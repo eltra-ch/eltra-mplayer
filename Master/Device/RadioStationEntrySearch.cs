@@ -1,15 +1,16 @@
 ﻿using MPlayerCommon.Contracts;
+using MPlayerMaster.Rsd;
 
 namespace MPlayerMaster.Device
 {
     class RadioStationEntrySearch
     {
-        public RadioStationEntrySearch(RadioStationEntry entry)
+        public RadioStationEntrySearch(RadioStationModel entry)
         {
             Entry = entry;
         }
 
-        public RadioStationEntry Entry { get; set; }
+        public RadioStationModel Entry { get; set; }
 
         public bool Contains(string queryWord)
         {

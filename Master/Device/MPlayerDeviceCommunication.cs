@@ -11,9 +11,8 @@ using EltraCommon.ObjectDictionary.Xdd.DeviceDescription.Profiles.Application.Pa
 using System.Runtime.InteropServices;
 
 using static MPlayerMaster.MPlayerDefinitions;
-using System.IO;
-using MPlayerMaster.RsdParser;
-using MPlayerCommon.Contracts;
+using MPlayerMaster.Runner;
+using MPlayerMaster.Rsd;
 
 namespace MPlayerMaster.Device
 {
@@ -36,11 +35,12 @@ namespace MPlayerMaster.Device
         private Parameter _controlWordParameter;
         private Parameter _stationsCountParameter;
 
-        private List<RadioStationEntry> _radioStations;
+        
         private MPlayerSettings _settings;
         private ushort _maxStationsCount;
 
         private MPlayerRunner _runner;
+        private RsdManager _rsdManager;
 
         #endregion
 
@@ -55,9 +55,10 @@ namespace MPlayerMaster.Device
             _stationTitleParameters = new List<Parameter>();
             _streamTitleParameters = new List<Parameter>();
             _volumeScalingParameters = new List<Parameter>();
-            _processIdParameters = new List<Parameter>();
-            _radioStations = new List<RadioStationEntry>();
+            _processIdParameters = new List<Parameter>();            
             _customTitleParameters = new List<Parameter>();
+
+            RsdManager.Init();
         }
 
         #endregion
@@ -65,6 +66,8 @@ namespace MPlayerMaster.Device
         #region Properties
 
         internal MPlayerRunner Runner => _runner ?? (_runner = CreateRunner());
+
+        internal RsdManager RsdManager => _rsdManager ?? (_rsdManager = CreateRsdManager());
 
         public int ActiveStationValue
         {
@@ -85,6 +88,13 @@ namespace MPlayerMaster.Device
 
         #region Init
 
+        private RsdManager CreateRsdManager()
+        {
+            var result = new RsdManager() { RsdZipFile = _settings.RsdZipFile };
+
+            return result;
+        }
+
         private MPlayerRunner CreateRunner()
         {
             var result = new MPlayerRunner
@@ -100,22 +110,7 @@ namespace MPlayerMaster.Device
                 Settings = _settings
             };
 
-            ReadRadioStations();
-
             return result;
-        }
-
-        private void ReadRadioStations()
-        {
-            if(File.Exists(_settings.RsdZipFile))
-            {
-                var parser = new RsdFileParser() { SerializeToJsonFile = false };
-
-                if(parser.ConvertRsdZipFileToJson(_settings.RsdZipFile))
-                {
-                    _radioStations = parser.Output;
-                }
-            }
         }
 
         protected override async void OnInitialized()
@@ -673,52 +668,7 @@ namespace MPlayerMaster.Device
 
         public string QueryStation(string query)
         {
-            string result = string.Empty;
-            const int minQueryLength = 3;
-            const int maxRadioStationEntries = 25;
-
-            try
-            {
-                if (_radioStations != null && _radioStations.Count > 0 && query.Length > minQueryLength)
-                {
-                    var radioStations = new List<RadioStationEntry>();
-
-                    var queryWords = query.Split(new char[] { ' ', ';', ';' });
-
-                    if (queryWords.Length > 0)
-                    {
-                        foreach (var radioStation in _radioStations)
-                        {
-                            bool contains = true;
-                            foreach (var queryWord in queryWords)
-                            {
-                                var search = new RadioStationEntrySearch(radioStation);
-
-                                if (!search.Contains(queryWord))
-                                {
-                                    contains = false;
-                                }
-                            }
-
-                            if (contains)
-                            {
-                                radioStations.Add(radioStation);
-
-                                if (radioStations.Count > maxRadioStationEntries)
-                                {
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    result = System.Text.Json.JsonSerializer.Serialize(radioStations);
-                }
-            }
-            catch(Exception e)
-            {
-                MsgLogger.Exception($"{GetType().Name} - QueryStation", e);
-            }
+            var result = RsdManager.QueryStation(query);
 
             return result;
         }

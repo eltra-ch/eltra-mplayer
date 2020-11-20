@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MPlayerMaster.Parser
+namespace MPlayerMaster.Runner.Console
 {
     class MPlayerConsoleParser
     {
@@ -86,7 +86,7 @@ namespace MPlayerMaster.Parser
 
                             if (!string.IsNullOrEmpty(streamTitle))
                             {
-                                Console.WriteLine($"stream title: {streamTitle}");
+                                MsgLogger.WriteLine($"stream title: {streamTitle}");
 
                                 if (ActiveStationValue > 0)
                                 {
@@ -120,7 +120,7 @@ namespace MPlayerMaster.Parser
 
                     if (!string.IsNullOrEmpty(stationName))
                     {
-                        Console.WriteLine($"station name: {stationName}");
+                        MsgLogger.WriteLine($"station name: {stationName}");
 
                         if (ActiveStationValue > 0)
                         {

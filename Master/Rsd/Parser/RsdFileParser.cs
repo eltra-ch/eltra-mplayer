@@ -6,7 +6,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Text.Json;
 
-namespace MPlayerMaster.RsdParser
+namespace MPlayerMaster.Rsd.Parser
 {
     class RsdFileParser
     {

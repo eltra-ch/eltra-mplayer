@@ -1,11 +1,10 @@
-﻿using EltraCommon.Helpers;
-using EltraCommon.Logger;
+﻿using EltraCommon.Logger;
 using MPlayerCommon.Contracts;
 using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace MPlayerMaster.RsdParser
+namespace MPlayerMaster.Rsd.Parser
 {
     class RsdEntryZipParser
     {
