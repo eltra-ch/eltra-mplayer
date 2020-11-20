@@ -26,6 +26,7 @@ namespace MPlayerMaster.Device
         private readonly List<Parameter> _streamTitleParameters;
         private readonly List<Parameter> _volumeScalingParameters;
         private readonly List<Parameter> _processIdParameters;
+        private readonly List<Parameter> _customTitleParameters;
 
         private Parameter _activeStationParameter;
         private Parameter _volumeParameter;
@@ -56,6 +57,7 @@ namespace MPlayerMaster.Device
             _volumeScalingParameters = new List<Parameter>();
             _processIdParameters = new List<Parameter>();
             _radioStations = new List<RadioStationEntry>();
+            _customTitleParameters = new List<Parameter>();
         }
 
         #endregion
@@ -90,7 +92,7 @@ namespace MPlayerMaster.Device
                 StationTitleParameters = _stationTitleParameters,
                 ProcessIdParameters = _processIdParameters,
                 StreamTitleParameters = _streamTitleParameters,
-
+                StreamCustomTitleParameters = _customTitleParameters,
                 StationsCountParameter = _stationsCountParameter,
                 StatusWordParameter = _statusWordParameter,
                 ActiveStationParameter = _activeStationParameter,
@@ -198,18 +200,23 @@ namespace MPlayerMaster.Device
                     var streamTitleParameter = Vcs.SearchParameter(index, 0x03) as XddParameter;
                     var valumeScalingParameter = Vcs.SearchParameter(index, 0x04) as XddParameter;
                     var processIdParameter = Vcs.SearchParameter(index, 0x05) as XddParameter;
+                    var customTitleParameter = Vcs.SearchParameter(index, 0x06) as XddParameter;
 
                     if (urlParameter != null && 
                         stationTitleParameter != null && 
                         streamTitleParameter != null && 
                         valumeScalingParameter != null && 
-                        processIdParameter != null)
+                        processIdParameter != null &&
+                        customTitleParameter != null)
                     {
                         _urlParameters.Add(urlParameter);
                         _stationTitleParameters.Add(stationTitleParameter);
                         _streamTitleParameters.Add(streamTitleParameter);
                         _volumeScalingParameters.Add(valumeScalingParameter);
                         _processIdParameters.Add(processIdParameter);
+                        _customTitleParameters.Add(customTitleParameter);
+
+                        customTitleParameter.ParameterChanged += OnCustomStreamTitleChanged;
                     }
                 }
             }
@@ -218,6 +225,24 @@ namespace MPlayerMaster.Device
         #endregion
 
         #region Events
+
+        private void OnCustomStreamTitleChanged(object sender, ParameterChangedEventArgs e)
+        {
+            var parameter = e.Parameter;
+
+            if(parameter != null && parameter.GetValue(out string customTitle))
+            {
+                if(!string.IsNullOrEmpty(customTitle))
+                {
+                    var streamTitleParameter = Vcs.SearchParameter(parameter.Index, 0x03) as XddParameter;
+
+                    if(streamTitleParameter!=null)
+                    {
+                        streamTitleParameter.SetValue(customTitle);
+                    }
+                }
+            }
+        }
 
         private void OnActiveStationParameterChanged(object sender, ParameterChangedEventArgs e)
         {
@@ -355,6 +380,15 @@ namespace MPlayerMaster.Device
                     result = true;
                 }
             }
+            else if (objectIndex >= 0x4000 && objectIndex <= (0x4000 + _maxStationsCount) && objectSubindex == 0x06
+                      && _customTitleParameters.Count > 0)
+            {
+                if (_customTitleParameters[objectIndex - 0x4000].GetValue(out byte[] d1))
+                {
+                    data = d1;
+                    result = true;
+                }
+            }
 
             return result;
         }
@@ -386,6 +420,14 @@ namespace MPlayerMaster.Device
                 if (_volumeScalingParameters.Count > (objectIndex - 0x4000))
                 {
                     result = _volumeScalingParameters[objectIndex - 0x4000].SetValue(data);
+                }
+            }
+            else if (objectIndex >= 0x4000 && objectIndex <= (0x4000 + _maxStationsCount)
+                    && objectSubindex == 0x06)
+            {
+                if (_customTitleParameters.Count > (objectIndex - 0x4000))
+                {
+                    result = _customTitleParameters[objectIndex - 0x4000].SetValue(data);
                 }
             }
             else if (objectIndex == 0x4100 && objectSubindex == 0x0)

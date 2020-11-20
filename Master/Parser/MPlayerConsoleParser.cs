@@ -12,6 +12,7 @@ namespace MPlayerMaster.Parser
 
         public Parameter ActiveStationParameter { get; set; }
         public List<Parameter> StreamTitleParameters { get; set; }
+        public List<Parameter> CustomStationTitleParameters { get; set; }
         public List<Parameter> StationTitleParameters { get; set; }
 
         public int ActiveStationValue
@@ -125,10 +126,22 @@ namespace MPlayerMaster.Parser
                         {
                             int index = ActiveStationValue - 1;
 
-                            if (!StationTitleParameters[index].SetValue(stationName))
+                            if (CustomStationTitleParameters[index].GetValue(out string customTitle))
                             {
-                                MsgLogger.WriteError($"{GetType().Name} - ParseMPlayerStationName", $"cannot set new station name: {stationName}");
+                                if (!string.IsNullOrEmpty(customTitle))
+                                {
+                                    stationName = customTitle;
+                                }
+
+                                if (!StationTitleParameters[index].SetValue(stationName))
+                                {
+                                    MsgLogger.WriteError($"{GetType().Name} - ParseMPlayerStationName", $"cannot set new station title: {stationName}");
+                                }
                             }
+                            else
+                            {
+                                MsgLogger.WriteError($"{GetType().Name} - ParseMPlayerStationName", $"cannot get custom station title: {stationName}");
+                            }                            
                         }
                     }
                 }

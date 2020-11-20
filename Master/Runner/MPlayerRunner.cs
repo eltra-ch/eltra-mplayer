@@ -45,6 +45,8 @@ namespace MPlayerMaster
         public List<Parameter> ProcessIdParameters { get; set; }
         public List<Parameter> StreamTitleParameters { get; set; }
 
+        public List<Parameter> StreamCustomTitleParameters { get; set; }
+
         public Parameter StationsCountParameter { get; set; }
         public Parameter StatusWordParameter { get; set; }
         public Parameter ActiveStationParameter { get; set; }
@@ -63,6 +65,7 @@ namespace MPlayerMaster
             {
                 ActiveStationParameter = ActiveStationParameter,
                 StreamTitleParameters = StreamTitleParameters,
+                CustomStationTitleParameters = StreamCustomTitleParameters,
                 StationTitleParameters = StationTitleParameters
             };
 

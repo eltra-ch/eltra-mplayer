@@ -31,6 +31,7 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
         private string _stationStreamTitle;
         private bool _isStationEditVisible;
         private ParameterEditViewModel _stationIdParameter;
+        private ParameterEditViewModel _stationCustomTitleParameter;
         private ParameterEditViewModel _stationVolumeScalingParameter;
         private bool _isActiveStation;
         private bool _deviceInitialization;
@@ -47,9 +48,11 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
 
             _stationIdParameter = new XamParameterEditViewModel(this, $"PARAM_Station_{stationIndex+1}_Id");   
             _stationVolumeScalingParameter = new XamParameterEditViewModel(this, $"PARAM_Station_{stationIndex+1}_VolumeScaling");
+            _stationCustomTitleParameter = new XamParameterEditViewModel(this, $"PARAM_Station_{stationIndex + 1}_CustomTitle");
 
             _stationIdParameter.ShowLabel = false;
             _stationVolumeScalingParameter.ShowLabel = false;
+            _stationCustomTitleParameter.ShowLabel = false;
 
             DeviceInitialized += OnDeviceInitialized;
         }
@@ -99,6 +102,11 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
         public ParameterEditViewModel StationIdParameter
         {
             get => _stationIdParameter;
+        }
+
+        public ParameterEditViewModel StationCustomTitleParameter
+        {
+            get => _stationCustomTitleParameter;
         }
 
         public ParameterEditViewModel StationVolumeScalingParameter
