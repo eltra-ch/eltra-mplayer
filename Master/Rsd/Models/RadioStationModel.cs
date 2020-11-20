@@ -50,6 +50,7 @@ namespace MPlayerMaster.Rsd.Models
         private void OnEntryChanged()
         {
             LastValidation = DateTime.MinValue;
+            IsValid = true;
 
             if (Entry != null)
             {
