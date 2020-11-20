@@ -1,14 +1,16 @@
 ﻿using EltraCommon.Logger;
 using MPlayerCommon.Contracts;
-using MPlayerMaster.Device;
 using MPlayerMaster.Rsd.Parser;
+using MPlayerMaster.Rsd.Validator;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using MPlayerMaster.Rsd.Models;
+using Newtonsoft.Json;
 
 namespace MPlayerMaster.Rsd
 {
-    class RsdManager
+    class RsdManager : IDisposable
     {
         #region Private fields
 
@@ -103,24 +105,18 @@ namespace MPlayerMaster.Rsd
 
                         foreach (var radioStation in RadioStations)
                         {
-                            bool contains = true;
-                            foreach (var queryWord in queryWords)
+                            if (radioStation.IsValid)
                             {
-                                var search = new RadioStationEntrySearch(radioStation);
+                                var contains = ContainsWord(queryWords, radioStation);
 
-                                if (!search.Contains(queryWord))
+                                if (contains)
                                 {
-                                    contains = false;
-                                }
-                            }
+                                    radioStations.Add(radioStation.Entry);
 
-                            if (contains)
-                            {
-                                radioStations.Add(radioStation.Entry);
-
-                                if (radioStations.Count > MaxRadioStationEntries)
-                                {
-                                    break;
+                                    if (radioStations.Count > MaxRadioStationEntries)
+                                    {
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -128,7 +124,7 @@ namespace MPlayerMaster.Rsd
                         Validator.SearchActive = false;
                     }
 
-                    result = System.Text.Json.JsonSerializer.Serialize(radioStations);
+                    result = JsonConvert.SerializeObject(radioStations);
                 }
             }
             catch (Exception e)
@@ -137,6 +133,31 @@ namespace MPlayerMaster.Rsd
             }
 
             return result;
+        }
+
+        private static bool ContainsWord(string[] queryWords, RadioStationModel radioStation)
+        {
+            bool contains = true;
+            foreach (var queryWord in queryWords)
+            {
+                var search = new RadioStationEntrySearch(radioStation);
+
+                if (!search.Contains(queryWord))
+                {
+                    contains = false;
+                }
+            }
+
+            return contains;
+        }
+
+        #endregion
+
+        #region Disposable
+
+        public void Dispose()
+        {
+            Validator.Stop();
         }
 
         #endregion

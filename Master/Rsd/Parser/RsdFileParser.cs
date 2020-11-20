@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Text.Json;
+using Newtonsoft.Json;
 
 namespace MPlayerMaster.Rsd.Parser
 {
@@ -101,7 +101,7 @@ namespace MPlayerMaster.Rsd.Parser
             {
                 if (entries.Count > 0)
                 {
-                    var jsonString = JsonSerializer.Serialize(entries);
+                    var jsonString = JsonConvert.SerializeObject(entries);
 
                     File.WriteAllText(fileName, jsonString);
 
