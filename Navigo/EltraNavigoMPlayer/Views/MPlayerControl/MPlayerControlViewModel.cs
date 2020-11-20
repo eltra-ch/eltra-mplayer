@@ -35,6 +35,9 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
         private Timer _valumeHistereseTimer;
 
         private List<MPlayerStationViewModel> _stationList;
+        
+        private double _stationUpdateProgressValue;
+        private XddParameter _updateStationProgressParameter;
 
         #endregion
 
@@ -74,6 +77,12 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             set => SetProperty(ref _volumeValue, value);
         }
 
+        public double StationUpdateProgressValue
+        {
+            get => _stationUpdateProgressValue;
+            set => SetProperty(ref _stationUpdateProgressValue, value);
+        }
+
         #endregion
 
         #region Commands 
@@ -109,6 +118,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             InitializeMuteParameter();
 
             InitializeStationList();
+
+            InitializeStationUpdateProgressParameter();
 
             IsBusy = false;
         }
@@ -351,6 +362,39 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             _valumeHistereseTimer.AutoReset = true;
         }
 
+        private void InitializeStationUpdateProgressParameter()
+        {
+            _updateStationProgressParameter = Device.SearchParameter(0x4301, 0x00) as XddParameter;
+
+            if (_updateStationProgressParameter != null)
+            {
+                double updateProgressStationValue;
+
+                if (_updateStationProgressParameter.GetValue(out updateProgressStationValue))
+                {
+                    StationUpdateProgressValue = updateProgressStationValue / 100;
+                }
+
+                _updateStationProgressParameter.ParameterChanged += OnStationUpdateProgressParameterChanged;
+                _updateStationProgressParameter.AutoUpdate();
+
+                Task.Run(async () =>
+                {
+                    IsBusy = true;
+
+                    await _updateStationProgressParameter.UpdateValue();
+
+                    IsBusy = false;
+                }).ContinueWith((t) =>
+                {
+                    if (_updateStationProgressParameter.GetValue(out updateProgressStationValue))
+                    {
+                        StationUpdateProgressValue = updateProgressStationValue / 100;
+                    }
+                });
+            }
+        }
+
         private void OnVolumeChanged()
         {
             if(_volumeParameter != null)
@@ -391,6 +435,17 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
                     _volumeValue = Math.Round(newValue);
 
                     CreateVolumeHistereseTimer();
+                }
+            }
+        }
+
+        private void OnStationUpdateProgressParameterChanged(object sender, ParameterChangedEventArgs e)
+        {
+            if (e.Parameter is Parameter stationUpdateProgressParameter)
+            {
+                if (stationUpdateProgressParameter.GetValue(out double stationUpdateProgress))
+                {
+                    StationUpdateProgressValue = stationUpdateProgress / 100;
                 }
             }
         }

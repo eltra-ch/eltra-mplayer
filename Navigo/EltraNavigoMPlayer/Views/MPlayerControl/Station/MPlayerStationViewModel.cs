@@ -35,7 +35,7 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
         private ParameterEditViewModel _stationVolumeScalingParameter;
         private bool _isActiveStation;
         private bool _deviceInitialization;
-
+        
         #endregion
 
         #region Constructors

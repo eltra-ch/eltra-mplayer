@@ -41,9 +41,10 @@
                     <RowDefinition Height="Auto"/> <!-- 1 status -->
                     <RowDefinition Height="Auto"/> <!-- 2 buttons -->
                     <RowDefinition Height="Auto"/> <!-- 3 turn off -->
-                    <RowDefinition Height="Auto"/> <!-- 4 activity -->
-                    <RowDefinition Height="Auto"/> <!-- 5 slider -->
-                    <RowDefinition Height="24"/>   <!-- 6 footer -->
+                    <RowDefinition Height="Auto"/> <!-- 4 progress -->
+                    <RowDefinition Height="Auto"/> <!-- 5 activity -->
+                    <RowDefinition Height="Auto"/> <!-- 6 slider -->
+                    <RowDefinition Height="24"/>   <!-- 7 footer -->
                 </Grid.RowDefinitions>
 
                 <Frame Grid.Row="1" Grid.Column="1" Padding="0">
@@ -71,10 +72,14 @@
                 </Grid>
 
                 <Frame Grid.Row="4" Grid.Column="1" Padding="4">
+                    <ProgressBar Progress="{Binding StationUpdateProgressValue}"/>
+                </Frame>
+                
+                <Frame Grid.Row="5" Grid.Column="1" Padding="4">
                     <ActivityIndicator IsRunning="{Binding IsBusy}" VerticalOptions="Center" HorizontalOptions="Center" />
                 </Frame>
                 
-                <Frame Grid.Row="5" Grid.Column="1" BorderColor="{StaticResource NavigationPrimary}">
+                <Frame Grid.Row="6" Grid.Column="1" BorderColor="{StaticResource NavigationPrimary}">
                     <StackLayout Orientation="Vertical">
                         <StackLayout.Resources>
                             <converters2:NegateBooleanConverter x:Key="NegateBooleanConverter"/>
