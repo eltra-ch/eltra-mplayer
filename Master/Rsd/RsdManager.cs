@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using MPlayerMaster.Rsd.Models;
 using Newtonsoft.Json;
+using EltraConnector.Master.Device;
 
 namespace MPlayerMaster.Rsd
 {
@@ -56,7 +57,7 @@ namespace MPlayerMaster.Rsd
             return new List<RadioStationModel>();
         }
 
-        public void Init()
+        public void Init(MasterVcs vcs)
         {
             if (File.Exists(RsdZipFile))
             {
@@ -68,6 +69,7 @@ namespace MPlayerMaster.Rsd
 
                     InitRadioStations(parser.Output);
 
+                    Validator.Vcs = vcs;
                     Validator.RadioStations = _radioStations;
 
                     Validator.Start();

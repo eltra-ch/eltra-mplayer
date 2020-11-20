@@ -31,7 +31,7 @@ namespace MPlayerMaster.Device
         private Parameter _volumeParameter;
         private XddParameter _muteParameter;
         private Parameter _statusWordParameter;
-
+        
         private Parameter _controlWordParameter;
         private Parameter _stationsCountParameter;
 
@@ -56,9 +56,7 @@ namespace MPlayerMaster.Device
             _streamTitleParameters = new List<Parameter>();
             _volumeScalingParameters = new List<Parameter>();
             _processIdParameters = new List<Parameter>();            
-            _customTitleParameters = new List<Parameter>();
-
-            RsdManager.Init();
+            _customTitleParameters = new List<Parameter>();            
         }
 
         #endregion
@@ -116,7 +114,9 @@ namespace MPlayerMaster.Device
         protected override async void OnInitialized()
         {
             Console.WriteLine($"device (node id={Device.NodeId}) initialized, processing ...");
-            
+
+            RsdManager.Init(Vcs);
+
             InitStateMachine();
 
             InitializeStationList();
@@ -181,7 +181,7 @@ namespace MPlayerMaster.Device
         private void InitializeStationList()
         {
             _stationsCountParameter = Vcs.SearchParameter("PARAM_StationsCount") as XddParameter;
-
+            
             if (_stationsCountParameter != null && _stationsCountParameter.GetValue(out ushort maxCount))
             {
                 _maxStationsCount = maxCount;

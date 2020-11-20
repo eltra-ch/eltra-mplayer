@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using EltraCommon.Logger;
+using EltraCommon.ObjectDictionary.Xdd.DeviceDescription.Profiles.Application.Parameters;
+using EltraConnector.Master.Device;
 using MPlayerMaster.Rsd.Models;
 
 namespace MPlayerMaster.Rsd.Validator
@@ -13,18 +16,21 @@ namespace MPlayerMaster.Rsd.Validator
         private RdsWebClient _rdsWebClient = new RdsWebClient();
         private Task _validationTask;
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        private XddParameter _stationUpdateProgressParameter;
 
         #endregion
 
         public RadioStationValidator()
         {
-            ValidationInterval = TimeSpan.FromHours(1);
+            ValidationInterval = TimeSpan.FromHours(12);
         }
 
         ~RadioStationValidator()
         {
             Stop();
         }
+
+        public MasterVcs Vcs { get; set; }
 
         public TimeSpan ValidationInterval { get; set; }
 
@@ -82,13 +88,21 @@ namespace MPlayerMaster.Rsd.Validator
 
         private void DoValidation(CancellationToken cancellationToken)
         {
-            Console.WriteLine("start validation ...");
+            _stationUpdateProgressParameter = Vcs.SearchParameter("PARAM_StationUpdateProgress") as XddParameter;
+
+            MsgLogger.WriteLine($"start validation ({RadioStations.Count}) ...");
 
             do
             {
+                int counter = 0;
+
                 foreach (var radioStation in RadioStations)
                 {
                     var sinceLastValidation = DateTime.Now - radioStation.LastValidation;
+
+                    double progressPercent = Math.Round((counter / (double)RadioStations.Count)*100, 1);
+
+                    _stationUpdateProgressParameter.SetValue(progressPercent);
 
                     if (!SearchActive && sinceLastValidation > ValidationInterval)
                     {
@@ -96,11 +110,11 @@ namespace MPlayerMaster.Rsd.Validator
 
                         if (radioStation.LastValidation == DateTime.MinValue)
                         {
-                            Console.WriteLine("first time validation");
+                            MsgLogger.WriteLine($"first time validation, {counter}/{RadioStations.Count} {progressPercent} %");
                         }
                         else
                         {
-                            Console.WriteLine($"last validation started for: {sinceLastValidation.TotalMinutes} min.");
+                            MsgLogger.WriteLine($"last validation started for: {sinceLastValidation.TotalMinutes} min., {counter}/{RadioStations.Count} {progressPercent} %");
                         }
                         
                         foreach (var url in radioStation.Urls)
@@ -111,7 +125,7 @@ namespace MPlayerMaster.Rsd.Validator
 
                                 radioStation.IsValid = true;
 
-                                Console.WriteLine($"SUCCESS: url: '{url.Uri}' OK");
+                                MsgLogger.WriteLine($"SUCCESS: url: '{url.Uri}', {counter}/{RadioStations.Count} {progressPercent} %");
                             }
                             else
                             {
@@ -119,7 +133,7 @@ namespace MPlayerMaster.Rsd.Validator
 
                                 toRemove.Add(url.Uri);
 
-                                Console.WriteLine($"#ERROR#: url: '{url.Uri}'");
+                                MsgLogger.WriteLine($"#ERROR#: url: '{url.Uri}', {counter}/{RadioStations.Count} {progressPercent} %");
                             }
                         }
 
@@ -138,11 +152,13 @@ namespace MPlayerMaster.Rsd.Validator
 
                         radioStation.LastValidation = DateTime.Now;
                     }
+
+                    counter++;
                 }
             }
             while (!cancellationToken.IsCancellationRequested);
 
-            Console.WriteLine("stop validation");
+            MsgLogger.WriteLine("stop validation");
         }
     }
 }
