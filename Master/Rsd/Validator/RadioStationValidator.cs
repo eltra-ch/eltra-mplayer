@@ -92,6 +92,8 @@ namespace MPlayerMaster.Rsd.Validator
 
             MsgLogger.WriteLine($"start validation ({RadioStations.Count}) ...");
 
+            const int minWaitTime = 10;
+
             do
             {
                 int counter = 0;
@@ -155,6 +157,8 @@ namespace MPlayerMaster.Rsd.Validator
 
                     counter++;
                 }
+
+                Thread.Sleep(minWaitTime);
             }
             while (!cancellationToken.IsCancellationRequested);
 
