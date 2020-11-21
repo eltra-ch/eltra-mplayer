@@ -15,7 +15,6 @@ namespace MPlayerMaster.Rsd
     {
         #region Private fields
 
-        private List<RadioStationModel> _radioStations;
         private RadioStationValidator _validator;
 
         #endregion
@@ -32,11 +31,8 @@ namespace MPlayerMaster.Rsd
 
         #region Properties
 
-        public List<RadioStationModel> RadioStations
-        {
-            get => _radioStations ?? (_radioStations = CreateRadioStations());
-        }
-
+        public RadioStationEntriesModel RadioStationEntriesModel { get; set; }
+        
         public string RsdZipFile { get; set; }
 
         public int MinQueryLength { get; set; }
@@ -52,11 +48,6 @@ namespace MPlayerMaster.Rsd
 
         #region Methods
 
-        protected virtual List<RadioStationModel> CreateRadioStations()
-        {
-            return new List<RadioStationModel>();
-        }
-
         public void Init(MasterVcs vcs)
         {
             if (File.Exists(RsdZipFile))
@@ -70,23 +61,16 @@ namespace MPlayerMaster.Rsd
                     InitRadioStations(parser.Output);
 
                     Validator.Vcs = vcs;
-                    Validator.RadioStations = _radioStations;
+                    Validator.RadioStations = RadioStationEntriesModel.Entries;
 
                     Validator.Start();
                 }
             }
         }
 
-        private void InitRadioStations(List<RadioStationEntry> radioStationEntries)
+        private void InitRadioStations(RadioStationEntriesModel radioStationEntriesModel)
         {
-            RadioStations.Clear();
-
-            foreach (var radioStationEntry in radioStationEntries)
-            {
-                var model = new RadioStationModel() { Entry = radioStationEntry };
-
-                RadioStations.Add(model);
-            }
+            RadioStationEntriesModel = radioStationEntriesModel;
         }
 
         public string QueryStation(string query)
@@ -95,7 +79,7 @@ namespace MPlayerMaster.Rsd
             
             try
             {
-                if (RadioStations != null && RadioStations.Count > 0 && query.Length > MinQueryLength)
+                if (RadioStationEntriesModel != null && RadioStationEntriesModel.Count > 0 && query.Length > MinQueryLength)
                 {
                     var radioStations = new List<RadioStationEntry>();
 
@@ -105,7 +89,7 @@ namespace MPlayerMaster.Rsd
                     {
                         Validator.SearchActive = true;
 
-                        foreach (var radioStation in RadioStations)
+                        foreach (var radioStation in RadioStationEntriesModel.Entries)
                         {
                             if (radioStation.IsValid)
                             {

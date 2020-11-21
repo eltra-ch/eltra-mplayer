@@ -1,23 +1,23 @@
 ﻿using EltraCommon.Logger;
-using MPlayerCommon.Contracts;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using Newtonsoft.Json;
+using MPlayerMaster.Rsd.Models;
+using EltraCommon.Helpers;
 
 namespace MPlayerMaster.Rsd.Parser
 {
     class RsdFileParser
     {
-        private List<RadioStationEntry> _output;
+        private RadioStationEntriesModel _output;
 
         public RsdFileParser()
         {
             SerializeToJsonFile = true;
         }
 
-        public List<RadioStationEntry> Output => _output ?? (_output = new List<RadioStationEntry>());
+        public RadioStationEntriesModel Output => _output ?? (_output = new RadioStationEntriesModel());
 
         public bool SerializeToJsonFile { get; set; }
 
@@ -76,12 +76,9 @@ namespace MPlayerMaster.Rsd.Parser
 
                     if (result)
                     {
-                        Output.AddRange(entries);
+                        Output.AddEntries(entries);
 
-                        if (SerializeToJsonFile)
-                        {
-                            result = SerializeJsonFile(fileName, entries);
-                        }
+                        result = DoPostProcessing(fileName);
                     }
                 }
             }
@@ -93,27 +90,42 @@ namespace MPlayerMaster.Rsd.Parser
             return result;
         }
 
-        private bool SerializeJsonFile(string fileName, List<RadioStationEntry> entries)
+        private bool DoPostProcessing(string fileName)
         {
             bool result = false;
 
             try
             {
-                if (entries.Count > 0)
+                if (Output!=null && Output.Count > 0)
                 {
-                    var jsonString = JsonConvert.SerializeObject(entries);
+                    CalculateMd5(fileName);
 
-                    File.WriteAllText(fileName, jsonString);
+                    if (SerializeToJsonFile)
+                    {
+                        //serialize object
+                        var json = JsonConvert.SerializeObject(Output);
 
+                        File.WriteAllText(fileName, json);
+                    }
+                    
                     result = true;
                 }
             }
             catch (Exception e)
             {
-                MsgLogger.Exception($"{GetType().Name} - SerializeJsonFile", e);
+                MsgLogger.Exception($"{GetType().Name} - DoPostProcessing", e);
             }
 
             return result;
+        }
+
+        private void CalculateMd5(string fileName)
+        {
+            //calculate md5
+            var json = JsonConvert.SerializeObject(Output.Entries);
+
+            Output.Md5 = CryptHelpers.ToMD5(json);
+            Output.Name = new FileInfo(fileName).Name;
         }
     }
 }

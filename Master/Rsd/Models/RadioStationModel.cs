@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 using MPlayerCommon.Contracts;
 
 namespace MPlayerMaster.Rsd.Models
 {
+    [DataContract]
     class RadioStationModel
     {
         #region Private fields
@@ -13,8 +15,19 @@ namespace MPlayerMaster.Rsd.Models
 
         #endregion
 
+        #region Constructors
+
+        public RadioStationModel()
+        {
+            IsValid = true;
+            LastValidation = DateTime.MinValue;
+        }
+
+        #endregion
+
         #region Properties
 
+        [DataMember]
         public RadioStationEntry Entry
         {
             get => _entry;
@@ -29,18 +42,25 @@ namespace MPlayerMaster.Rsd.Models
             }
         }
 
+        [IgnoreDataMember]
         public string Name => Entry?.Name;
 
+        [IgnoreDataMember]
         public string Genre => Entry?.Genre;
 
+        [IgnoreDataMember]
         public string Country => Entry?.Country;
 
+        [IgnoreDataMember]
         public string Language => Entry?.Language;
 
+        [DataMember]
         public List<RadioUrlModel> Urls => _urls ?? (_urls = new List<RadioUrlModel>());
-        
+
+        [DataMember]
         public bool IsValid { get; set; }
 
+        [DataMember]
         public DateTime LastValidation { get; set; }
 
         #endregion
@@ -49,9 +69,6 @@ namespace MPlayerMaster.Rsd.Models
 
         private void OnEntryChanged()
         {
-            LastValidation = DateTime.MinValue;
-            IsValid = true;
-
             if (Entry != null)
             {
                 Urls.Clear();
