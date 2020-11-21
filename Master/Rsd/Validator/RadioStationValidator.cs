@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using EltraCommon.Logger;
@@ -92,7 +93,7 @@ namespace MPlayerMaster.Rsd.Validator
 
             MsgLogger.WriteLine($"start validation ({RadioStations.Count}) ...");
 
-            const int minWaitTime = 10;
+            const int minWaitTimeMs = 10;
 
             do
             {
@@ -158,7 +159,14 @@ namespace MPlayerMaster.Rsd.Validator
                     counter++;
                 }
 
-                Thread.Sleep(minWaitTime);
+                var timeout = new Stopwatch();
+
+                timeout.Start();
+
+                while (!cancellationToken.IsCancellationRequested && timeout.Elapsed < ValidationInterval)
+                {
+                    Thread.Sleep(minWaitTimeMs);
+                }
             }
             while (!cancellationToken.IsCancellationRequested);
 

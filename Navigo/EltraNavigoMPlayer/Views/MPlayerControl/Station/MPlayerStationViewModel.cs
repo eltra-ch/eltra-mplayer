@@ -286,7 +286,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
             var result = base.Show();
 
             StationIdParameter.InitModelData();
-            StationIdParameter.Written += OnStationIdWritten; 
+            StationIdParameter.Written += OnStationIdWritten;
+            StationIdParameter.StartUpdate();
 
             StationVolumeScalingParameter.InitModelData();
             
@@ -296,6 +297,7 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
         public override Task Hide()
         {
             StationIdParameter.Written -= OnStationIdWritten;
+            StationIdParameter.StopUpdate();
 
             return base.Hide();
         }
