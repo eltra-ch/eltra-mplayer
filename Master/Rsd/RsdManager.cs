@@ -58,19 +58,36 @@ namespace MPlayerMaster.Rsd
                 {
                     Validator.Stop();
 
-                    InitRadioStations(parser.Output);
+                    if(InitRadioStations(parser.Output))
+                    {
+                        Validator.Vcs = vcs;
+                        Validator.RadioStationEntriesModel = RadioStationEntriesModel;
 
-                    Validator.Vcs = vcs;
-                    Validator.RadioStations = RadioStationEntriesModel.Entries;
-
-                    Validator.Start();
+                        Validator.Start();
+                    }
+                    else
+                    {
+                        MsgLogger.WriteError($"{GetType().Name} - Init", "init model failed!");
+                    }
+                }
+                else
+                {
+                    MsgLogger.WriteError($"{GetType().Name} - Init", "parsing zip file failed!");
                 }
             }
         }
 
-        private void InitRadioStations(RadioStationEntriesModel radioStationEntriesModel)
+        private bool InitRadioStations(RadioStationEntriesModel radioStationEntriesModel)
         {
-            RadioStationEntriesModel = radioStationEntriesModel;
+            bool result = false;
+
+            if (radioStationEntriesModel != null)
+            {
+                RadioStationEntriesModel = radioStationEntriesModel;
+                result = true;
+            }
+
+            return result;
         }
 
         public string QueryStation(string query)
@@ -87,8 +104,6 @@ namespace MPlayerMaster.Rsd
 
                     if (queryWords.Length > 0)
                     {
-                        Validator.SearchActive = true;
-
                         foreach (var radioStation in RadioStationEntriesModel.Entries)
                         {
                             if (radioStation.IsValid)
@@ -106,8 +121,6 @@ namespace MPlayerMaster.Rsd
                                 }
                             }
                         }
-
-                        Validator.SearchActive = false;
                     }
 
                     result = JsonConvert.SerializeObject(radioStations);

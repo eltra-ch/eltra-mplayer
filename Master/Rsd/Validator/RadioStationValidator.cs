@@ -35,10 +35,8 @@ namespace MPlayerMaster.Rsd.Validator
 
         public TimeSpan ValidationInterval { get; set; }
 
-        public List<RadioStationModel> RadioStations { get; set; }
+        public RadioStationEntriesModel RadioStationEntriesModel { get; set; }
         
-        public bool SearchActive { get; set; }
-
         public void Start()
         {
             Stop();
@@ -91,7 +89,21 @@ namespace MPlayerMaster.Rsd.Validator
         {
             _stationUpdateProgressParameter = Vcs.SearchParameter("PARAM_StationUpdateProgress") as XddParameter;
 
-            MsgLogger.WriteLine($"start validation ({RadioStations.Count}) ...");
+            if(_stationUpdateProgressParameter == null)
+            {
+                MsgLogger.WriteError($"{GetType().Name} - DoValidation", "station update progress parameter not found!");
+                return;
+            }
+
+            if (RadioStationEntriesModel == null)
+            {
+                MsgLogger.WriteError($"{GetType().Name} - DoValidation", "model not found!");
+                return;
+            }
+
+            int radioStationEntriesCount = RadioStationEntriesModel.Count;
+
+            MsgLogger.WriteLine($"start validation ({radioStationEntriesCount}) ...");
 
             const int minWaitTimeMs = 10;
 
@@ -99,62 +111,20 @@ namespace MPlayerMaster.Rsd.Validator
             {
                 int counter = 0;
 
-                foreach (var radioStation in RadioStations)
+                foreach (var radioStation in RadioStationEntriesModel.Entries)
                 {
                     var sinceLastValidation = DateTime.Now - radioStation.LastValidation;
 
-                    double progressPercent = Math.Round((counter / (double)RadioStations.Count)*100, 1);
+                    double progressPercent = Math.Round((counter / (double)radioStationEntriesCount) * 100, 1);
 
-                    _stationUpdateProgressParameter.SetValue(progressPercent);
-
-                    if (!SearchActive && sinceLastValidation > ValidationInterval)
+                    if (sinceLastValidation > ValidationInterval)
                     {
-                        var toRemove = new List<string>();
-
-                        if (radioStation.LastValidation == DateTime.MinValue)
-                        {
-                            MsgLogger.WriteLine($"first time validation, {counter}/{RadioStations.Count} {progressPercent} %");
-                        }
-                        else
-                        {
-                            MsgLogger.WriteLine($"last validation started for: {sinceLastValidation.TotalMinutes} min., {counter}/{RadioStations.Count} {progressPercent} %");
-                        }
-                        
-                        foreach (var url in radioStation.Urls)
-                        {
-                            if (IsReadableUri(url.Uri))
-                            {
-                                url.IsValid = true;
-
-                                radioStation.IsValid = true;
-
-                                MsgLogger.WriteLine($"SUCCESS: url: '{url.Uri}', {counter}/{RadioStations.Count} {progressPercent} %");
-                            }
-                            else
-                            {
-                                url.IsValid = false;
-
-                                toRemove.Add(url.Uri);
-
-                                MsgLogger.WriteLine($"#ERROR#: url: '{url.Uri}', {counter}/{RadioStations.Count} {progressPercent} %");
-                            }
-                        }
-
-                        foreach (var uri in toRemove)
-                        {
-                            if (radioStation.Entry.Urls.Contains(uri))
-                            {
-                                radioStation.Entry.Urls.Remove(uri);
-                            }
-                        }
-
-                        if (radioStation.IsValid && radioStation.Entry.Urls.Count == 0)
-                        {
-                            radioStation.IsValid = false;
-                        }
-
-                        radioStation.LastValidation = DateTime.Now;
+                        ValidateRadioStation(radioStation, radioStationEntriesCount, counter, sinceLastValidation, progressPercent);
                     }
+
+                    UpdateProgress(progressPercent);
+
+                    Thread.Sleep(minWaitTimeMs);
 
                     counter++;
                 }
@@ -171,6 +141,71 @@ namespace MPlayerMaster.Rsd.Validator
             while (!cancellationToken.IsCancellationRequested);
 
             MsgLogger.WriteLine("stop validation");
+        }
+
+        private void ValidateRadioStation(RadioStationModel radioStation, int radioStationEntriesCount, int counter, TimeSpan sinceLastValidation, double progressPercent)
+        {
+            var toRemove = new List<string>();
+
+            if (radioStation.LastValidation == DateTime.MinValue)
+            {
+                MsgLogger.WriteLine($"first time validation, {counter}/{radioStationEntriesCount} {progressPercent} %");
+            }
+            else
+            {
+                MsgLogger.WriteLine($"last validation started for: {sinceLastValidation.TotalMinutes} min., {counter}/{radioStationEntriesCount} {progressPercent} %");
+            }
+
+            foreach (var url in radioStation.Urls)
+            {
+                if (IsReadableUri(url.Uri))
+                {
+                    url.IsValid = true;
+
+                    radioStation.IsValid = true;
+
+                    MsgLogger.WriteLine($"SUCCESS: url: '{url.Uri}', {counter}/{radioStationEntriesCount} {progressPercent} %");
+                }
+                else
+                {
+                    url.IsValid = false;
+
+                    toRemove.Add(url.Uri);
+
+                    MsgLogger.WriteLine($"#ERROR#: url: '{url.Uri}', {counter}/{radioStationEntriesCount} {progressPercent} %");
+                }
+            }
+
+            foreach (var uri in toRemove)
+            {
+                if (radioStation.Entry.Urls.Contains(uri))
+                {
+                    radioStation.Entry.Urls.Remove(uri);
+                }
+            }
+
+            if (radioStation.IsValid && radioStation.Entry.Urls.Count == 0)
+            {
+                radioStation.IsValid = false;
+            }
+
+            radioStation.LastValidation = DateTime.Now;
+        }
+
+        private bool UpdateProgress(double progressPercent)
+        {
+            const double minStep = 1.0;
+            bool result = false;
+
+            if (_stationUpdateProgressParameter.GetValue(out double progress))
+            {
+                if (progressPercent - progress >= minStep)
+                {
+                    result = _stationUpdateProgressParameter.SetValue(progressPercent);
+                }
+            }
+
+            return result;
         }
     }
 }
