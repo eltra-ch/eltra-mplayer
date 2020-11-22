@@ -120,6 +120,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
             {
                 IsBusy = true;
 
+                var searchResults = new List<RadioStationEntry>();
+
                 var queryStationCommand = await Device.GetCommand("QueryStation");
 
                 if(queryStationCommand!=null)
@@ -137,11 +139,11 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
 
                     if (!string.IsNullOrEmpty(queryResult))
                     {
-                        var searchResults = JsonConvert.DeserializeObject<List<RadioStationEntry>>(queryResult);
-
-                        SearchResults = searchResults;
+                        searchResults = JsonConvert.DeserializeObject<List<RadioStationEntry>>(queryResult);                        
                     }
                 }
+
+                SearchResults = searchResults;
 
                 IsBusy = false;
             });
