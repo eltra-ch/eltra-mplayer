@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "MPlayerMaster": {
+      "commandName": "Project"
+    },
+    "UWPApp": {
+      "commandName": "Executable",
+      "remoteDebugEnabled": false
+    }
+  }
+}
