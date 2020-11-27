@@ -136,14 +136,6 @@ namespace MPlayerMaster
             }
         }
 
-        public string RsdZipFile
-        {
-            get
-            {
-                return Configuration["RsdZipFile"];
-            }
-        }
-
         public string MPlayerProcessName
         {
             get
@@ -158,7 +150,23 @@ namespace MPlayerMaster
                 return Configuration["MPlayerProcessPath"];
             }
         }
-        
+
+        public string RadioSureLogin
+        {
+            get
+            {
+                return Configuration["RadioSureLogin"];
+            }
+        }
+
+        public string RadioSurePasswd
+        {
+            get
+            {
+                return Configuration["RadioSurePasswd"];
+            }
+        }
+
         private IConfiguration Configuration
         {
             get => _configuration ?? (_configuration = new ConfigurationBuilder()

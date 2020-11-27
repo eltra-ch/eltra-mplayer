@@ -9,10 +9,12 @@ using System.Diagnostics;
 using EltraCommon.Logger;
 using EltraCommon.ObjectDictionary.Xdd.DeviceDescription.Profiles.Application.Parameters;
 using System.Runtime.InteropServices;
+using EltraCommon.Contracts.Users;
 
 using static MPlayerMaster.MPlayerDefinitions;
 using MPlayerMaster.Runner;
-using MPlayerMaster.Rsd;
+using EltraConnector.Agent;
+using EltraCommon.Contracts.CommandSets;
 
 namespace MPlayerMaster.Device
 {
@@ -34,14 +36,13 @@ namespace MPlayerMaster.Device
         
         private Parameter _controlWordParameter;
         private Parameter _stationsCountParameter;
+        private AgentConnector _agentConnector;
 
-        
         private MPlayerSettings _settings;
         private ushort _maxStationsCount;
-
+        private DeviceCommand _queryStationCommand;
         private MPlayerRunner _runner;
-        private RsdManager _rsdManager;
-
+        
         #endregion
 
         #region Constructors
@@ -55,8 +56,8 @@ namespace MPlayerMaster.Device
             _stationTitleParameters = new List<Parameter>();
             _streamTitleParameters = new List<Parameter>();
             _volumeScalingParameters = new List<Parameter>();
-            _processIdParameters = new List<Parameter>();            
-            _customTitleParameters = new List<Parameter>();            
+            _processIdParameters = new List<Parameter>();
+            _customTitleParameters = new List<Parameter>();
         }
 
         #endregion
@@ -64,8 +65,6 @@ namespace MPlayerMaster.Device
         #region Properties
 
         internal MPlayerRunner Runner => _runner ?? (_runner = CreateRunner());
-
-        internal RsdManager RsdManager => _rsdManager ?? (_rsdManager = CreateRsdManager());
 
         public int ActiveStationValue
         {
@@ -85,13 +84,6 @@ namespace MPlayerMaster.Device
         #endregion
 
         #region Init
-
-        private RsdManager CreateRsdManager()
-        {
-            var result = new RsdManager() { RsdZipFile = _settings.RsdZipFile };
-
-            return result;
-        }
 
         private MPlayerRunner CreateRunner()
         {
@@ -115,8 +107,6 @@ namespace MPlayerMaster.Device
         {
             Console.WriteLine($"device (node id={Device.NodeId}) initialized, processing ...");
 
-            RsdManager.Init(Vcs);
-
             InitStateMachine();
 
             InitializeStationList();
@@ -125,7 +115,46 @@ namespace MPlayerMaster.Device
 
             await InitVolumeControl();
 
+            await InitQueryStation();
+
             base.OnInitialized();
+        }
+
+        private async Task<bool> InitQueryStation()
+        {
+            bool result = false;
+
+            if(_agentConnector!=null)
+            {
+                _agentConnector.Disconnect();
+            }
+
+            _agentConnector = new AgentConnector() { Host = _settings.Host };
+
+            if (await _agentConnector.SignIn(new UserIdentity() { Login = _settings.Alias, Password = _settings.AliasPasswd, Role = "developer" }))
+            {
+                if (await _agentConnector.Connect(new UserIdentity() { Login = _settings.RadioSureLogin, Password = _settings.RadioSurePasswd, Role = "developer" }))
+                {
+                    var channels = await _agentConnector.GetChannels();
+
+                    foreach (var channel in channels)
+                    {
+                        foreach (var device in channel.Devices)
+                        {
+                            var queryStationCommand = await device.GetCommand("QueryStation");
+
+                            if (queryStationCommand != null)
+                            {
+                                _queryStationCommand = queryStationCommand;
+                                result = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return result;
         }
 
         private void InitStateMachine()
@@ -666,9 +695,52 @@ namespace MPlayerMaster.Device
             return result;
         }
 
+        private async Task<string> ExecQueryStation(string query)
+        {
+            string result = "failure";
+
+            if (_queryStationCommand != null)
+            {
+                _queryStationCommand.SetParameterValue("Query", query);
+
+                var command = await _queryStationCommand.Execute();
+
+                if (command != null && command.GetParameterValue("Result", ref query))
+                {
+                    result = query;
+                }
+            }
+
+            return result;
+        }
+
         public string QueryStation(string query)
         {
-            var result = RsdManager.QueryStation(query);
+            var result = string.Empty;
+
+            var t = Task.Run(async ()=> {
+
+                var queryResult = await ExecQueryStation(query);
+
+                if(queryResult != "failure")
+                {
+                    result = queryResult;
+                }
+                else
+                {
+                    if(await InitQueryStation())
+                    {
+                        queryResult = await ExecQueryStation(query);
+
+                        if (queryResult != "failure")
+                        {
+                            result = queryResult;
+                        }
+                    }
+                }                
+            });
+
+            t.Wait();
 
             return result;
         }
