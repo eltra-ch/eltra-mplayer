@@ -1,15 +1,11 @@
 ﻿using EltraCommon.Logger;
 using MPlayerCommon.Contracts;
-using RadioSureMaster.Rsd.Parser;
 using RadioSureMaster.Rsd.Validator;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using RadioSureMaster.Rsd.Models;
 using Newtonsoft.Json;
 using EltraConnector.Master.Device;
-using System.Threading.Tasks;
-using System.Net.Http;
 
 namespace RadioSureMaster.Rsd
 {
@@ -18,8 +14,7 @@ namespace RadioSureMaster.Rsd
         #region Private fields
 
         private RadioStationValidator _validator;
-        private RsdxDownloader _rsdxDownloader;
-
+        
         #endregion
 
         #region Constructors
@@ -34,8 +29,8 @@ namespace RadioSureMaster.Rsd
 
         #region Properties
 
-        public RadioStationEntriesModel RadioStationEntriesModel { get; set; }
-        
+        public RadioStationEntriesModel RadioStationEntriesModel => Validator.RadioStationEntriesModel;
+
         public string RsdxUrl { get; set; }
 
         public int MinQueryLength { get; set; }
@@ -51,88 +46,12 @@ namespace RadioSureMaster.Rsd
 
         #region Methods
 
-        private void GetZipFileName()
-        {
-            Task.Run(async () => {
-
-                string tmpFullPath = string.Empty;
-
-                try
-                {
-                    string zipFileUrl = await _rsdxDownloader.GetCurrentDownloadNameAsync();
-
-                    if (!string.IsNullOrEmpty(zipFileUrl))
-                    {
-                        var uri = new Uri(zipFileUrl);
-                        string filename = string.Empty;
-
-                        if (uri.IsFile)
-                        {
-                            filename = Path.GetFileName(uri.LocalPath);
-                        }
-
-                        tmpFullPath = Path.Combine(Path.GetTempPath(), filename);
-
-                        var httpClient = new HttpClient();
-
-                        var stream = await httpClient.GetStreamAsync(zipFileUrl);
-
-                        using (var memoryStream = new MemoryStream())
-                        {
-                            await stream.CopyToAsync(memoryStream);
-
-                            var byteArray = memoryStream.ToArray();
-
-                            File.WriteAllBytes(tmpFullPath, byteArray);
-                        }
-                    }
-                }
-                catch(Exception e)
-                {
-                    MsgLogger.Exception($"{GetType().Name} - GetZipFileName", e);
-                }
-
-                return tmpFullPath;
-            }).ContinueWith((t)=> 
-            {
-                var zipFileName = t.Result;
-
-                if (!string.IsNullOrEmpty(zipFileName))
-                {
-                    var parser = new RsdFileParser() { SerializeToJsonFile = false };
-
-                    if (parser.ConvertRsdZipFileToJson(zipFileName))
-                    {
-                        Validator.Stop();
-
-                        if (parser.Output != null)
-                        {
-                            RadioStationEntriesModel = parser.Output;
-
-                            Validator.RadioStationEntriesModel = RadioStationEntriesModel;
-
-                            Validator.Start();
-                        }
-                        else
-                        {
-                            MsgLogger.WriteError($"{GetType().Name} - Init", "init model failed!");
-                        }
-                    }
-                    else
-                    {
-                        MsgLogger.WriteError($"{GetType().Name} - Init", "parsing zip file failed!");
-                    }
-                }
-            });            
-        }
-
         public void Init(MasterVcs vcs)
         {
-            _rsdxDownloader = new RsdxDownloader() { RsdxUrl = RsdxUrl };
-
+            Validator.RsdxUrl = RsdxUrl;
             Validator.Vcs = vcs;
 
-            GetZipFileName();            
+            Validator.Start();            
         }
 
         public string QueryStation(string query)

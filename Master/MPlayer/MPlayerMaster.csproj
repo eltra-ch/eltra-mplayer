@@ -23,7 +23,7 @@
    </ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\Common\MPlayerCommon\MPlayerCommon.csproj" />
+	  <ProjectReference Include="..\..\Common\MPlayerCommon\MPlayerCommon.csproj" />
 	</ItemGroup>
 
   <ItemGroup>

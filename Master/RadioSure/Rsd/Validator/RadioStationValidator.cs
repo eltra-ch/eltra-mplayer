@@ -7,6 +7,7 @@ using EltraCommon.Logger;
 using EltraCommon.ObjectDictionary.Xdd.DeviceDescription.Profiles.Application.Parameters;
 using EltraConnector.Master.Device;
 using RadioSureMaster.Rsd.Models;
+using RadioSureMaster.Rsd.Parser;
 
 namespace RadioSureMaster.Rsd.Validator
 {
@@ -18,6 +19,7 @@ namespace RadioSureMaster.Rsd.Validator
         private Task _validationTask;
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private XddParameter _stationUpdateProgressParameter;
+        StationFile _stationFile;
 
         #endregion
 
@@ -31,6 +33,8 @@ namespace RadioSureMaster.Rsd.Validator
             Stop();
         }
 
+        public string RsdxUrl { get; set; }
+
         public MasterVcs Vcs { get; set; }
 
         public TimeSpan ValidationInterval { get; set; }
@@ -39,9 +43,40 @@ namespace RadioSureMaster.Rsd.Validator
         
         public void Start()
         {
+            const int minWaitTimeMs = 10;
+
+            var cancellationToken = _cancellationTokenSource.Token;
+
             Stop();
 
-            _validationTask = Task.Run(() => { DoValidation(_cancellationTokenSource.Token); }, _cancellationTokenSource.Token);
+            _stationUpdateProgressParameter = Vcs.SearchParameter("PARAM_StationUpdateProgress") as XddParameter;
+
+            if (_stationUpdateProgressParameter == null)
+            {
+                MsgLogger.WriteError($"{GetType().Name} - Start", "station update progress parameter not found!");
+                return;
+            }
+
+            _stationFile = new StationFile() { RsdxUrl = RsdxUrl };
+
+            _validationTask = Task.Run(async () =>
+            {
+
+                do
+                {
+                    await UpdateStations();
+
+                    var timeout = new Stopwatch();
+
+                    timeout.Start();
+
+                    while (!cancellationToken.IsCancellationRequested && timeout.Elapsed < ValidationInterval)
+                    {
+                        Thread.Sleep(minWaitTimeMs);
+                    }
+                }
+                while (!cancellationToken.IsCancellationRequested);
+            });
         }
 
         public void Stop()
@@ -85,15 +120,69 @@ namespace RadioSureMaster.Rsd.Validator
             return result;
         }
 
+        private Task UpdateStations()
+        {
+            var t = Task.Run(async () =>
+            {
+                MsgLogger.WriteLine("update radio station file");
+
+                var fileName = await _stationFile.UpdateStationFile();
+
+                MsgLogger.WriteLine($"update radio station file completed, result = {fileName}");
+
+                return fileName;
+            }).ContinueWith((t) =>
+            {
+                MsgLogger.WriteLine("update radio station model");
+
+                if(UpdateRadioStationModel(t.Result))
+                {
+                    MsgLogger.WriteLine("do validation");
+
+                    DoValidation(_cancellationTokenSource.Token);
+                }
+                else
+                {
+                    MsgLogger.WriteError($"{GetType().Name} - UpdateStations", "update radio station model failed!");
+                }
+            });
+
+            return t;
+        }
+
+        private bool UpdateRadioStationModel(string zipFileName)
+        {
+            bool result = false;
+
+            if (!string.IsNullOrEmpty(zipFileName))
+            {
+                var parser = new RsdFileParser() { SerializeToJsonFile = false };
+
+                if (parser.ConvertRsdZipFileToJson(zipFileName))
+                {
+                    if (parser.Output != null)
+                    {
+                        RadioStationEntriesModel = parser.Output;
+
+                        result = true;
+                    }
+                    else
+                    {
+                        MsgLogger.WriteError($"{GetType().Name} - Init", "init model failed!");
+                    }
+                }
+                else
+                {
+                    MsgLogger.WriteError($"{GetType().Name} - Init", "parsing zip file failed!");
+                }
+            }
+
+            return result;
+        }
+
         private void DoValidation(CancellationToken cancellationToken)
         {
-            _stationUpdateProgressParameter = Vcs.SearchParameter("PARAM_StationUpdateProgress") as XddParameter;
-
-            if(_stationUpdateProgressParameter == null)
-            {
-                MsgLogger.WriteError($"{GetType().Name} - DoValidation", "station update progress parameter not found!");
-                return;
-            }
+            const int minWaitTimeMs = 10;
 
             if (RadioStationEntriesModel == null)
             {
@@ -105,40 +194,30 @@ namespace RadioSureMaster.Rsd.Validator
 
             MsgLogger.WriteLine($"start validation ({radioStationEntriesCount}) ...");
 
-            const int minWaitTimeMs = 10;
+            int counter = 0;
 
-            do
+            foreach (var radioStation in RadioStationEntriesModel.Entries)
             {
-                int counter = 0;
+                var sinceLastValidation = DateTime.Now - radioStation.LastValidation;
 
-                foreach (var radioStation in RadioStationEntriesModel.Entries)
+                double progressPercent = Math.Round((counter / (double)radioStationEntriesCount) * 100, 1);
+
+                if (sinceLastValidation > ValidationInterval)
                 {
-                    var sinceLastValidation = DateTime.Now - radioStation.LastValidation;
-
-                    double progressPercent = Math.Round((counter / (double)radioStationEntriesCount) * 100, 1);
-
-                    if (sinceLastValidation > ValidationInterval)
-                    {
-                        ValidateRadioStation(radioStation, radioStationEntriesCount, counter, sinceLastValidation, progressPercent);
-                    }
-
-                    UpdateProgress(progressPercent);
-
-                    Thread.Sleep(minWaitTimeMs);
-
-                    counter++;
+                    ValidateRadioStation(radioStation, radioStationEntriesCount, counter, sinceLastValidation, progressPercent);
                 }
 
-                var timeout = new Stopwatch();
+                UpdateProgress(progressPercent);
 
-                timeout.Start();
-
-                while (!cancellationToken.IsCancellationRequested && timeout.Elapsed < ValidationInterval)
+                if(cancellationToken.IsCancellationRequested)
                 {
-                    Thread.Sleep(minWaitTimeMs);
+                    break;
                 }
+
+                Thread.Sleep(minWaitTimeMs);
+
+                counter++;
             }
-            while (!cancellationToken.IsCancellationRequested);
 
             MsgLogger.WriteLine("stop validation");
         }

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30204.135
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MPlayerMaster", "Master\MPlayerMaster.csproj", "{A6B58520-EBA0-4CCF-BFA8-EF82174E075A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MPlayerMaster", "Master\MPlayer\MPlayerMaster.csproj", "{A6B58520-EBA0-4CCF-BFA8-EF82174E075A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EltraNavigoMPlayer", "Navigo\EltraNavigoMPlayer\EltraNavigoMPlayer.csproj", "{56E52998-6513-482B-AE73-0E64C1D28E29}"
 EndProject

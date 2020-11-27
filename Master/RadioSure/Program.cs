@@ -48,7 +48,7 @@ namespace RadioSureMaster
                     connector.ChannelStatusChanged += OnChannelStatusChanged;
                     connector.RemoteChannelStatusChanged += OnRemotePartyChannelStatusChanged;
 
-                    Console.WriteLine("Signed in - Start service");
+                    MsgLogger.WriteLine("Signed in - Start service");
 
                     //heartbeat every 3 min, timeout device after 9 min
                     connector.ConnectionSettings = new ConnectionSettings() { UpdateInterval = 180, Timeout = 540 };
@@ -57,7 +57,7 @@ namespace RadioSureMaster
                 }
                 else
                 {
-                    Console.WriteLine("error: cannot sign-in!");
+                    MsgLogger.WriteError("Main", "cannot sign-in!");
                 }
             });
 
@@ -89,7 +89,7 @@ namespace RadioSureMaster
             }
             else
             {
-                Console.WriteLine($"connector status changed {e.Status}");
+                MsgLogger.WriteLine($"connector status changed {e.Status}");
             }
         }
     }

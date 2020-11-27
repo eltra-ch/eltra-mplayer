@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.30204.135
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MPlayerMaster", "MPlayerMaster.csproj", "{A6B58520-EBA0-4CCF-BFA8-EF82174E075A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MPlayerCommon", "..\Common\MPlayerCommon\MPlayerCommon.csproj", "{4F21D429-6C62-4FE8-8DCF-38A81100174A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MPlayerCommon", "..\..\Common\MPlayerCommon\MPlayerCommon.csproj", "{4F21D429-6C62-4FE8-8DCF-38A81100174A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
