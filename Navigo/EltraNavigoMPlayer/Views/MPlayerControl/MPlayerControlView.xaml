@@ -65,9 +65,13 @@
                 </Grid>
 
                 <Grid Grid.Row="3" Grid.Column="1">
+                    <Grid.Resources>
+                        <converters1:TurnOffButtonColorConverter x:Key="TurnOffButtonColorConverter"/>
+                    </Grid.Resources>
                     <StackLayout Orientation="Vertical">
                         <Frame Padding="0,18,0,0"/>
-                        <Button HeightRequest="48" Text="Turn Off" Command="{Binding TurnOffButtonCommand}" BackgroundColor="IndianRed" IsEnabled="{Binding IsEnabled}"/>
+                        <Button HeightRequest="48" Text="{Binding TurnOffButonText}" Command="{Binding TurnOffButtonCommand}" 
+                                BackgroundColor="{Binding RelayStateValue, Converter={StaticResource TurnOffButtonColorConverter}}" IsEnabled="{Binding IsEnabled}"/>
                     </StackLayout>
                 </Grid>
 

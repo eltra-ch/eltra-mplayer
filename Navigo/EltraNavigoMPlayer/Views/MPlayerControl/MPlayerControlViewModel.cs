@@ -27,17 +27,20 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
         private bool _isMuteActive;
         private bool _internalChange;
         private ushort _statusWordValue;
+        private string _turnOffButonText;
 
         private XddParameter _volumeParameter;
         private XddParameter _muteParameter;
         private XddParameter _statusWordParameter;
-        
+        private XddParameter _relayStateParameter;
+
         private Timer _valumeHistereseTimer;
 
         private List<MPlayerStationViewModel> _stationList;
         
         private double _stationUpdateProgressValue;
         private XddParameter _updateStationProgressParameter;
+        private ushort _relayStateValue;
 
         #endregion
 
@@ -47,6 +50,9 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
         {
             Title = "MPlayer";
             Uuid = "C999F6E2-1FF8-44E1-977C-5B8826E3B9CA";
+            TurnOffButonText = "Turn Off";
+
+            PropertyChanged += OnViewPropertyChanged;
         }
 
         #endregion
@@ -83,6 +89,18 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             set => SetProperty(ref _stationUpdateProgressValue, value);
         }
 
+        public ushort RelayStateValue
+        {
+            get => _relayStateValue;
+            set => SetProperty(ref _relayStateValue, value);
+        }
+
+        public string TurnOffButonText
+        {
+            get => _turnOffButonText;
+            set => SetProperty(ref _turnOffButonText, value);
+        }
+
         #endregion
 
         #region Commands 
@@ -93,16 +111,40 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
 
         #region Events handling
 
-        private void OnTurnOffButtonPressed(object obj)
+        private void OnViewPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            foreach(var station in StationList)
+            if (e.PropertyName == "RelayStateValue")
             {
-                if(station.IsActiveStation)
+                UpdateTurnOffText();
+            }
+        }
+
+        private async void OnTurnOffButtonPressed(object obj)
+        {
+            ushort newState;
+
+            IsBusy = true;
+
+            if (RelayStateValue == 0)
+            {
+                //is OFF you are going to turn ON
+                newState = 1;
+            }
+            else
+            {
+                //ON -> turn off
+                newState = 0;
+            }
+            
+            if (_relayStateParameter != null && _relayStateParameter.SetValue(newState))
+            {                
+                if(await _relayStateParameter.Write())
                 {
-                    station.TurnOff();
-                    break;
+                    RelayStateValue = newState;
                 }
             }
+
+            IsBusy = false;
         }
 
         private void OnDeviceInitialized(object sender, EventArgs e)
@@ -113,6 +155,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
 
             InitializeStateMachineParameter();
 
+            InitializeRelayStateParameter();
+
             InitializeVolumeParameter();
 
             InitializeMuteParameter();
@@ -122,6 +166,52 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             InitializeStationUpdateProgressParameter();
 
             IsBusy = false;
+        }
+
+        private void UpdateTurnOffText()
+        {
+            if(RelayStateValue == 0)
+            {
+                TurnOffButonText = "Turn On";
+            }
+            else
+            {
+                TurnOffButonText = "Turn Off";
+            }            
+        }
+
+        private void InitializeRelayStateParameter()
+        {
+            _relayStateParameter = Device.SearchParameter(0x3141, 0x01) as XddParameter;
+
+            if (_relayStateParameter != null)
+            {
+                ushort state = 0;
+
+                if (_relayStateParameter.GetValue(out state))
+                {
+                    RelayStateValue = state;
+                }
+
+                _relayStateParameter.ParameterChanged += OnRelayStateParameterChanged;
+
+                _relayStateParameter.AutoUpdate();
+
+                Task.Run(async () =>
+                {
+                    IsBusy = true;
+
+                    await _relayStateParameter.UpdateValue();
+
+                    IsBusy = false;
+                }).ContinueWith((t) =>
+                {
+                    if (_relayStateParameter.GetValue(out state))
+                    {
+                        RelayStateValue = state;
+                    }
+                });
+            }
         }
 
         private void InitializeStationList()
@@ -314,6 +404,17 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
                 if (statusWordParameter.GetValue(out ushort val))
                 {
                     StatusWordValue = val;
+                }
+            }
+        }
+
+        private void OnRelayStateParameterChanged(object sender, ParameterChangedEventArgs e)
+        {
+            if (e.Parameter is Parameter relayStateParameter)
+            {
+                if (relayStateParameter.GetValue(out ushort val))
+                {
+                    RelayStateValue = val;
                 }
             }
         }
