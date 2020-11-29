@@ -769,7 +769,7 @@ namespace MPlayerMaster.Device
 
             state = 0;
 
-            MsgLogger.WriteFlow($"get channel - state ...");
+            MsgLogger.WriteDebug($"{GetType().Name} - GetChannelState", $"get channel - state ...");
 
             try
             {
@@ -779,7 +779,7 @@ namespace MPlayerMaster.Device
 
                     state = (byte)pinValue;
 
-                    MsgLogger.WriteFlow($"get channel, pin={_settings.RelayGpioPin} state success, value = {state}");
+                    MsgLogger.WriteDebug($"{GetType().Name} - GetChannelState", $"get channel, pin={_settings.RelayGpioPin} state success, value = {state}");
 
                     result = true;
                 }
