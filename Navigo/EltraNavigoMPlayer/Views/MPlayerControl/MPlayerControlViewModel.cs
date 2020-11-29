@@ -163,8 +163,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
 
             InitializeStationList();
 
-            InitializeStationUpdateProgressParameter();
-
             IsBusy = false;
         }
 
@@ -461,39 +459,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             _valumeHistereseTimer.Elapsed += OnVolumeHistereseElapsed;
             _valumeHistereseTimer.Enabled = true;
             _valumeHistereseTimer.AutoReset = true;
-        }
-
-        private void InitializeStationUpdateProgressParameter()
-        {
-            _updateStationProgressParameter = Device.SearchParameter(0x4301, 0x00) as XddParameter;
-
-            if (_updateStationProgressParameter != null)
-            {
-                double updateProgressStationValue;
-
-                if (_updateStationProgressParameter.GetValue(out updateProgressStationValue))
-                {
-                    StationUpdateProgressValue = updateProgressStationValue / 100;
-                }
-
-                _updateStationProgressParameter.ParameterChanged += OnStationUpdateProgressParameterChanged;
-                _updateStationProgressParameter.AutoUpdate();
-
-                Task.Run(async () =>
-                {
-                    IsBusy = true;
-
-                    await _updateStationProgressParameter.UpdateValue();
-
-                    IsBusy = false;
-                }).ContinueWith((t) =>
-                {
-                    if (_updateStationProgressParameter.GetValue(out updateProgressStationValue))
-                    {
-                        StationUpdateProgressValue = updateProgressStationValue / 100;
-                    }
-                });
-            }
         }
 
         private void OnVolumeChanged()
