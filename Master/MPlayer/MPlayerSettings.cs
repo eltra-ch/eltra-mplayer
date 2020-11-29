@@ -167,6 +167,22 @@ namespace MPlayerMaster
             }
         }
 
+        public int RelayGpioPin
+        {
+            get
+            {
+                int result = 0;
+                var relayGpioPinText = Configuration["RelayGpioPin"];
+            
+                if(int.TryParse(relayGpioPinText, out int pin))
+                {
+                    result = pin;
+                }
+
+                return result;
+            }
+        }
+
         private IConfiguration Configuration
         {
             get => _configuration ?? (_configuration = new ConfigurationBuilder()

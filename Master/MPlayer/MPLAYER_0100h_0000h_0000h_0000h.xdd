@@ -28,7 +28,7 @@
 				<version versionType="SW" readOnly="true">0x0100</version>
 				<version versionType="HW" readOnly="true">0x0210</version>
 				<version versionType="APPNB" readOnly="true">0x0003</version>
-				<version versionType="APPVER" readOnly="true">0x0001</version>
+				<version versionType="APPVER" readOnly="true">0x0002</version>
 			</DeviceIdentity>
 			<DeviceManager>
 				<userLevelList>
@@ -78,6 +78,52 @@
 					</flags>
 				</templateList>
 				<parameterList>
+
+          <!-- Relay State -->
+          <structuredParameter uniqueID="PARAM_RelayState">
+            <index>0x3141</index>
+            <label lang="en-TT">Relay state</label>
+          </structuredParameter>
+          <parameter uniqueID="PARAM_RelayState_MaxSubIdx">
+            <index>0x3141</index>
+            <subIndex>0x00</subIndex>
+            <label lang="en-TT">Number of relay switches</label>
+            <dataType>
+              <type>UNSIGNED8</type>
+            </dataType>
+            <flagsIDRef uniqueIDRef="AT_RO" />
+            <defaultValue>1</defaultValue>
+            <userLevels>
+              <userLevelIDRef uniqueIDRef="USR_Expert" />
+              <userLevelIDRef uniqueIDRef="USR_Internal" />
+            </userLevels>
+          </parameter>
+          <parameter uniqueID="PARAM_RelayState_1">
+            <index>0x3141</index>
+            <subIndex>0x01</subIndex>
+            <label lang="en-TT">Relay 1 state</label>
+            <dataType>
+              <type>UNSIGNED16</type>
+            </dataType>
+            <flagsIDRef uniqueIDRef="AT_RW" />
+            <defaultValue>0x00</defaultValue>
+            <allowedValues>
+              <range>
+                <minValue>
+                  <value>0x00</value>
+                </minValue>
+                <maxValue>
+                  <value>0x01</value>
+                </maxValue>
+              </range>
+            </allowedValues>
+            <userLevels>
+              <userLevelIDRef uniqueIDRef="USR_Expert" />
+              <userLevelIDRef uniqueIDRef="USR_Internal" />
+            </userLevels>
+            <displayFormat>hex</displayFormat>
+          </parameter>
+          
 					<!-- Stations date -->
 					<structuredParameter uniqueID="PARAM_StationsData">
 						<index>0x3900</index>

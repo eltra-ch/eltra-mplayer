@@ -15,6 +15,8 @@ using static MPlayerMaster.MPlayerDefinitions;
 using MPlayerMaster.Runner;
 using EltraConnector.Agent;
 using EltraCommon.Contracts.CommandSets;
+using EltraCommon.Os.Linux;
+using ThermoMaster.DeviceManager.Wrapper;
 
 namespace MPlayerMaster.Device
 {
@@ -413,6 +415,15 @@ namespace MPlayerMaster.Device
                     result = true;
                 }
             }
+            else if(objectIndex == 0x3141 && objectSubindex == 0x01)
+            {
+                if(GetChannelState(out var state))
+                {
+                    data = BitConverter.GetBytes(state);
+
+                    result = true;
+                }
+            }
 
             return result;
         }
@@ -477,6 +488,12 @@ namespace MPlayerMaster.Device
                 Console.WriteLine($"new mute value = {muteValue}");
 
                 result = _muteParameter.SetValue(muteValue);
+            }
+            else if (objectIndex == 0x3141 && objectSubindex == 0x01)
+            {
+                ushort channelState = BitConverter.ToUInt16(data, 0);
+
+                result = SetChannelState(channelState);
             }
 
             return result;
@@ -742,6 +759,81 @@ namespace MPlayerMaster.Device
 
             t.Wait();
 
+            return result;
+        }
+
+        public bool GetChannelState(out ushort state)
+        {
+            bool result = false;
+            int pinValue = 0;
+
+            state = 0;
+
+            MsgLogger.WriteFlow($"get channel - state ...");
+
+            try
+            {
+                if (SystemHelper.IsLinux)
+                {
+                    EltraRelayWrapper.RelayRead((ushort)_settings.RelayGpioPin, ref pinValue);
+
+                    state = (byte)pinValue;
+
+                    MsgLogger.WriteFlow($"get channel, pin={_settings.RelayGpioPin} state success, value = {state}");
+
+                    result = true;
+                }
+                else
+                {
+                    MsgLogger.WriteLine(LogMsgType.Warning, "GPIO library is not supported on windows, simulate success");
+                    result = true;
+                }
+            }
+            catch (Exception e)
+            {
+                MsgLogger.Exception($"{GetType().Name} - GetChannelState", e);
+            }
+
+            return result;
+        }
+
+        public bool SetChannelState(ushort state)
+        {
+            bool result = false;
+            int pinValue = 0;
+
+            try
+            {
+                if (SystemHelper.IsLinux)
+                {
+                    MsgLogger.WriteFlow($"digital write - {_settings.RelayGpioPin} state = {state} ...");
+
+                    EltraRelayWrapper.RelayWrite((ushort)_settings.RelayGpioPin, state);
+
+                    EltraRelayWrapper.RelayRead((ushort)_settings.RelayGpioPin, ref pinValue);
+
+                    if (pinValue == state)
+                    {
+                        MsgLogger.WriteFlow($"set channel, pin={_settings.RelayGpioPin} state -> {state} success");
+
+                        result = true;
+                    }
+                    else
+                    {
+                        MsgLogger.WriteError($"{GetType().Name} - SetChannelState", $"set channel - state -> {state} failed!");
+                    }
+                }
+                else
+                {
+                    MsgLogger.WriteLine(LogMsgType.Warning, "GPIO library is not supported on windows, simulate success");
+                    result = true;
+                }
+            }
+            catch (Exception e)
+            {
+                MsgLogger.Exception($"{GetType().Name} - SetChannelState", e);
+            }
+            
             return result;
         }
 
