@@ -135,7 +135,7 @@ namespace MPlayerMaster.Device
 
             _agentConnector = new AgentConnector() { Host = _settings.Host };
 
-            if (await _agentConnector.SignIn(new UserIdentity() { Login = _settings.Alias, Password = _settings.AliasPasswd, Role = "developer" }))
+            if (await _agentConnector.SignIn(new UserIdentity() { Login = _settings.Login, Password = _settings.LoginPasswd, Role = "developer" }))
             {
                 if (await _agentConnector.Connect(new UserIdentity() { Login = _settings.RadioSureLogin, Password = _settings.RadioSurePasswd, Role = "developer" }))
                 {
