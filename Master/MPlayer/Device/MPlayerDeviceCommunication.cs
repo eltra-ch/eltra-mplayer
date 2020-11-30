@@ -35,7 +35,7 @@ namespace MPlayerMaster.Device
         private Parameter _volumeParameter;
         private XddParameter _muteParameter;
         private Parameter _statusWordParameter;
-        
+        private XddParameter _relayStateParameter;
         private Parameter _controlWordParameter;
         private Parameter _stationsCountParameter;
         private AgentConnector _agentConnector;
@@ -111,6 +111,8 @@ namespace MPlayerMaster.Device
 
             InitStateMachine();
 
+            InitRelayState();
+
             InitializeStationList();
 
             await SetActiveStation();
@@ -168,6 +170,34 @@ namespace MPlayerMaster.Device
             {
                 MsgLogger.WriteError($"{GetType().Name} - InitStateMachine", "Set execution state (waiting) failed!");
             }
+        }
+
+        private bool InitRelayState()
+        {
+            bool result = false;
+
+            _relayStateParameter = Vcs.SearchParameter(0x3141, 0x01) as XddParameter;
+
+            if(_relayStateParameter != null)
+            {
+                _relayStateParameter.ParameterChanged += OnRelayStateParameterChanged;
+
+                if (GetRelayState(out ushort state))
+                {
+                    result = _relayStateParameter.SetValue(state);
+
+                    if (!result)
+                    {
+                        MsgLogger.WriteError($"{GetType().Name} - InitRelayState", "set relay state failed!");
+                    }
+                }
+                else
+                {
+                    MsgLogger.WriteError($"{GetType().Name} - InitRelayState", "get relay state failed!");
+                }
+            }
+
+            return result;
         }
 
         private async Task InitVolumeControl()
@@ -251,6 +281,16 @@ namespace MPlayerMaster.Device
         #endregion
 
         #region Events
+
+        private void OnRelayStateParameterChanged(object sender, ParameterChangedEventArgs e)
+        {
+            if(_relayStateParameter != null && _relayStateParameter.GetValue(out ushort state))
+            {
+                Task.Run(()=> {
+                    SetRelayState(state);
+                });                
+            }
+        }
 
         private void OnCustomStreamTitleChanged(object sender, ParameterChangedEventArgs e)
         {
@@ -417,11 +457,14 @@ namespace MPlayerMaster.Device
             }
             else if(objectIndex == 0x3141 && objectSubindex == 0x01)
             {
-                if(GetChannelState(out var state))
+                if(GetRelayState(out var state))
                 {
                     data = BitConverter.GetBytes(state);
 
-                    result = true;
+                    if (_relayStateParameter != null)
+                    {
+                        result = _relayStateParameter.SetValue(state);
+                    }
                 }
             }
 
@@ -491,9 +534,12 @@ namespace MPlayerMaster.Device
             }
             else if (objectIndex == 0x3141 && objectSubindex == 0x01)
             {
-                ushort channelState = BitConverter.ToUInt16(data, 0);
+                ushort relayState = BitConverter.ToUInt16(data, 0);
 
-                result = SetChannelState(channelState);
+                if (_relayStateParameter != null)
+                {
+                    result = _relayStateParameter.SetValue(relayState);
+                }
             }
 
             return result;
@@ -762,7 +808,7 @@ namespace MPlayerMaster.Device
             return result;
         }
 
-        public bool GetChannelState(out ushort state)
+        public bool GetRelayState(out ushort state)
         {
             bool result = false;
             int pinValue = 0;
@@ -797,7 +843,7 @@ namespace MPlayerMaster.Device
             return result;
         }
 
-        public bool SetChannelState(ushort state)
+        public bool SetRelayState(ushort state)
         {
             bool result = false;
             int pinValue = 0;

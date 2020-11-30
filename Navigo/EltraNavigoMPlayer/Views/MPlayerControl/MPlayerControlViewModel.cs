@@ -39,7 +39,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
         private List<MPlayerStationViewModel> _stationList;
         
         private double _stationUpdateProgressValue;
-        private XddParameter _updateStationProgressParameter;
         private ushort _relayStateValue;
 
         #endregion
