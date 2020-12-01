@@ -106,6 +106,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
 
         public ICommand TurnOffButtonCommand => new Command(OnTurnOffButtonPressed);
 
+        public ICommand StopButtonCommand => new Command(OnStopButtonPressed);
+
         #endregion
 
         #region Events handling
@@ -116,6 +118,21 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             {
                 UpdateTurnOffText();
             }
+        }
+
+        private async void OnStopButtonPressed(object obj)
+        {
+            IsBusy = true;
+
+            foreach (var station in StationList)
+            {
+                if (station.IsActiveStation)
+                {
+                    await station.TurnOff();
+                }
+            }
+
+            IsBusy = false;
         }
 
         private async void OnTurnOffButtonPressed(object obj)

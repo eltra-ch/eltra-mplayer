@@ -238,13 +238,13 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
             }
         }
 
-        private void OnStationParameterChanged(object sender, ParameterChangedEventArgs e)
+        private async void OnStationParameterChanged(object sender, ParameterChangedEventArgs e)
         {
             if (!_deviceInitialization)
             {
                 if (IsActiveStation)
                 {
-                    TurnOff();
+                    await TurnOff();
                 }
             }
         }
@@ -268,18 +268,15 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
 
         #region Methods
 
-        public void TurnOff()
+        public async Task TurnOff()
         {
             if (!_deviceInitialization)
             {
-                Task.Run(async () =>
-                {
-                    IsBusy = true;
+                IsBusy = true;
 
-                    await ActiveSelection(0);
+                await ActiveSelection(0);
 
-                    IsBusy = false;
-                });
+                IsBusy = false;
             }
         }
 
