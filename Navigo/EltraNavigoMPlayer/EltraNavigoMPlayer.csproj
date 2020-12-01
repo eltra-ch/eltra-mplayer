@@ -4,13 +4,20 @@
 	<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <TargetFramework>netstandard2.0</TargetFramework>
 	<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+	<Configurations>Debug;Release;Debug (UWP)</Configurations>
   </PropertyGroup>
   
 
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <OutputPath>C:\Users\dsien\AppData\Local\Packages\56594Eltra.EltraNavigo_gsp01nqvnhw8c\LocalState\</OutputPath>
+    <OutputPath></OutputPath>
 	
+  </PropertyGroup>
+  
+
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug (UWP)|AnyCPU'">
+    <OutputPath>C:\Users\dsien\AppData\Local\Packages\56594Eltra.EltraNavigo_gsp01nqvnhw8c\LocalState\</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -32,7 +39,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="EltraXamCommon" Version="1.1.4" />
+    <PackageReference Include="EltraXamCommon" Version="1.1.5" />
     <PackageReference Include="Xamarin.Forms" Version="4.8.0.1687" />
   </ItemGroup>
 

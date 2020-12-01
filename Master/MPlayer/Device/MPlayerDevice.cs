@@ -15,19 +15,12 @@ namespace MPlayerMaster.Device
             : base("MPLAYER", deviceDescriptionFilePath, nodeId)
         {
             _settings = settings;
+            
+            DeviceToolPayloadsPath = settings.NavigoPluginsPath;
 
             Identification.SerialNumber = 0x102;
 
             AddCommand(new QueryStationCommand(this));
-        }
-
-        protected override bool UpdatePayloadContent(DeviceToolPayload payload)
-        {
-            string path = Path.Combine(Environment.CurrentDirectory, _settings.NavigoPluginsPath, payload.FileName);
-
-            bool result = UpdatePayloadFromFile(path, payload);
-
-            return result;
         }
 
         protected override void OnStatusChanged()
