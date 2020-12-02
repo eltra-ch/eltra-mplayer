@@ -87,6 +87,11 @@ namespace RadioSureMaster.Rsd.Parser
                     if (entry.Name.EndsWith(".rsd"))
                     {
                         result = ConvertRsdFileToJson(entry, fileName);
+
+                        if(result)
+                        {
+                            RsdFileName = entry.Name;
+                        }
                     }
                 }
             }
