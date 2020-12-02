@@ -16,6 +16,7 @@ using System.Windows.Input;
 using Xamarin.Forms;
 using Prism.Services.Dialogs;
 using MPlayerMaster.Views.Dialogs;
+using System.ComponentModel;
 
 namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
 {
@@ -27,7 +28,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
         private int _previousStationIndex;
         private int _activeStationValue;
         private string _controlButtonText;
-        private XddParameter _activeStationParameter;
         private string _stationStreamTitle;
         private bool _isStationEditVisible;
         private ParameterEditViewModel _stationIdParameter;
@@ -35,7 +35,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
         private ParameterEditViewModel _stationVolumeScalingParameter;
         private bool _isActiveStation;
         private bool _deviceInitialization;
-        
+        private XddParameter _activeStationParameter;
+
         #endregion
 
         #region Constructors
@@ -54,6 +55,7 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
             _stationVolumeScalingParameter.ShowLabel = false;
             _stationCustomTitleParameter.ShowLabel = false;
 
+            PropertyChanged += OnViewModelPropertyChanged;
             DeviceInitialized += OnDeviceInitialized;
         }
 
@@ -69,16 +71,26 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
 
         #region Properties
 
-        public bool IsActiveStation
-        {
-            get => _isActiveStation;
-            set => SetProperty(ref _isActiveStation, value);
-        }
-
         public int ActiveStationValue
         {
             get => _activeStationValue;
             set => SetProperty(ref _activeStationValue, value);
+        }
+
+        public XddParameter ActiveStationParameter
+        {
+            get => _activeStationParameter;
+            set
+            {
+                _activeStationParameter = value;
+                OnActiveStationParameterChanged();
+            }
+        }
+
+        public bool IsActiveStation
+        {
+            get => _isActiveStation;
+            set => SetProperty(ref _isActiveStation, value);
         }
 
         public string ControlButtonText
@@ -169,6 +181,37 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
 
         #region Events handling
 
+        private void OnViewModelPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if(e.PropertyName == "ActiveStationValue")
+            {
+                IsActiveStation = ActiveStationValue == (_stationIndex + 1);
+            }
+        }
+
+        private void OnActiveStationParameterChanged()
+        {
+            if(GetActiveStationValue(out var activeStationValue))
+            {
+                IsActiveStation = activeStationValue == (_stationIndex + 1);
+            }
+        }
+
+        private bool GetActiveStationValue(out int activeStationValue)
+        {
+            bool result = false;
+
+            activeStationValue = 0;
+
+            if (_activeStationParameter != null && _activeStationParameter.GetValue(out int stationValue))
+            {
+                activeStationValue = stationValue;
+                result = true;
+            }
+
+            return result;
+        }
+
         private void OnStationIdWritten(object sender, ParameterWrittenEventArgs e)
         {
             if (e.Result)
@@ -184,8 +227,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
             _deviceInitialization = true;
 
             InitAgentStatus();
-
-            InitializeActiveStationParameter();
 
             InitializeStationParameter();
 
@@ -208,19 +249,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
         private void OnEditButtonPressed(object obj)
         {
             IsStationEditVisible = !IsStationEditVisible;
-        }
-
-        private void OnActiveStationParameterChanged(object sender, ParameterChangedEventArgs e)
-        {
-            if (e.Parameter is Parameter activeStationParameter)
-            {
-                if (activeStationParameter.GetValue(out int activeStationValue))
-                {
-                    ActiveStationValue = activeStationValue;
-
-                    IsActiveStation = ActiveStationValue == (_stationIndex + 1);
-                }
-            }
         }
 
         private void OnStationLabelParameterChanged(object sender, ParameterChangedEventArgs e)
@@ -366,43 +394,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
             }
         }
 
-        private void InitializeActiveStationParameter()
-        {
-            _activeStationParameter = Device.SearchParameter(0x4100, 0x00) as XddParameter;
-
-            if (_activeStationParameter != null)
-            {
-                int activeStationValue = 0;
-
-                if (_activeStationParameter.GetValue(out activeStationValue))
-                {
-                    ActiveStationValue = activeStationValue;
-
-                    IsActiveStation = ActiveStationValue == (_stationIndex + 1);
-                }
-
-                _activeStationParameter.ParameterChanged += OnActiveStationParameterChanged;
-                _activeStationParameter.AutoUpdate();
-
-                Task.Run(async () =>
-                {
-                    IsBusy = true;
-
-                    await _activeStationParameter.UpdateValue();
-
-                    IsBusy = false;
-                }).ContinueWith((t) =>
-                {
-                    if (_activeStationParameter.GetValue(out activeStationValue))
-                    {
-                        ActiveStationValue = activeStationValue;
-
-                        IsActiveStation = ActiveStationValue == (_stationIndex + 1);
-                    }
-                });
-            }
-        }
-
         private async Task<bool> ActiveSelection(int index)
         {
             bool result = false;
@@ -424,6 +415,10 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
                         result = await SetActiveStation(index);
                     }
                 }
+                else if(index == 0)
+                {
+                    result = await SetActiveStation(0);
+                }
             }
 
             IsBusy = false;
@@ -435,11 +430,11 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
         {
             bool result = false;
 
-            if (_activeStationParameter != null && _activeStationParameter.SetValue(index))
+            if (ActiveStationParameter != null && ActiveStationParameter.SetValue(index))
             {
                 IsBusy = true;
 
-                if (!await _activeStationParameter.Write())
+                if (!await ActiveStationParameter.Write())
                 {
                     ToastMessage.ShortAlert($"Activate Button {index + 1} failed!");
                 }

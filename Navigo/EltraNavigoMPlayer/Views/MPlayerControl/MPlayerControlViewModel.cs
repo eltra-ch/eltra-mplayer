@@ -28,11 +28,13 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
         private bool _internalChange;
         private ushort _statusWordValue;
         private string _turnOffButonText;
+        private int _activeStationValue;
 
         private XddParameter _volumeParameter;
         private XddParameter _muteParameter;
         private XddParameter _statusWordParameter;
         private XddParameter _relayStateParameter;
+        private XddParameter _activeStationParameter;
 
         private Timer _valumeHistereseTimer;
 
@@ -62,6 +64,12 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
         {
             get => _stationList ?? (_stationList = new List<MPlayerStationViewModel>());
             set => SetProperty(ref _stationList, value);
+        }
+
+        public int ActiveStationValue
+        {
+            get => _activeStationValue;
+            set => SetProperty(ref _activeStationValue, value);
         }
 
         public ushort StatusWordValue
@@ -111,6 +119,19 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
         #endregion
 
         #region Events handling
+
+        private void OnActiveStationParameterChanged(object sender, ParameterChangedEventArgs e)
+        {
+            if (e.Parameter is Parameter activeStationParameter)
+            {
+                if (activeStationParameter.GetValue(out int activeStationValue))
+                {
+                    ActiveStationValue = activeStationValue;
+
+                    SetStationsActiveStationValue();
+                }
+            }
+        }
 
         private void OnViewPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
@@ -172,6 +193,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             InitializeStateMachineParameter();
 
             InitializeRelayStateParameter();
+
+            InitializeActiveStationParameter();
 
             InitializeVolumeParameter();
 
@@ -242,7 +265,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
                     var stationViewModel = new MPlayerStationViewModel(this, i)
                     {
                         Agent = Agent,
-                        Device = Device
+                        Device = Device,
+                        ActiveStationParameter = _activeStationParameter
                     };
 
                     stationList.Add(stationViewModel);
@@ -298,6 +322,21 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
                     });
                 }
             }
+        }
+
+        private bool GetActiveStationValue(out int activeStationValue)
+        {
+            bool result = false;
+
+            activeStationValue = 0;
+
+            if (_activeStationParameter != null && _activeStationParameter.GetValue(out int stationValue))
+            {
+                activeStationValue = stationValue;
+                result = true;
+            }
+
+            return result;
         }
 
         private void InitializeMuteParameter()
@@ -399,7 +438,52 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
                 });
             }
         }
-                
+
+        private void InitializeActiveStationParameter()
+        {
+            _activeStationParameter = Device.SearchParameter(0x4100, 0x00) as XddParameter;
+
+            if (_activeStationParameter != null)
+            {
+                int activeStationValue = 0;
+
+                if (_activeStationParameter.GetValue(out activeStationValue))
+                {
+                    ActiveStationValue = activeStationValue;
+                    
+                    SetStationsActiveStationValue();
+                }
+
+                _activeStationParameter.ParameterChanged += OnActiveStationParameterChanged;
+                _activeStationParameter.AutoUpdate();
+
+                Task.Run(async () =>
+                {
+                    IsBusy = true;
+
+                    await _activeStationParameter.UpdateValue();
+
+                    IsBusy = false;
+                }).ContinueWith((t) =>
+                {
+                    if (_activeStationParameter.GetValue(out activeStationValue))
+                    {
+                        ActiveStationValue = activeStationValue;
+
+                        SetStationsActiveStationValue();
+                    }
+                });
+            }
+        }
+
+        private void SetStationsActiveStationValue()
+        {
+            foreach (var station in StationList)
+            {
+                station.ActiveStationValue = ActiveStationValue;
+            }
+        }
+
         private void OnVolumeParameterChanged(object sender, ParameterChangedEventArgs e)
         {
             if(e.Parameter is Parameter volumeParameter)
