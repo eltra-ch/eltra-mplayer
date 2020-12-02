@@ -6,7 +6,7 @@ using MPlayerCommon.Contracts;
 namespace RadioSureMaster.Rsd.Models
 {
     [DataContract]
-    class RadioStationModel
+    public class RadioStationModel
     {
         #region Private fields
 

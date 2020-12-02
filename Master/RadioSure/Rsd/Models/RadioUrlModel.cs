@@ -3,7 +3,7 @@
 namespace RadioSureMaster.Rsd.Models
 {
     [DataContract]
-    class RadioUrlModel
+    public class RadioUrlModel
     {
         public RadioUrlModel()
         {

@@ -10,16 +10,52 @@ namespace RadioSureMaster.Rsd.Parser
 {
     class RsdFileParser
     {
+        #region Private fields
+
         private RadioStationEntriesModel _output;
+        private string _rsdFileName;
+
+        #endregion
+
+        #region Constructors
 
         public RsdFileParser()
         {
             SerializeToJsonFile = true;
         }
 
+        #endregion
+
+        #region Properties
+
         public RadioStationEntriesModel Output => _output ?? (_output = new RadioStationEntriesModel());
 
         public bool SerializeToJsonFile { get; set; }
+
+        public string RsdFileName
+        {
+            get => _rsdFileName;
+            set
+            {
+                _rsdFileName = value;
+                OnRsdFileNameChanged();
+            }
+        }
+
+        #endregion
+
+        #region Events
+
+        public event EventHandler<string> RsdFileNameChanged;
+
+        private void OnRsdFileNameChanged()
+        {
+            RsdFileNameChanged?.Invoke(this, RsdFileName);
+        }
+
+        #endregion
+
+        #region Methods
 
         public bool ConvertRsdZipFileToJson(string filePath)
         {
@@ -58,13 +94,13 @@ namespace RadioSureMaster.Rsd.Parser
             return result;
         }
 
-        private bool ConvertRsdFileToJson(ZipArchiveEntry entry, string zipFileName)
+        private bool ConvertRsdFileToJson(ZipArchiveEntry entry, string rsdFileName)
         {
             bool result = false;
 
             try
             {
-                var fileName = Path.ChangeExtension(zipFileName, "json");
+                var fileName = Path.ChangeExtension(rsdFileName, "json");
 
                 var processor = new RsdEntryZipParser();
 
@@ -127,5 +163,7 @@ namespace RadioSureMaster.Rsd.Parser
             Output.Md5 = CryptHelpers.ToMD5(json);
             Output.Name = new FileInfo(fileName).Name;
         }
+
+        #endregion
     }
 }

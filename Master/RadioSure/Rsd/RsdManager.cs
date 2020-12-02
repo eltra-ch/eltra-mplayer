@@ -9,12 +9,13 @@ using EltraConnector.Master.Device;
 
 namespace RadioSureMaster.Rsd
 {
-    class RsdManager : IDisposable
+    public class RsdManager : IDisposable
     {
         #region Private fields
 
         private RadioStationValidator _validator;
-        
+        private string _rsdFileName;
+
         #endregion
 
         #region Constructors
@@ -39,12 +40,45 @@ namespace RadioSureMaster.Rsd
 
         protected RadioStationValidator Validator
         {
-            get => _validator ?? (_validator = new RadioStationValidator());
+            get => _validator ?? (_validator = CreateValidator());
+        }
+
+        public string RsdFileName
+        {
+            get => _rsdFileName;
+            set
+            {
+                _rsdFileName = value;
+                OnRsdFileNameChanged();
+            }
+        }
+
+        #endregion
+
+        #region Events
+
+        public event EventHandler<string> RsdFileNameChanged;
+
+        private void OnRsdFileNameChanged()
+        {
+            RsdFileNameChanged?.Invoke(this, RsdFileName);
         }
 
         #endregion
 
         #region Methods
+
+        protected virtual RadioStationValidator CreateValidator()
+        {
+            var result = new RadioStationValidator();
+
+            result.RsdFileNameChanged += (s, e) =>
+            {
+                RsdFileName = e;
+            };
+
+            return result;
+        }
 
         public void Init(MasterVcs vcs)
         {

@@ -11,7 +11,7 @@ using RadioSureMaster.Rsd.Parser;
 
 namespace RadioSureMaster.Rsd.Validator
 {
-    class RadioStationValidator
+    public class RadioStationValidator
     {
         #region Private fields
 
@@ -20,8 +20,11 @@ namespace RadioSureMaster.Rsd.Validator
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private XddParameter _stationUpdateProgressParameter;
         StationFile _stationFile;
+        private string _rsdFileName;
 
         #endregion
+
+        #region Constructors
 
         public RadioStationValidator()
         {
@@ -33,6 +36,10 @@ namespace RadioSureMaster.Rsd.Validator
             Stop();
         }
 
+        #endregion
+
+        #region Properties
+
         public string RsdxUrl { get; set; }
 
         public MasterVcs Vcs { get; set; }
@@ -40,7 +47,32 @@ namespace RadioSureMaster.Rsd.Validator
         public TimeSpan ValidationInterval { get; set; }
 
         public RadioStationEntriesModel RadioStationEntriesModel { get; set; }
-        
+
+        public string RsdFileName
+        {
+            get => _rsdFileName;
+            set
+            {
+                _rsdFileName = value;
+                OnRsdFileNameChanged();
+            }
+        }
+
+        #endregion
+
+        #region Events
+
+        public event EventHandler<string> RsdFileNameChanged;
+
+        private void OnRsdFileNameChanged()
+        {
+            RsdFileNameChanged?.Invoke(this, RsdFileName);
+        }
+
+        #endregion
+
+        #region Methods
+
         public void Start()
         {
             const int minWaitTimeMs = 10;
@@ -157,6 +189,11 @@ namespace RadioSureMaster.Rsd.Validator
             if (!string.IsNullOrEmpty(zipFileName))
             {
                 var parser = new RsdFileParser() { SerializeToJsonFile = false };
+
+                parser.RsdFileNameChanged += (s, e) => 
+                {
+                    RsdFileName = e;
+                };
 
                 if (parser.ConvertRsdZipFileToJson(zipFileName))
                 {
@@ -286,5 +323,7 @@ namespace RadioSureMaster.Rsd.Validator
 
             return result;
         }
+
+        #endregion
     }
 }

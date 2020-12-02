@@ -5,7 +5,7 @@ using System.Runtime.Serialization;
 namespace RadioSureMaster.Rsd.Models
 {
     [DataContract]
-    class RadioStationEntriesModel
+    public class RadioStationEntriesModel
     {
         private List<RadioStationModel> _entries;
 

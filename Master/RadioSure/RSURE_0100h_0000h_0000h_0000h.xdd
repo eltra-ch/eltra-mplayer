@@ -28,7 +28,7 @@
 				<version versionType="SW" readOnly="true">0x0100</version>
 				<version versionType="HW" readOnly="true">0x0310</version>
 				<version versionType="APPNB" readOnly="true">0x0000</version>
-				<version versionType="APPVER" readOnly="true">0x0001</version>
+				<version versionType="APPVER" readOnly="true">0x0002</version>
 			</DeviceIdentity>
 			<DeviceManager>
 				<userLevelList>
@@ -70,6 +70,78 @@
 					</flags>
 				</templateList>
 				<parameterList>
+
+                  <parameter uniqueID="PARAM_MinQueryLength">
+                    <index>0x4200</index>
+                    <subIndex>0x00</subIndex>
+                    <label lang="en-TT">Minimal query length</label>
+                    <dataType>
+                      <type>UNSIGNED8</type>
+                    </dataType>
+                    <flagsIDRef uniqueIDRef="AT_RW" />
+                    <defaultValue>3</defaultValue>
+                    <allowedValues>
+                      <range>
+                        <minValue>
+                          <value>3</value>
+                        </minValue>
+                        <maxValue>
+                          <value>18</value>
+                        </maxValue>
+                      </range>
+                    </allowedValues>
+                    <userLevels>
+                      <userLevelIDRef uniqueIDRef="USR_Standard" />
+                      <userLevelIDRef uniqueIDRef="USR_Expert" />
+                      <userLevelIDRef uniqueIDRef="USR_Internal" />
+                    </userLevels>
+                    <displayFormat>dec</displayFormat>
+                  </parameter>
+
+                  <parameter uniqueID="PARAM_MaxRadioStationEntries">
+                    <index>0x4201</index>
+                    <subIndex>0x00</subIndex>
+                    <label lang="en-TT">Maximum number of query entries</label>
+                    <dataType>
+                      <type>UNSIGNED8</type>
+                    </dataType>
+                    <flagsIDRef uniqueIDRef="AT_RW" />
+                    <defaultValue>25</defaultValue>
+                    <allowedValues>
+                      <range>
+                        <minValue>
+                          <value>3</value>
+                        </minValue>
+                        <maxValue>
+                          <value>50</value>
+                        </maxValue>
+                      </range>
+                    </allowedValues>
+                    <userLevels>
+                      <userLevelIDRef uniqueIDRef="USR_Standard" />
+                      <userLevelIDRef uniqueIDRef="USR_Expert" />
+                      <userLevelIDRef uniqueIDRef="USR_Internal" />
+                    </userLevels>
+                    <displayFormat>dec</displayFormat>
+                  </parameter>
+                  
+                  <parameter uniqueID="PARAM_RsdFileName">
+                    <index>0x4300</index>
+                    <subIndex>0x00</subIndex>
+                    <label lang="en-TT">Actual RSD file name</label>
+                    <dataType>
+                      <type>VISIBLE_STRING</type>
+                    </dataType>
+                    <flagsIDRef uniqueIDRef="AT_RO" />
+                    <defaultValue/>
+                    <userLevels>
+                      <userLevelIDRef uniqueIDRef="USR_Standard" />
+                      <userLevelIDRef uniqueIDRef="USR_Expert" />
+                      <userLevelIDRef uniqueIDRef="USR_Internal" />
+                    </userLevels>
+                    <displayFormat>dec</displayFormat>
+                  </parameter>
+
           <!-- Station update progress -->
           <parameter uniqueID="PARAM_StationUpdateProgress">
             <index>0x4301</index>
