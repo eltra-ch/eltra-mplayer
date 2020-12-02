@@ -272,7 +272,7 @@ namespace MPlayerMaster.Device
                         _processIdParameters.Add(processIdParameter);
                         _customTitleParameters.Add(customTitleParameter);
 
-                        customTitleParameter.ParameterChanged += OnCustomStreamTitleChanged;
+                        customTitleParameter.ParameterChanged += OnCustomStationTitleChanged;
                     }
                 }
             }
@@ -292,7 +292,7 @@ namespace MPlayerMaster.Device
             }
         }
 
-        private void OnCustomStreamTitleChanged(object sender, ParameterChangedEventArgs e)
+        private void OnCustomStationTitleChanged(object sender, ParameterChangedEventArgs e)
         {
             var parameter = e.Parameter;
 
@@ -300,11 +300,11 @@ namespace MPlayerMaster.Device
             {
                 if(!string.IsNullOrEmpty(customTitle))
                 {
-                    var streamTitleParameter = Vcs.SearchParameter(parameter.Index, 0x03) as XddParameter;
+                    var stationTitleParameter = Vcs.SearchParameter(parameter.Index, 0x02) as XddParameter;
 
-                    if(streamTitleParameter!=null)
+                    if(stationTitleParameter!=null)
                     {
-                        streamTitleParameter.SetValue(customTitle);
+                        stationTitleParameter.SetValue(customTitle);
                     }
                 }
             }
