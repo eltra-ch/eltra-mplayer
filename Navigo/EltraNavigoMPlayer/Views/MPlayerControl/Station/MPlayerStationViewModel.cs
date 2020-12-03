@@ -82,8 +82,12 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
             get => _activeStationParameter;
             set
             {
-                _activeStationParameter = value;
-                OnActiveStationParameterChanged();
+                if (_activeStationParameter != value)
+                {
+                    _activeStationParameter = value;
+
+                    OnActiveStationParameterChanged();
+                }
             }
         }
 
@@ -181,6 +185,19 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
 
         #region Events handling
 
+        private void OnActiveStationParameterChanged(object sender, ParameterChangedEventArgs e)
+        {
+            if (e.Parameter is Parameter activeStationParameter)
+            {
+                if (activeStationParameter.GetValue(out int activeStationValue))
+                {
+                    ActiveStationValue = activeStationValue;
+
+                    IsActiveStation = activeStationValue == (_stationIndex + 1);
+                }
+            }
+        }
+
         private void OnViewModelPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if(e.PropertyName == "ActiveStationValue")
@@ -191,9 +208,15 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
 
         private void OnActiveStationParameterChanged()
         {
-            if(GetActiveStationValue(out var activeStationValue))
+            if (_activeStationParameter != null)
             {
-                IsActiveStation = activeStationValue == (_stationIndex + 1);
+                _activeStationParameter.ParameterChanged -= OnActiveStationParameterChanged;
+                _activeStationParameter.ParameterChanged += OnActiveStationParameterChanged;
+            }
+
+            if (GetActiveStationValue(out var activeStationValue))
+            {
+                ActiveStationValue = activeStationValue;
             }
         }
 

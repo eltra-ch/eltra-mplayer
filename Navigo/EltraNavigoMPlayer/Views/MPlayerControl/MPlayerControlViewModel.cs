@@ -123,12 +123,10 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
         private void OnActiveStationParameterChanged(object sender, ParameterChangedEventArgs e)
         {
             if (e.Parameter is Parameter activeStationParameter)
-            {
+            {   
                 if (activeStationParameter.GetValue(out int activeStationValue))
                 {
                     ActiveStationValue = activeStationValue;
-
-                    SetStationsActiveStationValue();
                 }
             }
         }
@@ -445,13 +443,9 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
 
             if (_activeStationParameter != null)
             {
-                int activeStationValue = 0;
-
-                if (_activeStationParameter.GetValue(out activeStationValue))
+                if(GetActiveStationValue(out var activeStationValue))
                 {
                     ActiveStationValue = activeStationValue;
-                    
-                    SetStationsActiveStationValue();
                 }
 
                 _activeStationParameter.ParameterChanged += OnActiveStationParameterChanged;
@@ -469,18 +463,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
                     if (_activeStationParameter.GetValue(out activeStationValue))
                     {
                         ActiveStationValue = activeStationValue;
-
-                        SetStationsActiveStationValue();
                     }
                 });
-            }
-        }
-
-        private void SetStationsActiveStationValue()
-        {
-            foreach (var station in StationList)
-            {
-                station.ActiveStationValue = ActiveStationValue;
             }
         }
 
