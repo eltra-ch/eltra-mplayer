@@ -48,9 +48,7 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
 
         public MPlayerControlViewModel()
         {
-            string assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-
-            Title = $"MPlayer {assemblyVersion}";
+            Title = $"MPlayer";
             Uuid = "C999F6E2-1FF8-44E1-977C-5B8826E3B9CA";
             TurnOffButonText = "Turn Off";
 
@@ -210,6 +208,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
                 if (_relayStateParameter.GetValue(out state))
                 {
                     RelayStateValue = state;
+                    
+                    UpdateTurnOffText();
                 }
 
                 _relayStateParameter.ParameterChanged += OnRelayStateParameterChanged;
@@ -228,6 +228,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
                     if (_relayStateParameter.GetValue(out state))
                     {
                         RelayStateValue = state;
+
+                        UpdateTurnOffText();
                     }
                 });
             }
