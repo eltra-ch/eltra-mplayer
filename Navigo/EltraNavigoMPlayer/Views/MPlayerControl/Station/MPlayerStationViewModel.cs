@@ -16,7 +16,6 @@ using System.Windows.Input;
 using Xamarin.Forms;
 using Prism.Services.Dialogs;
 using MPlayerMaster.Views.Dialogs;
-using System.ComponentModel;
 
 namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
 {
@@ -55,7 +54,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
             _stationVolumeScalingParameter.ShowLabel = false;
             _stationCustomTitleParameter.ShowLabel = false;
 
-            PropertyChanged += OnViewModelPropertyChanged;
             DeviceInitialized += OnDeviceInitialized;
         }
 
@@ -198,25 +196,33 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
             }
         }
 
-        private void OnViewModelPropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if(e.PropertyName == "ActiveStationValue")
-            {
-                IsActiveStation = ActiveStationValue == (_stationIndex + 1);
-            }
-        }
-
         private void OnActiveStationParameterChanged()
         {
-            if (_activeStationParameter != null)
-            {
-                _activeStationParameter.ParameterChanged -= OnActiveStationParameterChanged;
-                _activeStationParameter.ParameterChanged += OnActiveStationParameterChanged;
-            }
+            RegisterStationParameterEvent();
 
             if (GetActiveStationValue(out var activeStationValue))
             {
                 ActiveStationValue = activeStationValue;
+
+                IsActiveStation = ActiveStationValue == (_stationIndex + 1);
+            }
+        }
+
+        private void RegisterStationParameterEvent()
+        {
+            UnregisterStationParameterEvent();
+
+            if (ActiveStationParameter != null)
+            {
+                ActiveStationParameter.ParameterChanged += OnActiveStationParameterChanged;
+            }
+        }
+
+        private void UnregisterStationParameterEvent()
+        {
+            if (ActiveStationParameter != null)
+            {
+                ActiveStationParameter.ParameterChanged -= OnActiveStationParameterChanged;
             }
         }
 
@@ -251,9 +257,7 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
 
             InitAgentStatus();
 
-            InitializeStationParameter();
-
-            _deviceInitialization = false;
+            InitializeStationParameter();            
         }
 
         private void InitAgentStatus()
@@ -413,6 +417,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
                     {
                         StationStreamTitle = streamLabel;
                     }
+
+                    _deviceInitialization = false;
                 });
             }
         }
