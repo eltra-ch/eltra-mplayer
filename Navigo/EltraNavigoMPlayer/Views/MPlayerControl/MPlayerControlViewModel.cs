@@ -48,7 +48,9 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
 
         public MPlayerControlViewModel()
         {
-            Title = "MPlayer";
+            string assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+
+            Title = $"MPlayer {assemblyVersion}";
             Uuid = "C999F6E2-1FF8-44E1-977C-5B8826E3B9CA";
             TurnOffButonText = "Turn Off";
 
