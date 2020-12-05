@@ -34,7 +34,7 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
         private XddParameter _statusWordParameter;
         private XddParameter _relayStateParameter;
         private XddParameter _activeStationParameter;
-
+        private XddParameter _stationsCountParameter;
         private Timer _valumeHistereseTimer;
 
         private List<MPlayerStationViewModel> _stationList;
@@ -164,6 +164,45 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             IsBusy = false;
         }
 
+        private void OnVolumeChanged()
+        {
+            if (_volumeParameter != null)
+            {
+                int volumeValue = Convert.ToInt32(VolumeValue);
+
+                if (_volumeParameter.SetValue(volumeValue))
+                {
+                    UpdateVolumeAsync(volumeValue);
+                }
+            }
+        }
+
+        public void SliderVolumeValueChanged(double newValue)
+        {
+            if (_volumeParameter != null && _volumeParameter.GetValue(out int volumeValue))
+            {
+                int newIntValue = Convert.ToInt32(newValue);
+
+                if (volumeValue != newIntValue)
+                {
+                    _volumeValue = Math.Round(newValue);
+
+                    CreateVolumeHistereseTimer();
+                }
+            }
+        }
+
+        private void OnStationUpdateProgressParameterChanged(object sender, ParameterChangedEventArgs e)
+        {
+            if (e.Parameter is Parameter stationUpdateProgressParameter)
+            {
+                if (stationUpdateProgressParameter.GetValue(out double stationUpdateProgress))
+                {
+                    StationUpdateProgressValue = stationUpdateProgress / 100;
+                }
+            }
+        }
+
         private void OnDeviceInitialized(object sender, EventArgs e)
         {
             IsBusy = true;
@@ -183,91 +222,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             InitializeStationList();
 
             IsBusy = false;
-        }
-
-        private void UpdateTurnOffText()
-        {
-            if(RelayStateValue == 0)
-            {
-                TurnOffButonText = "Turn On";
-            }
-            else
-            {
-                TurnOffButonText = "Turn Off";
-            }            
-        }
-
-        private void InitializeRelayStateParameter()
-        {
-            _relayStateParameter = Device.SearchParameter(0x3141, 0x01) as XddParameter;
-
-            if (_relayStateParameter != null)
-            {
-                ushort state = 0;
-
-                if (_relayStateParameter.GetValue(out state))
-                {
-                    RelayStateValue = state;
-                    
-                    UpdateTurnOffText();
-                }
-
-                _relayStateParameter.ParameterChanged += OnRelayStateParameterChanged;
-
-                _relayStateParameter.AutoUpdate();
-
-                Task.Run(async () =>
-                {
-                    IsBusy = true;
-
-                    await _relayStateParameter.UpdateValue();
-
-                    IsBusy = false;
-                }).ContinueWith((t) =>
-                {
-                    if (_relayStateParameter.GetValue(out state))
-                    {
-                        RelayStateValue = state;
-
-                        UpdateTurnOffText();
-                    }
-                });
-            }
-        }
-
-        private void InitializeStationList()
-        {
-            var stationList = new List<MPlayerStationViewModel>();
-            var stationsCountParameter = Device.SearchParameter("PARAM_StationsCount") as XddParameter;
-
-            if (stationsCountParameter != null && stationsCountParameter.GetValue(out ushort maxCount))
-            {
-                IsBusy = true;
-
-                for (int i = 0; i < maxCount; i++)
-                {
-                    var stationViewModel = new MPlayerStationViewModel(this, i)
-                    {
-                        Agent = Agent,
-                        Device = Device,
-                        ActiveStationParameter = _activeStationParameter
-                    };
-
-                    stationList.Add(stationViewModel);
-                }
-
-                IsBusy = false;
-            }
-
-            StationList = stationList;
-        }
-
-        private void InitAgentStatus()
-        {
-            Agent.StatusChanged -= OnAgentStatusChanged;
-            Agent.StatusChanged += OnAgentStatusChanged;
-
-            IsEnabled = (Agent.Status == AgentStatus.Bound);
         }
 
         private void OnAgentStatusChanged(object sender, AgentStatusEventArgs e)
@@ -308,121 +262,42 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             }
         }
 
-        private void InitializeMuteParameter()
+        private void UpdateTurnOffText()
         {
-            _muteParameter = Device.SearchParameter(0x4201, 0x00) as XddParameter;
-
-            if (_muteParameter != null)
+            if (RelayStateValue == 0)
             {
-                bool muteVal = false;
+                TurnOffButonText = "Turn On";
+            }
+            else
+            {
+                TurnOffButonText = "Turn Off";
+            }
+        }
 
-                if (_muteParameter.GetValue(out muteVal))
-                {
-                    IsMuteActive = muteVal;
-                }
+        private void InitializeRelayStateParameter()
+        {
+            _relayStateParameter = Device.SearchParameter(0x3141, 0x01) as XddParameter;
+        }
 
-                _muteParameter.ParameterChanged += OnVolumeParameterChanged;
-                _muteParameter.AutoUpdate();
-
+        private void UpdateRelayStateAsync()
+        {
+            if (_relayStateParameter != null)
+            {
                 Task.Run(async () =>
                 {
                     IsBusy = true;
 
-                    await _muteParameter.UpdateValue();
+                    await _relayStateParameter.UpdateValue();
 
                     IsBusy = false;
                 }).ContinueWith((t) =>
                 {
-                    if (_muteParameter.GetValue(out muteVal))
+                    if (_relayStateParameter.GetValue(out ushort state))
                     {
-                        IsMuteActive = muteVal;
+                        RelayStateValue = state;
+
+                        UpdateTurnOffText();
                     }
-                });
-            }
-        }
-
-        private void InitializeVolumeParameter()
-        {
-            _volumeParameter = Device.SearchParameter(0x4200, 0x00) as XddParameter;
-
-            if (_volumeParameter != null)
-            {
-                int volumeValue = 0;
-
-                if (_volumeParameter.GetValue(out volumeValue))
-                {
-                    VolumeValue = volumeValue;
-                }
-
-                _volumeParameter.ParameterChanged += OnVolumeParameterChanged;
-                _volumeParameter.AutoUpdate();
-
-                Task.Run(async () =>
-                {
-                    IsBusy = true;
-
-                    await _volumeParameter.UpdateValue();
-
-                    IsBusy = false;
-                }).ContinueWith((t) =>
-                {
-                    if (_volumeParameter.GetValue(out volumeValue))
-                    {
-                        VolumeValue = volumeValue;
-                    }
-                });
-            }
-        }
-
-        private void InitializeStateMachineParameter()
-        {
-            _statusWordParameter = Device.SearchParameter("PARAM_StatusWord") as XddParameter;
-
-            if (_statusWordParameter != null)
-            {
-                ushort val = 0;
-
-                if (_statusWordParameter.GetValue(out val))
-                {
-                    StatusWordValue = val;
-                }
-
-                _statusWordParameter.ParameterChanged += OnStatusWordParameterChanged;
-
-                _statusWordParameter.AutoUpdate();
-
-                Task.Run(async () =>
-                {
-                    IsBusy = true;
-
-                    await _statusWordParameter.UpdateValue();
-
-                    IsBusy = false;
-                }).ContinueWith((t) =>
-                {
-                    if (_statusWordParameter.GetValue(out val))
-                    {
-                        StatusWordValue = val;
-                    }
-                });
-            }
-        }
-
-        private void InitializeActiveStationParameter()
-        {
-            _activeStationParameter = Device.SearchParameter(0x4100, 0x00) as XddParameter;
-
-            if (_activeStationParameter != null)
-            {
-                _activeStationParameter.AutoUpdate();
-
-                Task.Run(async () =>
-                {
-                    IsBusy = true;
-
-                    await _activeStationParameter.UpdateValue();
-
-                    IsBusy = false;
                 });
             }
         }
@@ -504,58 +379,248 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             _valumeHistereseTimer.AutoReset = true;
         }
 
-        private void OnVolumeChanged()
+        private void InitializeStationList()
         {
-            if(_volumeParameter != null)
+            var stationList = new List<MPlayerStationViewModel>();
+            
+            _stationsCountParameter = Device.SearchParameter("PARAM_StationsCount") as XddParameter;
+
+            if (_stationsCountParameter != null && _stationsCountParameter.GetValue(out ushort maxCount))
             {
-                int volumeValue = Convert.ToInt32(VolumeValue);
+                IsBusy = true;
 
-                if(_volumeParameter.SetValue(volumeValue))
+                for (int i = 0; i < maxCount; i++)
                 {
-                    Task.Run(async ()=> {
+                    var stationViewModel = new MPlayerStationViewModel(this, i)
+                    {
+                        Agent = Agent,
+                        Device = Device,
+                        ActiveStationParameter = _activeStationParameter
+                    };
 
-                        Debug.Print($"before write, new value = {volumeValue}\r\n");
-
-                        IsBusy = true;
-
-                        if (await _volumeParameter.Write())
-                        {
-                            Debug.Print($"after write, new value = {volumeValue}\r\n");
-                        }
-                        else
-                        {
-                            Debug.Print($"after write failed, value = {volumeValue}\r\n");
-                        }
-
-                        IsBusy = false;
-                    });
+                    stationList.Add(stationViewModel);
                 }
+
+                IsBusy = false;
+            }
+
+            StationList = stationList;
+        }
+
+        private void InitAgentStatus()
+        {
+            IsEnabled = (Agent.Status == AgentStatus.Bound);
+        }
+
+        private void InitializeMuteParameter()
+        {
+            _muteParameter = Device.SearchParameter(0x4201, 0x00) as XddParameter;
+        }
+
+        private void UpdateMuteParameter()
+        {
+            if (_muteParameter != null)
+            {
+                Task.Run(async () =>
+                {
+                    IsBusy = true;
+
+                    await _muteParameter.UpdateValue();
+
+                    IsBusy = false;
+                }).ContinueWith((t) =>
+                {
+                    if (_muteParameter.GetValue(out bool muteVal))
+                    {
+                        IsMuteActive = muteVal;
+                    }
+                });
             }
         }
 
-        public void SliderVolumeValueChanged(double newValue)
+        private void InitializeVolumeParameter()
         {
-            if(_volumeParameter != null && _volumeParameter.GetValue(out int volumeValue))
+            _volumeParameter = Device.SearchParameter(0x4200, 0x00) as XddParameter;
+        }
+
+        private void UpdateVolumeAsync()
+        {
+            if (_volumeParameter != null)
             {
-                int newIntValue = Convert.ToInt32(newValue);
-
-                if (volumeValue != newIntValue)
+                Task.Run(async () =>
                 {
-                    _volumeValue = Math.Round(newValue);
+                    IsBusy = true;
 
-                    CreateVolumeHistereseTimer();
-                }
+                    await _volumeParameter.UpdateValue();
+
+                    IsBusy = false;
+                }).ContinueWith((t) =>
+                {
+                    if (_volumeParameter.GetValue(out int volumeValue))
+                    {
+                        VolumeValue = volumeValue;
+                    }
+                });
             }
         }
 
-        private void OnStationUpdateProgressParameterChanged(object sender, ParameterChangedEventArgs e)
+        private void InitializeStateMachineParameter()
         {
-            if (e.Parameter is Parameter stationUpdateProgressParameter)
+            _statusWordParameter = Device.SearchParameter("PARAM_StatusWord") as XddParameter;
+        }
+
+        private void UpdateStatusWordAsync()
+        {
+            if (_statusWordParameter != null)
             {
-                if (stationUpdateProgressParameter.GetValue(out double stationUpdateProgress))
+                Task.Run(async () =>
                 {
-                    StationUpdateProgressValue = stationUpdateProgress / 100;
-                }
+                    IsBusy = true;
+
+                    await _statusWordParameter.UpdateValue();
+
+                    IsBusy = false;
+                }).ContinueWith((t) =>
+                {
+                    if (_statusWordParameter.GetValue(out ushort val))
+                    {
+                        StatusWordValue = val;
+                    }
+                });
+            }
+        }
+
+        private void InitializeActiveStationParameter()
+        {
+            _activeStationParameter = Device.SearchParameter(0x4100, 0x00) as XddParameter;
+        }
+
+        private void UpdateActiveStationAsync()
+        {
+            if (_activeStationParameter != null)
+            {
+                Task.Run(async () =>
+                {
+                    IsBusy = true;
+
+                    await _activeStationParameter.UpdateValue();
+
+                    IsBusy = false;
+                });
+            }
+        }
+
+        public override Task Show()
+        {
+            UpdateActiveStationAsync();
+
+            if (_statusWordParameter != null)
+            {
+                _statusWordParameter.ParameterChanged += OnStatusWordParameterChanged;
+
+                _statusWordParameter.AutoUpdate();
+            }
+
+            if (_volumeParameter != null)
+            {
+                _volumeParameter.ParameterChanged += OnVolumeParameterChanged;
+                
+                _volumeParameter.AutoUpdate();
+            }
+
+            if (_muteParameter != null)
+            {
+                _muteParameter.ParameterChanged += OnVolumeParameterChanged;
+                
+                _muteParameter.AutoUpdate();
+            }
+
+            if (_relayStateParameter != null)
+            {
+                _relayStateParameter.ParameterChanged += OnRelayStateParameterChanged;
+                
+                _relayStateParameter.AutoUpdate();
+            }
+
+            if (_activeStationParameter != null)
+            {
+                _activeStationParameter.AutoUpdate();
+            }
+
+            UpdateStatusWordAsync();
+
+            UpdateMuteParameter();
+
+            UpdateRelayStateAsync();
+
+            Agent.StatusChanged += OnAgentStatusChanged;
+
+            InitAgentStatus();
+
+            UpdateVolumeAsync();
+
+            return base.Show();
+        }
+
+        public override Task Hide()
+        {
+            if (_statusWordParameter != null)
+            {
+                _statusWordParameter.ParameterChanged -= OnStatusWordParameterChanged;
+                
+                _statusWordParameter.StopUpdate();                
+            }
+
+            if (_volumeParameter != null)
+            {
+                _volumeParameter.ParameterChanged -= OnVolumeParameterChanged;
+                
+                _volumeParameter.StopUpdate();
+            }
+
+            if (_muteParameter != null)
+            {
+                _muteParameter.ParameterChanged -= OnVolumeParameterChanged;
+                
+                _muteParameter.StopUpdate();
+            }
+
+            if (_relayStateParameter != null)
+            {
+                _relayStateParameter.ParameterChanged -= OnRelayStateParameterChanged;
+                
+                _relayStateParameter.StopUpdate();
+            }
+
+            if (_activeStationParameter != null)
+            {
+                _activeStationParameter.StopUpdate();
+            }
+
+            Agent.StatusChanged -= OnAgentStatusChanged;
+
+            return base.Hide();
+        }
+
+        private void UpdateVolumeAsync(int volumeValue)
+        {
+            if (_volumeParameter != null)
+            {
+                Task.Run(async () =>
+                {
+                    IsBusy = true;
+
+                    if (await _volumeParameter.Write())
+                    {
+                        Debug.Print($"after write, new value = {volumeValue}\r\n");
+                    }
+                    else
+                    {
+                        Debug.Print($"after write failed, value = {volumeValue}\r\n");
+                    }
+
+                    IsBusy = false;
+                });
             }
         }
 

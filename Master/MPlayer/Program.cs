@@ -8,7 +8,6 @@ using EltraConnector.Master.Events;
 using EltraConnector.Master.Device.Connection;
 using EltraCommon.Logger;
 using MPlayerMaster.Device;
-using ThermoMaster.DeviceManager.Wrapper;
 
 namespace MPlayerMaster
 {

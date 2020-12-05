@@ -35,6 +35,9 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
         private bool _isActiveStation;
         private bool _deviceInitialization;
         private XddParameter _activeStationParameter;
+        private XddParameter _urlStationParameter;
+        private XddParameter _labelStationParameter;
+        private XddParameter _streamTitleStationParameter;
 
         #endregion
 
@@ -257,15 +260,9 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
 
             InitAgentStatus();
 
-            InitializeStationParameter();            
-        }
+            InitializeStationParameter();
 
-        private void InitAgentStatus()
-        {
-            Agent.StatusChanged -= OnAgentStatusChanged;
-            Agent.StatusChanged += OnAgentStatusChanged;
-
-            IsEnabled = (Agent.Status == AgentStatus.Bound);
+            _deviceInitialization = false;
         }
 
         private void OnAgentStatusChanged(object sender, AgentStatusEventArgs e)
@@ -319,9 +316,34 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
             }
         }
 
+        protected override void OnDialogClosed(object sender, IDialogResult dialogResult)
+        {
+            System.Diagnostics.Debug.Print("");
+        }
+
+        internal void OnSearchResultTapped(RadioStationEntry entry)
+        {
+            IsBusy = true;
+
+            var parameters = new DialogParameters
+                    {
+                        { "entry", entry },
+                        { "stationIdParameter", StationIdParameter.Parameter }
+                    };
+
+            ShowDialog(new StationDialogViewModel(), parameters);
+
+            IsBusy = false;
+        }
+
         #endregion
 
         #region Methods
+
+        private void InitAgentStatus()
+        {
+            IsEnabled = (Agent.Status == AgentStatus.Bound);
+        }
 
         public async Task TurnOff()
         {
@@ -339,12 +361,28 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
         {
             var result = base.Show();
 
+            Agent.StatusChanged += OnAgentStatusChanged;
+
             StationIdParameter.InitModelData();
             StationIdParameter.Written += OnStationIdWritten;
             StationIdParameter.StartUpdate();
 
             StationVolumeScalingParameter.InitModelData();
-            
+            StationCustomTitleParameter.InitModelData();
+
+            if (_labelStationParameter != null && _streamTitleStationParameter != null && _urlStationParameter != null)
+            {
+                _labelStationParameter.ParameterChanged += OnStationLabelParameterChanged;
+                _streamTitleStationParameter.ParameterChanged += OnStreamTitleStationLabelParameterChanged;
+                _urlStationParameter.ParameterChanged += OnStationParameterChanged;
+
+                _labelStationParameter.AutoUpdate();
+                _streamTitleStationParameter.AutoUpdate();
+                _urlStationParameter.AutoUpdate();
+            }
+
+            UpdateStationDataAsync();
+
             return result;
         }
 
@@ -353,72 +391,60 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
             StationIdParameter.Written -= OnStationIdWritten;
             StationIdParameter.StopUpdate();
 
+            if (_labelStationParameter != null && _streamTitleStationParameter != null && _urlStationParameter != null)
+            {
+                _labelStationParameter.ParameterChanged -= OnStationLabelParameterChanged;
+                _streamTitleStationParameter.ParameterChanged -= OnStreamTitleStationLabelParameterChanged;
+                _urlStationParameter.ParameterChanged -= OnStationParameterChanged;
+
+                _labelStationParameter.StopUpdate();
+                _streamTitleStationParameter.StopUpdate();
+                _urlStationParameter.StopUpdate();
+            }
+
+            Agent.StatusChanged -= OnAgentStatusChanged;
+
             return base.Hide();
         }
 
         private void InitializeStationParameter()
         {
             ushort index = (ushort)(0x4000 + (ushort)_stationIndex);
-            var urlStationParameter = Device.SearchParameter(index, 0x01) as XddParameter;
-            var labelStationParameter = Device.SearchParameter(index, 0x02) as XddParameter;
-            var streamTitleStationParameter = Device.SearchParameter(index, 0x03) as XddParameter;
 
-            if (urlStationParameter != null && labelStationParameter != null && streamTitleStationParameter != null)
+            _urlStationParameter = Device.SearchParameter(index, 0x01) as XddParameter;
+            _labelStationParameter = Device.SearchParameter(index, 0x02) as XddParameter;
+            _streamTitleStationParameter = Device.SearchParameter(index, 0x03) as XddParameter;            
+        }
+
+        private void UpdateStationDataAsync()
+        {
+            if (_urlStationParameter != null && _labelStationParameter != null && _streamTitleStationParameter != null)
             {
-                string url;
-                string label;
-                string streamLabel;
-
-                if (urlStationParameter.GetValue(out url))
-                {
-                    ControlButtonText = url;
-                }
-
-                if (labelStationParameter.GetValue(out label))
-                {
-                    ControlButtonText = label;
-                }
-
-                if (streamTitleStationParameter.GetValue(out streamLabel))
-                {
-                    StationStreamTitle = streamLabel;
-                }
-
-                labelStationParameter.ParameterChanged += OnStationLabelParameterChanged;
-                streamTitleStationParameter.ParameterChanged += OnStreamTitleStationLabelParameterChanged;
-                urlStationParameter.ParameterChanged += OnStationParameterChanged;
-
-                labelStationParameter.AutoUpdate();
-                streamTitleStationParameter.AutoUpdate();
-                urlStationParameter.AutoUpdate();
-
                 Task.Run(async () =>
                 {
                     IsBusy = true;
 
-                    await urlStationParameter.UpdateValue();
-                    await labelStationParameter.UpdateValue();
-                    await streamTitleStationParameter.UpdateValue();
+                    await _urlStationParameter.UpdateValue();
+                    await _labelStationParameter.UpdateValue();
+                    await _streamTitleStationParameter.UpdateValue();
 
                     IsBusy = false;
                 }).ContinueWith((t) =>
                 {
-                    if (urlStationParameter.GetValue(out url))
+                    if (_urlStationParameter.GetValue(out string url))
                     {
                         ControlButtonText = url;
                     }
 
-                    if (labelStationParameter.GetValue(out label))
+                    if (_labelStationParameter.GetValue(out string label))
                     {
                         ControlButtonText = label;
                     }
 
-                    if (streamTitleStationParameter.GetValue(out streamLabel))
+                    if (_streamTitleStationParameter.GetValue(out string streamLabel))
                     {
                         StationStreamTitle = streamLabel;
                     }
-
-                    _deviceInitialization = false;
                 });
             }
         }
@@ -476,26 +502,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
             }
 
             return result;
-        }
-
-        protected override void OnDialogClosed(object sender, IDialogResult dialogResult)
-        {
-            System.Diagnostics.Debug.Print("");
-        }
-
-        internal void OnSearchResultTapped(RadioStationEntry entry)
-        {
-            IsBusy = true;
-
-            var parameters = new DialogParameters
-                    {
-                        { "entry", entry },
-                        { "stationIdParameter", StationIdParameter.Parameter }
-                    };
-
-            ShowDialog(new StationDialogViewModel(), parameters);
-
-            IsBusy = false;
         }
 
         #endregion
