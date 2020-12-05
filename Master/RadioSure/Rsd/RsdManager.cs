@@ -79,7 +79,7 @@ namespace RadioSureMaster.Rsd
 
             return result;
         }
-
+         
         public void Init(MasterVcs vcs)
         {
             Validator.RsdxUrl = RsdxUrl;
