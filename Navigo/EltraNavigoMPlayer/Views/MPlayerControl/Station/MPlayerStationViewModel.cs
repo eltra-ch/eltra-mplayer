@@ -420,6 +420,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
         {
             if (_urlStationParameter != null && _labelStationParameter != null && _streamTitleStationParameter != null)
             {
+                UpdateActualStationValues();
+
                 Task.Run(async () =>
                 {
                     IsBusy = true;
@@ -431,21 +433,29 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
                     IsBusy = false;
                 }).ContinueWith((t) =>
                 {
-                    if (_urlStationParameter.GetValue(out string url))
-                    {
-                        ControlButtonText = url;
-                    }
-
-                    if (_labelStationParameter.GetValue(out string label))
-                    {
-                        ControlButtonText = label;
-                    }
-
-                    if (_streamTitleStationParameter.GetValue(out string streamLabel))
-                    {
-                        StationStreamTitle = streamLabel;
-                    }
+                    UpdateActualStationValues();
                 });
+            }
+        }
+
+        private void UpdateActualStationValues()
+        {
+            if (_urlStationParameter != null && _labelStationParameter != null && _streamTitleStationParameter != null)
+            {
+                if (_urlStationParameter.GetValue(out string url))
+                {
+                    ControlButtonText = url;
+                }
+
+                if (_labelStationParameter.GetValue(out string label))
+                {
+                    ControlButtonText = label;
+                }
+
+                if (_streamTitleStationParameter.GetValue(out string streamLabel))
+                {
+                    StationStreamTitle = streamLabel;
+                }
             }
         }
 
