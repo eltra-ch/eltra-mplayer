@@ -5,7 +5,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
 	<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	<Configurations>Debug;Release;Debug_UWP</Configurations>
-	<Version>1.0.4</Version>
+	<Version>1.0.5</Version>
 	<Authors>Dawid Sienkiewicz</Authors>
 	<Company>Dawid Sienkiewicz, eltra.ch</Company>
 	<PackageProjectUrl>www.eltra.ch</PackageProjectUrl>
@@ -43,11 +43,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="EltraXamCommon" Version="1.1.8" />
     <PackageReference Include="Xamarin.Forms" Version="4.8.0.1687" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\eltra-sdk\xternals\common\EltraUiCommon\EltraUiCommon.csproj" />
+    <ProjectReference Include="..\..\..\eltra-sdk\xternals\common\EltraXamCommon\EltraXamCommon.csproj" />
     <ProjectReference Include="..\..\Common\MPlayerCommon\MPlayerCommon.csproj" />
   </ItemGroup>
 

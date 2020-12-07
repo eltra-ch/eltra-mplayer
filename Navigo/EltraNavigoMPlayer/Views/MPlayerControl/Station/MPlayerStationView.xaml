@@ -4,59 +4,95 @@
 			 xmlns:parameters="clr-namespace:EltraXamCommon.Controls.Parameters;assembly=EltraXamCommon" 
 			 x:Class="EltraNavigoMPlayer.Views.MPlayerControl.Station.MPlayerStationView" 
              xmlns:station="clr-namespace:EltraNavigoMPlayer.Views.MPlayerControl.Station" 
-             xmlns:contracts="clr-namespace:MPlayerCommon.Contracts;assembly=MPlayerCommon" xmlns:behaviors="clr-namespace:EltraNavigoMPlayer.Views.MPlayerControl.Behaviors"
+             xmlns:contracts="clr-namespace:MPlayerCommon.Contracts;assembly=MPlayerCommon" xmlns:behaviors="clr-namespace:EltraNavigoMPlayer.Views.MPlayerControl.Behaviors" xmlns:xamconverters="clr-namespace:EltraXamCommon.Controls.Converters;assembly=EltraXamCommon"
              x:DataType="station:MPlayerStationViewModel">
 	<ContentView.Content>
 		<Grid>
 			<Grid.RowDefinitions>
-				<RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
+				<RowDefinition Height="18"/>
+                <RowDefinition Height="56"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <StackLayout Grid.Row="0" Orientation="Vertical">
                 <Label Text="{Binding StationStreamTitle}" IsVisible="{Binding IsActiveStation}" IsEnabled="{Binding IsEnabled}"/>
             </StackLayout>
-            <StackLayout Grid.Row="1" HeightRequest="48" Orientation="Horizontal" Spacing="0">
-                <Button BackgroundColor="{StaticResource NavigationPrimary}" 
-                        BorderColor="White" TextColor="White" BorderWidth="4" 
-                        VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand"   
-                        Text="{Binding ControlButtonText}" Command="{Binding ControlButtonCommand}" IsEnabled="{Binding IsEnabled}">
-					<Button.HeightRequest>
-						<OnPlatform x:TypeArguments="x:Double" iOS="48"/>
-					</Button.HeightRequest>
-					<Button.Triggers>
-						<DataTrigger TargetType="Button" Binding="{Binding IsActiveStation}" Value="True">
-                            <Setter Property="BorderColor" Value="DarkSeaGreen" />
-						</DataTrigger>
-                        <DataTrigger TargetType="Button" Binding="{Binding IsBusy}" Value="False">
-                            <Setter Property="BackgroundColor" Value="{StaticResource NavigationPrimary}" />
-                        </DataTrigger>
-                    </Button.Triggers>
-				</Button>
-                <Button Text="Edit" Command="{Binding EditButtonCommand}" VerticalOptions="FillAndExpand" IsEnabled="{Binding IsEnabled}" Margin="0,2,2,0">
-					<Button.Triggers>
-						<DataTrigger TargetType="Button" Binding="{Binding IsStationEditVisible}" Value="False">
-							<Setter Property="Text" Value="∨" />
-						</DataTrigger>
-						<DataTrigger TargetType="Button" Binding="{Binding IsStationEditVisible}" Value="True">
-							<Setter Property="Text" Value="∧" />
-						</DataTrigger>
-					</Button.Triggers>
-				</Button>
-                <Frame WidthRequest="12" BackgroundColor="Transparent" Padding="0,12,0,12">
-                    <Frame Padding="0" CornerRadius="10">
-                        <Frame.Triggers>
-                            <DataTrigger TargetType="Frame" Binding="{Binding IsBusy}" Value="True">
-                                <Setter Property="BackgroundColor" Value="OrangeRed" />
+            
+            <Grid Grid.Row="1">
+                <Grid.Resources>
+                    <xamconverters:AllTrueMultiConverter x:Key="AllTrueMultiConverter"/>
+                    <xamconverters:NegateBooleanConverter x:Key="NegateBooleanConverter"/>
+                </Grid.Resources>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Grid Grid.Column="0">
+                    <Button  BackgroundColor="{StaticResource NavigationPrimary}" CornerRadius="15"
+                            BorderColor="White" TextColor="White" BorderWidth="4" 
+                            VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand"   
+                            Text="{Binding ControlButtonText}" Command="{Binding ControlButtonCommand}" IsEnabled="{Binding IsEnabled}">
+                        <Button.HeightRequest>
+                            <OnPlatform x:TypeArguments="x:Double" iOS="56"/>
+                        </Button.HeightRequest>
+                        <Button.Triggers>
+                            <DataTrigger TargetType="Button" Binding="{Binding IsActiveStation}" Value="True">
+                                <Setter Property="BackgroundColor" Value="LightSeaGreen" />
                             </DataTrigger>
-                            <DataTrigger TargetType="Frame" Binding="{Binding IsBusy}" Value="False">
+                            <DataTrigger TargetType="Button" Binding="{Binding IsActiveStation}" Value="False">
                                 <Setter Property="BackgroundColor" Value="{StaticResource NavigationPrimary}" />
                             </DataTrigger>
-                        </Frame.Triggers>
+                        </Button.Triggers>
+                    </Button>
+                    <Frame WidthRequest="16" BackgroundColor="Transparent" VerticalOptions="Center" HorizontalOptions="Start" Padding="0" Margin="12,0,0,0" >
+                        <BoxView CornerRadius="16" HeightRequest="16" VerticalOptions="Center">
+                            <BoxView.Triggers>
+                                <DataTrigger TargetType="BoxView" Binding="{Binding IsBusy}" Value="True">
+                                    <Setter Property="BackgroundColor" Value="OrangeRed" />
+                                    <Setter Property="IsVisible" Value="True" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="BoxView" Binding="{Binding IsBusy}" Value="False">
+                                    <Setter Property="IsVisible" Value="False" />
+                                </DataTrigger>
+                                <!--<DataTrigger TargetType="BoxView" Value="False">
+                                    <DataTrigger.Binding>
+                                        <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
+                                            <Binding Path="IsBusy" Converter="{StaticResource NegateBooleanConverter}" />
+                                            <Binding Path="IsActiveStation"/>
+                                        </MultiBinding>
+                                    </DataTrigger.Binding>
+                                    <Setter Property="BackgroundColor" Value="{StaticResource NavigationPrimary}" />
+                                </DataTrigger>
+                                <DataTrigger TargetType="BoxView" Value="True">
+                                    <DataTrigger.Binding>
+                                        <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
+                                            <Binding Path="IsBusy" Converter="{StaticResource NegateBooleanConverter}" />
+                                            <Binding Path="IsActiveStation"/>
+                                        </MultiBinding>
+                                    </DataTrigger.Binding>
+                                    <Setter Property="BackgroundColor" Value="LightSeaGreen" />
+                                </DataTrigger>-->
+                            </BoxView.Triggers>
+                        </BoxView>
                     </Frame>
+                </Grid>
+                
+                <Frame Grid.Column="1" BackgroundColor="Transparent" Padding="0" CornerRadius="15" Margin="0,2,2,0">
+                    <Button WidthRequest="42" Command="{Binding EditButtonCommand}" VerticalOptions="FillAndExpand" IsEnabled="{Binding IsEnabled}" CornerRadius="15">
+                        <Button.Triggers>
+                            <DataTrigger TargetType="Button" Binding="{Binding IsStationEditVisible}" Value="False">
+                                <Setter Property="Text" Value="∨" />
+                            </DataTrigger>
+                            <DataTrigger TargetType="Button" Binding="{Binding IsStationEditVisible}" Value="True">
+                                <Setter Property="Text" Value="∧" />
+                            </DataTrigger>
+                        </Button.Triggers>
+                    </Button>
                 </Frame>
-            </StackLayout>
+                
+            </Grid>
 
             <Grid Grid.Row="2" IsVisible="{Binding IsStationEditVisible}">
                 <Grid.RowDefinitions>

@@ -9,7 +9,7 @@
              xmlns:behaviors1="clr-namespace:EltraNavigoMPlayer.Views.MPlayerControl.Behaviors" 
              xmlns:converters1="clr-namespace:EltraNavigoMPlayer.Views.MPlayerControl.Converters" 
 			 xmlns:station="clr-namespace:EltraNavigoMPlayer.Views.MPlayerControl.Station" 
-             xmlns:converters2="clr-namespace:EltraXamCommon.Controls.Converters;assembly=EltraXamCommon"
+             xmlns:xamconverters="clr-namespace:EltraXamCommon.Controls.Converters;assembly=EltraXamCommon"
              x:DataType="views:MPlayerControlViewModel"
              x:Class="EltraNavigoMPlayer.Views.MPlayerControl.MPlayerControlView"
              IsVisible="{Binding IsVisible}">
@@ -22,7 +22,7 @@
         <ScrollView>
             <Grid>
                 <Grid.Resources>
-                    <converters2:NegateBooleanConverter x:Key="NegateBooleanConverter"/>
+                    <xamconverters:NegateBooleanConverter x:Key="NegateBooleanConverter"/>
                     <Style TargetType="Button">
                         <Setter Property="FontSize" Value="12"/>
                         <Setter Property="BackgroundColor" Value="{StaticResource NavigationPrimary}"/>
@@ -39,22 +39,23 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="24"/>   <!-- 0 header -->
                     <RowDefinition Height="Auto"/> <!-- 1 status -->
-                    <RowDefinition Height="Auto"/> <!-- 2 buttons -->
-                    <RowDefinition Height="Auto"/> <!-- 3 stop -->
-                    <RowDefinition Height="Auto"/> <!-- 4 turn off -->
-                    <RowDefinition Height="Auto"/> <!-- 5 progress -->
-                    <RowDefinition Height="Auto"/> <!-- 6 activity -->
-                    <RowDefinition Height="Auto"/> <!-- 7 slider -->
-                    <RowDefinition Height="24"/>   <!-- 8 footer -->
+                    <RowDefinition Height="Auto"/> <!-- 2 stations -->
+                    <RowDefinition Height="24"/>   <!-- 3 space-->
+                    <RowDefinition Height="Auto"/> <!-- 4 stop / turn off -->
+                    <RowDefinition Height="Auto"/> <!-- 5 activity -->
+                    <RowDefinition Height="Auto"/> <!-- 6 volume -->
+                    <RowDefinition Height="24"/>   <!-- 7 footer -->
                 </Grid.RowDefinitions>
 
+                <!-- Status word -->
                 <Frame Grid.Row="1" Grid.Column="1" Padding="0">
                     <Frame.Resources>
                         <converters1:StatusWordToImageConverter x:Key="StatusWordToImageConverter"></converters1:StatusWordToImageConverter>
                     </Frame.Resources>
-                    <Image HeightRequest="24" HorizontalOptions="End" Source="{Binding StatusWordValue, Converter={StaticResource StatusWordToImageConverter}}"/>
+                    <Image HeightRequest="24" HorizontalOptions="End" Margin="0,0,10,0" Source="{Binding StatusWordValue, Converter={StaticResource StatusWordToImageConverter}}"/>
                 </Frame>
                 
+                <!-- Stations -->
                 <Grid Grid.Row="2" Grid.Column="1">
                     <StackLayout BindableLayout.ItemsSource="{Binding StationList}">
                         <BindableLayout.ItemTemplate>
@@ -65,36 +66,48 @@
                     </StackLayout>
                 </Grid>
 
-                <Grid Grid.Row="3" Grid.Column="1">
-                    <StackLayout Orientation="Vertical">
-                        <Frame Padding="0,18,0,0"/>
-                        <Button HeightRequest="36" Text="Stop" Command="{Binding StopButtonCommand}" IsEnabled="{Binding IsEnabled}"/>
-                    </StackLayout>
-                </Grid>
-                
+                <!-- Stop / Turn off -->
                 <Grid Grid.Row="4" Grid.Column="1">
                     <Grid.Resources>
+                        <xamconverters:AllTrueMultiConverter x:Key="AllTrueMultiConverter"/>
+                        <converters1:StopPlayStateConverter x:Key="StopPlayStateConverter"/>
                         <converters1:TurnOffButtonColorConverter x:Key="TurnOffButtonColorConverter"/>
                     </Grid.Resources>
-                    <StackLayout Orientation="Vertical">
-                        <Frame Padding="0,8,0,0"/>
-                        <Button HeightRequest="48" Text="{Binding TurnOffButonText}" Command="{Binding TurnOffButtonCommand}" 
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="52"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <!-- Stop -->
+                    <Frame Grid.Column="0" Padding="0" BackgroundColor="Transparent">
+                        <Button Text="Stop" Command="{Binding StopButtonCommand}">
+                            <Button.IsEnabled>
+                                <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
+                                    <Binding Path="IsEnabled" />
+                                    <Binding Path="ActiveStationValue" Converter="{StaticResource StopPlayStateConverter}" />
+                                </MultiBinding>
+                            </Button.IsEnabled>
+                        </Button>
+                    </Frame>
+                    <!-- Turn off -->
+                    <Frame Grid.Column="1" Padding="0" BackgroundColor="Transparent">
+                        <Button Text="{Binding TurnOffButonText}" Command="{Binding TurnOffButtonCommand}" 
                                 BackgroundColor="{Binding RelayStateValue, Converter={StaticResource TurnOffButtonColorConverter}}" IsEnabled="{Binding IsEnabled}"/>
-                    </StackLayout>
+                    </Frame>
                 </Grid>
-
-                <Frame Grid.Row="5" Grid.Column="1" Padding="4">
-                    <ProgressBar Progress="{Binding StationUpdateProgressValue}"/>
-                </Frame>
                 
-                <Frame Grid.Row="6" Grid.Column="1" Padding="4">
+                <!-- Activity -->
+                <Frame Grid.Row="5" Grid.Column="1" Padding="4">
                     <ActivityIndicator IsRunning="{Binding IsBusy}" VerticalOptions="Center" HorizontalOptions="Center" />
                 </Frame>
                 
-                <Frame Grid.Row="7" Grid.Column="1" BorderColor="{StaticResource NavigationPrimary}">
+                <!-- Volume -->
+                <Frame Grid.Row="6" Grid.Column="1" BorderColor="{StaticResource NavigationPrimary}">
                     <StackLayout Orientation="Vertical">
                         <StackLayout.Resources>
-                            <converters2:NegateBooleanConverter x:Key="NegateBooleanConverter"/>
+                            <xamconverters:NegateBooleanConverter x:Key="NegateBooleanConverter"/>
                         </StackLayout.Resources>
                         <Grid>
                             <Grid.ColumnDefinitions>

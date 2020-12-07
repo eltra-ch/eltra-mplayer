@@ -33,12 +33,11 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
         private ParameterEditViewModel _stationCustomTitleParameter;
         private ParameterEditViewModel _stationVolumeScalingParameter;
         private bool _isActiveStation;
-        private bool _deviceInitialization;
         private XddParameter _activeStationParameter;
         private XddParameter _urlStationParameter;
         private XddParameter _labelStationParameter;
         private XddParameter _streamTitleStationParameter;
-
+        
         #endregion
 
         #region Constructors
@@ -56,8 +55,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
             _stationIdParameter.ShowLabel = false;
             _stationVolumeScalingParameter.ShowLabel = false;
             _stationCustomTitleParameter.ShowLabel = false;
-
-            DeviceInitialized += OnDeviceInitialized;
         }
 
         #endregion
@@ -254,15 +251,13 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
             }
         }
 
-        private void OnDeviceInitialized(object sender, EventArgs e)
+        protected override void OnInitialized()
         {
-            _deviceInitialization = true;
-
-            InitAgentStatus();
+            UpdateAgentStatus();
 
             InitializeStationParameter();
 
-            _deviceInitialization = false;
+            base.OnInitialized();
         }
 
         private void OnAgentStatusChanged(object sender, AgentStatusEventArgs e)
@@ -290,20 +285,9 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
             }
         }
 
-        private async void OnStationParameterChanged(object sender, ParameterChangedEventArgs e)
-        {
-            if (!_deviceInitialization)
-            {
-                if (IsActiveStation)
-                {
-                    await TurnOff();
-                }
-            }
-        }
-
         private void OnControlButtonPressed(object obj = null)
         {
-            if (!_deviceInitialization)
+            if (IsInitialized)
             {
                 Task.Run(async () =>
                 {
@@ -340,14 +324,17 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
 
         #region Methods
 
-        private void InitAgentStatus()
+        private void UpdateAgentStatus()
         {
-            IsEnabled = (Agent.Status == AgentStatus.Bound);
+            if (Agent != null)
+            {
+                IsEnabled = (Agent.Status == AgentStatus.Bound);
+            }
         }
 
         public async Task TurnOff()
         {
-            if (!_deviceInitialization)
+            if (IsInitialized)
             {
                 IsBusy = true;
 
@@ -357,85 +344,82 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
             }
         }
 
-        public override Task Show()
+        protected override async Task RegisterAutoUpdate()
         {
-            var result = base.Show();
+            if (Agent != null)
+            {
+                Agent.StatusChanged += OnAgentStatusChanged;
+            }
 
-            Agent.StatusChanged += OnAgentStatusChanged;
+            if (StationIdParameter != null)
+            {
+                StationIdParameter.Written += OnStationIdWritten;
 
-            StationIdParameter.InitModelData();
-            StationIdParameter.Written += OnStationIdWritten;
-            StationIdParameter.StartUpdate();
-
-            StationVolumeScalingParameter.InitModelData();
-            StationCustomTitleParameter.InitModelData();
+                await StationIdParameter.StartUpdate();
+            }
 
             if (_labelStationParameter != null && _streamTitleStationParameter != null && _urlStationParameter != null)
             {
                 _labelStationParameter.ParameterChanged += OnStationLabelParameterChanged;
                 _streamTitleStationParameter.ParameterChanged += OnStreamTitleStationLabelParameterChanged;
-                _urlStationParameter.ParameterChanged += OnStationParameterChanged;
 
                 _labelStationParameter.AutoUpdate();
                 _streamTitleStationParameter.AutoUpdate();
                 _urlStationParameter.AutoUpdate();
             }
-
-            UpdateStationDataAsync();
-
-            return result;
         }
 
-        public override Task Hide()
+        protected override async Task UnregisterAutoUpdate()
         {
-            StationIdParameter.Written -= OnStationIdWritten;
-            StationIdParameter.StopUpdate();
+            if (StationIdParameter != null)
+            {
+                StationIdParameter.Written -= OnStationIdWritten;
+
+                await StationIdParameter.StopUpdate();
+            }
 
             if (_labelStationParameter != null && _streamTitleStationParameter != null && _urlStationParameter != null)
             {
                 _labelStationParameter.ParameterChanged -= OnStationLabelParameterChanged;
                 _streamTitleStationParameter.ParameterChanged -= OnStreamTitleStationLabelParameterChanged;
-                _urlStationParameter.ParameterChanged -= OnStationParameterChanged;
-
+                
                 _labelStationParameter.StopUpdate();
                 _streamTitleStationParameter.StopUpdate();
                 _urlStationParameter.StopUpdate();
             }
 
-            Agent.StatusChanged -= OnAgentStatusChanged;
-
-            return base.Hide();
+            if (Agent != null)
+            {
+                Agent.StatusChanged -= OnAgentStatusChanged;
+            }
         }
 
         private void InitializeStationParameter()
         {
             ushort index = (ushort)(0x4000 + (ushort)_stationIndex);
 
-            _urlStationParameter = Device.SearchParameter(index, 0x01) as XddParameter;
-            _labelStationParameter = Device.SearchParameter(index, 0x02) as XddParameter;
-            _streamTitleStationParameter = Device.SearchParameter(index, 0x03) as XddParameter;            
+            if (Device != null)
+            {
+                _urlStationParameter = Device.SearchParameter(index, 0x01) as XddParameter;
+                _labelStationParameter = Device.SearchParameter(index, 0x02) as XddParameter;
+                _streamTitleStationParameter = Device.SearchParameter(index, 0x03) as XddParameter;
+            }
         }
 
-        private void UpdateStationDataAsync()
-        {
+        protected override async Task UpdateAllControls()
+        {            
             if (_urlStationParameter != null && _labelStationParameter != null && _streamTitleStationParameter != null)
             {
                 UpdateActualStationValues();
 
-                Task.Run(async () =>
-                {
-                    IsBusy = true;
+                await _urlStationParameter.UpdateValue();
+                await _labelStationParameter.UpdateValue();
+                await _streamTitleStationParameter.UpdateValue();
 
-                    await _urlStationParameter.UpdateValue();
-                    await _labelStationParameter.UpdateValue();
-                    await _streamTitleStationParameter.UpdateValue();
-
-                    IsBusy = false;
-                }).ContinueWith((t) =>
-                {
-                    UpdateActualStationValues();
-                });
+                UpdateActualStationValues();
             }
+
+            await base.UpdateAllControls();
         }
 
         private void UpdateActualStationValues()
