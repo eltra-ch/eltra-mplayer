@@ -40,9 +40,9 @@
                     <RowDefinition Height="24"/>   <!-- 0 header -->
                     <RowDefinition Height="Auto"/> <!-- 1 status -->
                     <RowDefinition Height="Auto"/> <!-- 2 stations -->
-                    <RowDefinition Height="24"/>   <!-- 3 space-->
+                    <RowDefinition Height="24"/>   <!-- 3 activity-->
                     <RowDefinition Height="Auto"/> <!-- 4 stop / turn off -->
-                    <RowDefinition Height="Auto"/> <!-- 5 activity -->
+                    <RowDefinition Height="Auto"/> <!-- 5 space -->
                     <RowDefinition Height="Auto"/> <!-- 6 volume -->
                     <RowDefinition Height="24"/>   <!-- 7 footer -->
                 </Grid.RowDefinitions>
@@ -50,9 +50,19 @@
                 <!-- Status word -->
                 <Frame Grid.Row="1" Grid.Column="1" Padding="0">
                     <Frame.Resources>
-                        <converters1:StatusWordToImageConverter x:Key="StatusWordToImageConverter"></converters1:StatusWordToImageConverter>
+                        <converters1:StatusWordToImageConverter x:Key="StatusWordToImageConverter"/>
                     </Frame.Resources>
-                    <Image HeightRequest="24" HorizontalOptions="End" Margin="0,0,10,0" Source="{Binding StatusWordValue, Converter={StaticResource StatusWordToImageConverter}}"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Label VerticalOptions="Center" Grid.Column="0" Text="{Binding ActualPlayingLabel}" FontSize="14" LineBreakMode="WordWrap"/>
+
+                        <Image Grid.Column="1" HeightRequest="24" HorizontalOptions="End" Margin="0,0,10,0" Source="{Binding StatusWordValue, Converter={StaticResource StatusWordToImageConverter}}"/>
+                    </Grid>
                 </Frame>
                 
                 <!-- Stations -->
@@ -66,6 +76,11 @@
                     </StackLayout>
                 </Grid>
 
+                <!-- Activity -->
+                <Frame Grid.Row="3" Grid.Column="1" Padding="0" BackgroundColor="Transparent">
+                    <ActivityIndicator IsRunning="{Binding IsBusy}" VerticalOptions="Center" HorizontalOptions="Center" />
+                </Frame>
+
                 <!-- Stop / Turn off -->
                 <Grid Grid.Row="4" Grid.Column="1">
                     <Grid.Resources>
@@ -74,7 +89,7 @@
                         <converters1:TurnOffButtonColorConverter x:Key="TurnOffButtonColorConverter"/>
                     </Grid.Resources>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="52"/>
+                        <RowDefinition Height="64"/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition/>
@@ -97,11 +112,6 @@
                                 BackgroundColor="{Binding RelayStateValue, Converter={StaticResource TurnOffButtonColorConverter}}" IsEnabled="{Binding IsEnabled}"/>
                     </Frame>
                 </Grid>
-                
-                <!-- Activity -->
-                <Frame Grid.Row="5" Grid.Column="1" Padding="4">
-                    <ActivityIndicator IsRunning="{Binding IsBusy}" VerticalOptions="Center" HorizontalOptions="Center" />
-                </Frame>
                 
                 <!-- Volume -->
                 <Frame Grid.Row="6" Grid.Column="1" BorderColor="{StaticResource NavigationPrimary}">

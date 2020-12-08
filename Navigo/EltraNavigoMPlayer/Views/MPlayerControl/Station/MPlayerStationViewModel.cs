@@ -16,6 +16,7 @@ using System.Windows.Input;
 using Xamarin.Forms;
 using Prism.Services.Dialogs;
 using MPlayerMaster.Views.Dialogs;
+using System.ComponentModel;
 
 namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
 {
@@ -55,6 +56,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
             _stationIdParameter.ShowLabel = false;
             _stationVolumeScalingParameter.ShowLabel = false;
             _stationCustomTitleParameter.ShowLabel = false;
+
+            PropertyChanged += OnViewModelPropertyChanged;
         }
 
         #endregion
@@ -64,6 +67,14 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
         public ICommand ControlButtonCommand => new Command(OnControlButtonPressed);
         
         public ICommand EditButtonCommand => new Command(OnEditButtonPressed);
+
+        #endregion
+
+        #region Events
+
+        public event EventHandler<string> StationLabelChanged;
+        
+        public event EventHandler<string> StreamLabelChanged;
 
         #endregion
 
@@ -183,6 +194,37 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
 
         #region Events handling
 
+        private void OnViewModelPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if(e.PropertyName == "ActiveStationValue" ||
+                e.PropertyName == "ControlButtonText" ||
+                e.PropertyName == "StationStreamTitle")
+            {
+                if (IsActiveStation)
+                {
+                    if (e.PropertyName == "StationStreamTitle")
+                    {
+                        OnStreamLabelChaned(StationStreamTitle);
+                    }
+
+                    if (e.PropertyName == "ControlButtonText")
+                    {
+                        OnStationLabelChaned(ControlButtonText);
+                    }
+                }
+            }
+        }
+
+        private void OnStationLabelChaned(string label)
+        {
+            StationLabelChanged?.Invoke(this, label);
+        }
+
+        private void OnStreamLabelChaned(string label)
+        {
+            StreamLabelChanged?.Invoke(this, label);
+        }
+
         private void OnActiveStationParameterChanged(object sender, ParameterChangedEventArgs e)
         {
             if (e.Parameter is Parameter activeStationParameter)
@@ -275,6 +317,11 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
             if (e.Parameter.GetValue(out string label))
             {
                 ControlButtonText = label;
+
+                if (IsActiveStation)
+                {
+                    OnStationLabelChaned(label);
+                }
             }
         }
         private void OnStreamTitleStationLabelParameterChanged(object sender, ParameterChangedEventArgs e)
@@ -282,6 +329,11 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
             if (e.Parameter.GetValue(out string label))
             {
                 StationStreamTitle = label;
+
+                if (IsActiveStation)
+                {
+                    OnStreamLabelChaned(label);
+                }
             }
         }
 

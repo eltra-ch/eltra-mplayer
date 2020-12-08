@@ -42,6 +42,9 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
         
         private double _stationUpdateProgressValue;
         private ushort _relayStateValue;
+        private string _actualStreamLabel;
+        private string _actualStationLabel;
+        private string _actualPlayingLabel;
 
         #endregion
 
@@ -108,6 +111,12 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             set => SetProperty(ref _activeStationValue, value);
         }
 
+        public string ActualPlayingLabel
+        {
+            get => _actualPlayingLabel;
+            set => SetProperty(ref _actualPlayingLabel, value);
+        }
+
         #endregion
 
         #region Commands 
@@ -119,6 +128,20 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
         #endregion
 
         #region Events handling
+
+        private void OnStreamLabelChanged(object sender, string e)
+        {
+            _actualStreamLabel = e;
+
+            UpdateActualPlayingLabel();
+        }
+
+        private void OnStationLabelChaned(object sender, string e)
+        {
+            _actualStationLabel = e;
+
+            UpdateActualPlayingLabel();
+        }
 
         private void OnActiveStationParameterChanged(object sender, ParameterChangedEventArgs e)
         {
@@ -260,24 +283,7 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             {
                 if (!_internalChange)
                 {
-                    Task.Run(async () =>
-                    {
-                        if (_muteParameter != null && _muteParameter.SetValue(IsMuteActive))
-                        {
-                            IsBusy = true;
-
-                            if (!await _muteParameter.Write())
-                            {
-                                _internalChange = true;
-
-                                IsMuteActive = !IsMuteActive;
-
-                                _internalChange = false;
-                            }
-
-                            IsBusy = false;
-                        }
-                    });
+                    SetMuteActivityAsync();
                 }
             }
         }
@@ -301,6 +307,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
 
         private async Task UpdateRelayStateAsync()
         {
+            IsBusy = true;
+
             if (_relayStateParameter != null)
             {
                 await _relayStateParameter.UpdateValue();
@@ -312,6 +320,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
                     UpdateTurnOffText();
                 }
             }
+
+            IsBusy = false;
         }
 
         private void OnVolumeParameterChanged(object sender, ParameterChangedEventArgs e)
@@ -406,6 +416,9 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
                         ActiveStationParameter = _activeStationParameter
                     };
 
+                    stationViewModel.StationLabelChanged += OnStationLabelChaned;
+                    stationViewModel.StreamLabelChanged += OnStreamLabelChanged;
+
                     stationList.Add(stationViewModel);
                 }
 
@@ -430,6 +443,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
 
         private async Task UpdateMuteParameterAsync()
         {
+            IsBusy = true;
+
             if (_muteParameter != null)
             {
                 await _muteParameter.UpdateValue();
@@ -439,6 +454,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
                     IsMuteActive = muteVal;
                 }
             }
+
+            IsBusy = false;
         }
 
         private void InitializeVolumeParameter()
@@ -448,6 +465,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
 
         private async Task UpdateVolumeAsync()
         {
+            IsBusy = true;
+
             if (_volumeParameter != null)
             {
                 await _volumeParameter.UpdateValue();
@@ -457,6 +476,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
                     VolumeValue = volumeValue;
                 }
             }
+
+            IsBusy = false;
         }
 
         private void InitializeStateMachineParameter()
@@ -466,6 +487,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
 
         private async Task UpdateStatusWordAsync()
         {
+            IsBusy = true;
+
             if (_statusWordParameter != null)
             {
                 await _statusWordParameter.UpdateValue();
@@ -475,6 +498,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
                     StatusWordValue = val;
                 }
             }
+
+            IsBusy = false;
         }
 
         private void InitializeActiveStationParameter()
@@ -499,6 +524,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
 
         private async Task UpdateActiveStationAsync()
         {
+            IsBusy = true;
+
             if (_activeStationParameter != null)
             {
                 await _activeStationParameter.UpdateValue();
@@ -508,6 +535,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
                     ActiveStationValue = activeStationValue;
                 }
             }
+
+            IsBusy = false;
         }
 
         private void RegisterStationParameterEvent()
@@ -575,8 +604,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
 
         protected override async Task UpdateAllControls()
         {
-            IsBusy = true;
-
             await UpdateActiveStationAsync();
 
             await UpdateStatusWordAsync();
@@ -588,8 +615,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             UpdateAgentStatus();
 
             await UpdateVolumeAsync();
-
-            IsBusy = false;
         }
 
         protected override Task UnregisterAutoUpdate()
@@ -657,6 +682,40 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
                     IsBusy = false;
                 });
             }
+        }
+
+        private void UpdateActualPlayingLabel()
+        {
+            if(string.IsNullOrEmpty(_actualStreamLabel))
+            {
+                ActualPlayingLabel = $"{_actualStationLabel}";
+            }
+            else
+            {
+                ActualPlayingLabel = $"{_actualStationLabel} / {_actualStreamLabel}";
+            }
+        }
+
+        private void SetMuteActivityAsync()
+        {
+            Task.Run(async () =>
+            {
+                if (_muteParameter != null && _muteParameter.SetValue(IsMuteActive))
+                {
+                    IsBusy = true;
+
+                    if (!await _muteParameter.Write())
+                    {
+                        _internalChange = true;
+
+                        IsMuteActive = !IsMuteActive;
+
+                        _internalChange = false;
+                    }
+
+                    IsBusy = false;
+                }
+            });
         }
 
         #endregion

@@ -56,31 +56,13 @@
                                 <DataTrigger TargetType="BoxView" Binding="{Binding IsBusy}" Value="False">
                                     <Setter Property="IsVisible" Value="False" />
                                 </DataTrigger>
-                                <!--<DataTrigger TargetType="BoxView" Value="False">
-                                    <DataTrigger.Binding>
-                                        <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
-                                            <Binding Path="IsBusy" Converter="{StaticResource NegateBooleanConverter}" />
-                                            <Binding Path="IsActiveStation"/>
-                                        </MultiBinding>
-                                    </DataTrigger.Binding>
-                                    <Setter Property="BackgroundColor" Value="{StaticResource NavigationPrimary}" />
-                                </DataTrigger>
-                                <DataTrigger TargetType="BoxView" Value="True">
-                                    <DataTrigger.Binding>
-                                        <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
-                                            <Binding Path="IsBusy" Converter="{StaticResource NegateBooleanConverter}" />
-                                            <Binding Path="IsActiveStation"/>
-                                        </MultiBinding>
-                                    </DataTrigger.Binding>
-                                    <Setter Property="BackgroundColor" Value="LightSeaGreen" />
-                                </DataTrigger>-->
                             </BoxView.Triggers>
                         </BoxView>
                     </Frame>
                 </Grid>
                 
-                <Frame Grid.Column="1" BackgroundColor="Transparent" Padding="0" CornerRadius="15" Margin="0,2,2,0">
-                    <Button WidthRequest="42" Command="{Binding EditButtonCommand}" VerticalOptions="FillAndExpand" IsEnabled="{Binding IsEnabled}" CornerRadius="15">
+                <Frame Grid.Column="1" BackgroundColor="Transparent" CornerRadius="15" Padding="0,2,2,0">
+                    <Button WidthRequest="36" Command="{Binding EditButtonCommand}" VerticalOptions="FillAndExpand" IsEnabled="{Binding IsEnabled}" CornerRadius="15">
                         <Button.Triggers>
                             <DataTrigger TargetType="Button" Binding="{Binding IsStationEditVisible}" Value="False">
                                 <Setter Property="Text" Value="∨" />
