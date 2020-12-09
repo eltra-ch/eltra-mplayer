@@ -28,7 +28,7 @@ namespace RadioSureMaster.Rsd.Validator
 
         public RadioStationValidator()
         {
-            ValidationInterval = TimeSpan.FromHours(12);
+            ValidationInterval = TimeSpan.FromHours(24);
         }
 
         ~RadioStationValidator()
@@ -96,6 +96,8 @@ namespace RadioSureMaster.Rsd.Validator
 
                 do
                 {
+                    MsgLogger.WriteLine("update stations...");
+
                     await UpdateStations();
 
                     var timeout = new Stopwatch();

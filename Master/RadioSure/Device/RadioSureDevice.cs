@@ -40,19 +40,19 @@ namespace RadioSureMaster.Device
             switch (priority)
             {
                 case ParameterUpdatePriority.High:
-                    result = 500;
+                    result = 10000;
                     break;
                 case ParameterUpdatePriority.Medium:
-                    result = 750;
+                    result = 30000;
                     break;
                 case ParameterUpdatePriority.Low:
-                    result = 1000;
+                    result = 60000;
                     break;
                 case ParameterUpdatePriority.Lowest:
-                    result = 3000;
+                    result = 180000;
                     break;
                 default:
-                    result = 1000;
+                    result = 120000;
                     break;
             }
 
