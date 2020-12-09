@@ -28,7 +28,7 @@
 				<version versionType="SW" readOnly="true">0x0100</version>
 				<version versionType="HW" readOnly="true">0x0310</version>
 				<version versionType="APPNB" readOnly="true">0x0000</version>
-				<version versionType="APPVER" readOnly="true">0x0002</version>
+				<version versionType="APPVER" readOnly="true">0x0003</version>
 			</DeviceIdentity>
 			<DeviceManager>
 				<userLevelList>
@@ -69,7 +69,7 @@
 						<Backup>1</Backup>
 					</flags>
 				</templateList>
-				<parameterList>
+				<parameterList>          
           <!--MinQueryLength-->
 					<parameter uniqueID="PARAM_MinQueryLength">
 						<index>0x4200</index>
@@ -124,6 +124,36 @@
 						</userLevels>
 						<displayFormat>dec</displayFormat>
 					</parameter>
+          <!--ValidationInterval-->
+          <parameter uniqueID="PARAM_ValidationInterval">
+            <index>0x4202</index>
+            <subIndex>0x00</subIndex>
+            <label lang="en-TT">Validation interval</label>
+            <dataType>
+              <type>UNSIGNED8</type>
+            </dataType>
+            <flagsIDRef uniqueIDRef="AT_RW" />
+            <defaultValue>12</defaultValue>
+            <unit>
+              <label lang="en-TT">h</label>
+            </unit>
+            <allowedValues>
+              <range>
+                <minValue>
+                  <value>3</value>
+                </minValue>
+                <maxValue>
+                  <value>72</value>
+                </maxValue>
+              </range>
+            </allowedValues>
+            <userLevels>
+              <userLevelIDRef uniqueIDRef="USR_Standard" />
+              <userLevelIDRef uniqueIDRef="USR_Expert" />
+              <userLevelIDRef uniqueIDRef="USR_Internal" />
+            </userLevels>
+            <displayFormat>dec</displayFormat>
+          </parameter>          
           <!--RsdFileName-->
 					<parameter uniqueID="PARAM_RsdFileName">
 						<index>0x4300</index>

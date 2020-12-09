@@ -19,6 +19,7 @@ namespace RadioSureMaster.Rsd.Validator
         private Task _validationTask;
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private XddParameter _stationUpdateProgressParameter;
+        private XddParameter _validationIntervalParameter;
         StationFile _stationFile;
         private string _rsdFileName;
 
@@ -75,7 +76,7 @@ namespace RadioSureMaster.Rsd.Validator
 
         public void Start()
         {
-            const int minWaitTimeMs = 10;
+            const int minWaitTimeMs = 100;
 
             var cancellationToken = _cancellationTokenSource.Token;
 
@@ -98,13 +99,15 @@ namespace RadioSureMaster.Rsd.Validator
                 {
                     MsgLogger.WriteLine("update stations...");
 
+                    await UpdateValidationInterval();
+
                     await UpdateStations();
 
                     var timeout = new Stopwatch();
 
                     timeout.Start();
 
-                    while (!cancellationToken.IsCancellationRequested && timeout.Elapsed < ValidationInterval)
+                    while (!cancellationToken.IsCancellationRequested && timeout.Elapsed.TotalSeconds < ValidationInterval.TotalSeconds)
                     {
                         Thread.Sleep(minWaitTimeMs);
                     }
@@ -113,6 +116,33 @@ namespace RadioSureMaster.Rsd.Validator
             });
         }
 
+        private async Task<bool> UpdateValidationInterval()
+        {
+            bool result = false;
+
+            _validationIntervalParameter = Vcs.SearchParameter("PARAM_ValidationInterval") as XddParameter;
+
+            if (_validationIntervalParameter != null)
+            {
+                await _validationIntervalParameter.UpdateValue();
+
+                if (_validationIntervalParameter.GetValue(out byte validationIntervalValue))
+                {
+                    MsgLogger.WriteFlow($"{GetType().Name} - UpdateValidationInterval", $"validation interval = {validationIntervalValue} h");
+
+                    ValidationInterval = TimeSpan.FromHours(validationIntervalValue);
+                    
+                    result = true;
+                }
+            }
+            else
+            {
+                MsgLogger.WriteError($"{GetType().Name} - UpdateValidationInterval", "ValidationInterval parameter not found!");
+            }
+
+            return result;
+        }
+    
         public void Stop()
         {
             _cancellationTokenSource?.Cancel();
@@ -317,7 +347,7 @@ namespace RadioSureMaster.Rsd.Validator
 
             if (_stationUpdateProgressParameter.GetValue(out double progress))
             {
-                if (progressPercent - progress >= minStep)
+                if (Math.Abs(progressPercent - progress) >= minStep)
                 {
                     result = _stationUpdateProgressParameter.SetValue(progressPercent);
                 }
