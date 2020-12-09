@@ -15,8 +15,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="TestRadioSure\**" />
     <Compile Remove="TestStreema\**" />
+    <EmbeddedResource Remove="TestRadioSure\**" />
     <EmbeddedResource Remove="TestStreema\**" />
+    <None Remove="TestRadioSure\**" />
     <None Remove="TestStreema\**" />
   </ItemGroup>
 

@@ -31,9 +31,15 @@ namespace MPlayerMaster
 
                 Console.WriteLine("Sign-in ...");
 
-                if (await connector.SignIn(new UserIdentity() { Login = settings.Login, Name = "Mplayer", Password = settings.LoginPasswd, Role="developer" }, true))
+                if (await connector.SignIn(new UserIdentity() { Login = settings.Login, 
+                                                                Name = "Mplayer", 
+                                                                Password = settings.LoginPasswd, 
+                                                                Role="developer" }, true))
                 {
-                    var predefinedAlias = new UserIdentity() { Login = settings.Alias, Password = settings.AliasPasswd, Name = "MPlayer client", Role = "engineer" };
+                    var predefinedAlias = new UserIdentity() { Login = settings.Alias, 
+                                                               Password = settings.AliasPasswd, 
+                                                               Name = "MPlayer client", 
+                                                               Role = "engineer" };
 
                     if (await connector.CreateAlias(predefinedAlias))
                     {
