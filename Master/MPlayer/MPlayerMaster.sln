@@ -7,10 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MPlayerMaster", "MPlayerMas
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MPlayerCommon", "..\..\Common\MPlayerCommon\MPlayerCommon.csproj", "{4F21D429-6C62-4FE8-8DCF-38A81100174A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EltraConnector", "..\..\..\eltra-sdk\connect\EltraConnector\EltraConnector.csproj", "{C710816B-C0BC-49A8-846F-1F88BA61CE67}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EltraCommon", "..\..\..\eltra-sdk\xternals\common\EltraCommon\EltraCommon.csproj", "{5074E36F-0841-48A0-B841-FF5C7E1CF09D}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,14 +21,6 @@ Global
 		{4F21D429-6C62-4FE8-8DCF-38A81100174A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4F21D429-6C62-4FE8-8DCF-38A81100174A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4F21D429-6C62-4FE8-8DCF-38A81100174A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C710816B-C0BC-49A8-846F-1F88BA61CE67}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C710816B-C0BC-49A8-846F-1F88BA61CE67}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C710816B-C0BC-49A8-846F-1F88BA61CE67}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C710816B-C0BC-49A8-846F-1F88BA61CE67}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5074E36F-0841-48A0-B841-FF5C7E1CF09D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5074E36F-0841-48A0-B841-FF5C7E1CF09D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5074E36F-0841-48A0-B841-FF5C7E1CF09D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5074E36F-0841-48A0-B841-FF5C7E1CF09D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

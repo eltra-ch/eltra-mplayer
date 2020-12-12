@@ -21,15 +21,13 @@
   </ItemGroup>
 
 	<ItemGroup>
-      <PackageReference Include="Eltra.Connector" Version="1.8.2" />
+      <PackageReference Include="Eltra.Connector" Version="1.8.4" />
       <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="5.0.0" />
       <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
    </ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\..\eltra-sdk\connect\EltraConnector\EltraConnector.csproj" />
-	  <ProjectReference Include="..\..\..\eltra-sdk\xternals\common\EltraCommon\EltraCommon.csproj" />
 	  <ProjectReference Include="..\..\Common\MPlayerCommon\MPlayerCommon.csproj" />
 	</ItemGroup>
 
