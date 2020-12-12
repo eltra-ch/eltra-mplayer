@@ -73,7 +73,8 @@ namespace TestRadioSure
             var result = await Connector.SignIn(Identity, true);
             int nodeId = 1;
             string radiosureLogin = "radiosure2@eltra.ch";
-            var device = await TestData.GetDevice(1, radiosureLogin, "1234");
+            string radiosurePwd = "1234";
+            var device = await TestData.GetDevice(nodeId, radiosureLogin, radiosurePwd);
             string queryResult = string.Empty;
 
             var stopwatch = new Stopwatch();
@@ -92,6 +93,8 @@ namespace TestRadioSure
             stopwatch.Stop();
 
             _testOutputHelper.WriteLine($"execute time = {stopwatch.ElapsedMilliseconds} ms, result = {result}, length = {queryResult.Length}");
+
+            Connector.Disconnect();
 
             //Assert
             Assert.True(result);
