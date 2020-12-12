@@ -718,6 +718,16 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             });
         }
 
+        protected override void GoingOnline()
+        {
+            IsEnabled = true;
+        }
+
+        protected override void GoingOffline()
+        {
+            IsEnabled = false;
+        }
+
         #endregion
     }
 }

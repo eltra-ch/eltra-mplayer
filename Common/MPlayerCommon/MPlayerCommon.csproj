@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Configurations>Debug;Release;Debug (UWP)</Configurations>
+    <Configurations>Debug;Release;Debug (UWP);Debug - UWP</Configurations>
   </PropertyGroup>
 
 </Project>

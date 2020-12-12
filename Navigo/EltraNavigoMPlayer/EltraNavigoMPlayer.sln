@@ -9,14 +9,18 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MPlayerCommon", "..\..\Comm
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug - UWP|Any CPU = Debug - UWP|Any CPU
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F86100D0-C0FA-448D-82CE-1F07B0C2B94C}.Debug - UWP|Any CPU.ActiveCfg = Debug_UWP|Any CPU
 		{F86100D0-C0FA-448D-82CE-1F07B0C2B94C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F86100D0-C0FA-448D-82CE-1F07B0C2B94C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F86100D0-C0FA-448D-82CE-1F07B0C2B94C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F86100D0-C0FA-448D-82CE-1F07B0C2B94C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{458433E7-0710-48A6-B8A0-2172D87B6F02}.Debug - UWP|Any CPU.ActiveCfg = Debug|Any CPU
+		{458433E7-0710-48A6-B8A0-2172D87B6F02}.Debug - UWP|Any CPU.Build.0 = Debug|Any CPU
 		{458433E7-0710-48A6-B8A0-2172D87B6F02}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{458433E7-0710-48A6-B8A0-2172D87B6F02}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{458433E7-0710-48A6-B8A0-2172D87B6F02}.Release|Any CPU.ActiveCfg = Release|Any CPU

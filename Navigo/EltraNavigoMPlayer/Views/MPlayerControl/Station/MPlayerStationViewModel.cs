@@ -550,6 +550,16 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
             return result;
         }
 
+        protected override void GoingOnline()
+        {
+            IsEnabled = true;
+        }
+
+        protected override void GoingOffline()
+        {
+            IsEnabled = false;
+        }
+
         #endregion
     }
 }
