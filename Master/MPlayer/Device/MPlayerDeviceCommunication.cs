@@ -44,7 +44,8 @@ namespace MPlayerMaster.Device
         private ushort _maxStationsCount;
         private DeviceCommand _queryStationCommand;
         private MPlayerRunner _runner;
-        
+        private Task<bool> _setActiveStationAsyncTask;
+
         #endregion
 
         #region Constructors
@@ -244,7 +245,7 @@ namespace MPlayerMaster.Device
 
                 await _activeStationParameter.UpdateValue();
 
-                await SetActiveStationAsync(_activeStationParameter);
+                SetActiveStationAsync(_activeStationParameter);
             }
         }
 
@@ -326,13 +327,9 @@ namespace MPlayerMaster.Device
 
             if(parameterValue.GetValue(ref activeStationValue))
             {
-                Console.WriteLine($"Active Station Changed = {activeStationValue}");
+                MsgLogger.WriteLine($"Active Station Changed = {activeStationValue}");
 
-                Task.Run(async ()=>
-                {
-                    await SetActiveStationAsync(activeStationValue);
-                });
-                
+                SetActiveStationAsync(activeStationValue);
             }
         }
         private void OnVolumeChanged(object sender, ParameterChangedEventArgs e)
@@ -578,55 +575,68 @@ namespace MPlayerMaster.Device
             }
         }
 
-        private Task SetActiveStationAsync(int activeStationValue)
+        private void SetActiveStationAsync(int activeStationValue)
         {
-            var result = Task.Run(() =>
+            if (_setActiveStationAsyncTask == null || _setActiveStationAsyncTask.IsCompleted)
             {
-                if(activeStationValue == 0)
+                MsgLogger.WriteFlow($"{GetType().Name} - SetActiveStationAsync", $"set active station id = {activeStationValue}");
+
+                _setActiveStationAsyncTask = Task.Run(() =>
                 {
-                    for (ushort i = 0; i < _maxStationsCount; i++)
+                    bool result = false;
+
+                    if (activeStationValue == 0)
                     {
-                        SetEmptyStreamLabel(i);
-                    }
+                        for (ushort i = 0; i < _maxStationsCount; i++)
+                        {
+                            SetEmptyStreamLabel(i);
+                        }
 
-                    SetExecutionStatus(StatusWordEnums.PendingExecution);
-
-                    bool result = Runner.Stop();
-
-                    SetExecutionStatus(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
-                }
-                else if (_urlParameters.Count >= activeStationValue && activeStationValue > 0)
-                {
-                    var urlParam = _urlParameters[activeStationValue - 1];
-                    var processParam = _processIdParameters[activeStationValue - 1];
-                    
-                    if (urlParam.GetValue(out string url))
-                    {
                         SetExecutionStatus(StatusWordEnums.PendingExecution);
 
-                        SetEmptyStreamLabel((ushort)(activeStationValue - 1));
-
-                        Runner.Stop();
-
-                        var result = Runner.Start(processParam, url);
+                        result = Runner.Stop();
 
                         SetExecutionStatus(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
                     }
-                }
-            });
+                    else if (_urlParameters.Count >= activeStationValue && activeStationValue > 0)
+                    {
+                        var urlParam = _urlParameters[activeStationValue - 1];
+                        var processParam = _processIdParameters[activeStationValue - 1];
 
-            return result;
+                        if (urlParam.GetValue(out string url))
+                        {
+                            SetExecutionStatus(StatusWordEnums.PendingExecution);
+
+                            SetEmptyStreamLabel((ushort)(activeStationValue - 1));
+
+                            Runner.Stop();
+
+                            result = Runner.Start(processParam, url);
+
+                            SetExecutionStatus(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
+                        }
+                    }
+
+                    return result;
+                });
+            }
+            else
+            {
+                MsgLogger.WriteFlow($"{GetType().Name} - SetActiveStationAsync", $"another set active station task is running, id = {activeStationValue}");
+            }
         }
 
-        private Task SetActiveStationAsync(Parameter activeStation)
+        private bool SetActiveStationAsync(Parameter activeStation)
         {
-            Task result = Task.CompletedTask;
+            bool result = false;
 
             if (activeStation != null)
             {
                 if (activeStation.GetValue(out int activeStationValue))
                 {
-                    result = SetActiveStationAsync(activeStationValue);
+                    SetActiveStationAsync(activeStationValue);
+
+                    result = true;
                 }
                 else
                 {
