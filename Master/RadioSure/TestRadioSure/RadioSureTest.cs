@@ -67,6 +67,16 @@ namespace TestRadioSure
         [InlineData("104.6")]
         [InlineData("bavaria")]
         [InlineData("depeche mode")]
+        [InlineData("warszawa")]
+        [InlineData("Germany")]
+        [InlineData("Rock")]
+        [InlineData("Classic")]
+        [InlineData("jazz")]
+        [InlineData("polish jazz")]
+        [InlineData("russian")]
+        [InlineData("berlin")]
+        [InlineData("paris")]
+        [InlineData("france")]
         public async Task SingleShotPerformanceTest(string query)
         {
             //Arrange
@@ -74,12 +84,19 @@ namespace TestRadioSure
             int nodeId = 1;
             string radiosureLogin = "radiosure2@eltra.ch";
             string radiosurePwd = "1234";
+
+            var stopwatch1 = new Stopwatch();
+
+            stopwatch1.Start();
+
             var device = await TestData.GetDevice(nodeId, radiosureLogin, radiosurePwd);
             string queryResult = string.Empty;
 
-            var stopwatch = new Stopwatch();
+            stopwatch1.Stop();
 
-            stopwatch.Start();
+            var stopwatch2 = new Stopwatch();
+
+            stopwatch2.Start();
 
             var command = await device.GetCommand("QueryStation");
 
@@ -89,12 +106,22 @@ namespace TestRadioSure
             var executeResult = await command.Execute();
 
             executeResult.GetParameterValue("Result", ref queryResult);
+                        
+            stopwatch2.Stop();
 
-            stopwatch.Stop();
+            var stopwatch3 = new Stopwatch();
 
-            _testOutputHelper.WriteLine($"execute time = {stopwatch.ElapsedMilliseconds} ms, result = {result}, length = {queryResult.Length}");
+            stopwatch3.Start();
 
             Connector.Disconnect();
+
+            stopwatch3.Stop();
+
+            _testOutputHelper.WriteLine($"result = {result}, length = {queryResult.Length}");
+
+            _testOutputHelper.WriteLine($"connect time = {stopwatch1.ElapsedMilliseconds} ms");
+            _testOutputHelper.WriteLine($"execute time = {stopwatch2.ElapsedMilliseconds} ms");
+            _testOutputHelper.WriteLine($"disconnect time = {stopwatch3.ElapsedMilliseconds} ms");
 
             //Assert
             Assert.True(result);
