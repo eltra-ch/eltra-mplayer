@@ -43,8 +43,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="EltraXamCommon" Version="1.2.7" />
-    <PackageReference Include="Xamarin.Forms" Version="4.8.0.1687" />
+    <PackageReference Include="EltraXamCommon" Version="1.2.8" />
+    <PackageReference Include="Xamarin.Forms" Version="4.8.0.1821" />
   </ItemGroup>
 
   <ItemGroup>
