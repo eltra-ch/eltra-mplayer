@@ -17,6 +17,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{492D99
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RadioSureMaster", "Master\RadioSure\RadioSureMaster.csproj", "{ED819AE4-70D8-458C-9E29-16825CE16968}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestRadioSure", "Master\RadioSure\TestRadioSure\TestRadioSure.csproj", "{1A0FE5AA-E2EB-4B61-8242-0A2DBA64C3E2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{6150E1B3-C2DC-4355-BBE6-C46773E39DBC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug (UWP)|Any CPU = Debug (UWP)|Any CPU
@@ -48,6 +52,12 @@ Global
 		{ED819AE4-70D8-458C-9E29-16825CE16968}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ED819AE4-70D8-458C-9E29-16825CE16968}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ED819AE4-70D8-458C-9E29-16825CE16968}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A0FE5AA-E2EB-4B61-8242-0A2DBA64C3E2}.Debug (UWP)|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A0FE5AA-E2EB-4B61-8242-0A2DBA64C3E2}.Debug (UWP)|Any CPU.Build.0 = Debug|Any CPU
+		{1A0FE5AA-E2EB-4B61-8242-0A2DBA64C3E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A0FE5AA-E2EB-4B61-8242-0A2DBA64C3E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A0FE5AA-E2EB-4B61-8242-0A2DBA64C3E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A0FE5AA-E2EB-4B61-8242-0A2DBA64C3E2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -57,6 +67,7 @@ Global
 		{56E52998-6513-482B-AE73-0E64C1D28E29} = {B4D534DB-C3B6-497C-8A32-7D62AE597AC0}
 		{71300758-8AB3-43AF-B313-A53DC0F543F7} = {492D9917-79B3-4D97-ADB0-E417E89FE0F3}
 		{ED819AE4-70D8-458C-9E29-16825CE16968} = {7C944C0C-DCF1-4110-AF18-8D36F226C8BA}
+		{1A0FE5AA-E2EB-4B61-8242-0A2DBA64C3E2} = {6150E1B3-C2DC-4355-BBE6-C46773E39DBC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {557D5953-C783-4F41-B460-CF09AD3AC4F9}
