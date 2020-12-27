@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Eltra.Connector" Version="1.9.4" />
+    <PackageReference Include="Eltra.Connector" Version="1.9.5" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.8.3" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
