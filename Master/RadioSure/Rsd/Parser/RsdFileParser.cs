@@ -2,7 +2,7 @@
 using System;
 using System.IO;
 using System.IO.Compression;
-using Newtonsoft.Json;
+using System.Text.Json;
 using RadioSureMaster.Rsd.Models;
 using EltraCommon.Helpers;
 
@@ -144,7 +144,7 @@ namespace RadioSureMaster.Rsd.Parser
                     if (SerializeToJsonFile)
                     {
                         //serialize object
-                        var json = JsonConvert.SerializeObject(Output);
+                        var json = JsonSerializer.Serialize(Output);
 
                         File.WriteAllText(fileName, json);
                     }
@@ -163,7 +163,7 @@ namespace RadioSureMaster.Rsd.Parser
         private void CalculateMd5(string fileName)
         {
             //calculate md5
-            var json = JsonConvert.SerializeObject(Output.Entries);
+            var json = JsonSerializer.Serialize(Output.Entries);
 
             Output.Md5 = CryptHelpers.ToMD5(json);
             Output.Name = new FileInfo(fileName).Name;

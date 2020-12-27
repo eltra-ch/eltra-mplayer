@@ -4,7 +4,7 @@ using RadioSureMaster.Rsd.Validator;
 using System;
 using System.Collections.Generic;
 using RadioSureMaster.Rsd.Models;
-using Newtonsoft.Json;
+using System.Text.Json;
 using EltraConnector.Master.Device;
 
 namespace RadioSureMaster.Rsd
@@ -121,7 +121,7 @@ namespace RadioSureMaster.Rsd
                         }
                     }
 
-                    result = JsonConvert.SerializeObject(radioStations);
+                    result = JsonSerializer.Serialize(radioStations);
                 }
             }
             catch (Exception e)
