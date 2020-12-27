@@ -207,7 +207,7 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
                         OnStreamLabelChaned(StationStreamTitle);
                     }
 
-                    if (e.PropertyName == "ControlButtonText")
+                    if (e.PropertyName == "ControlButtonText" || e.PropertyName == "ActiveStationValue")
                     {
                         OnStationLabelChaned(ControlButtonText);
                     }
