@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 using MPlayerCommon.Contracts;
 
 namespace RadioSureMaster.Rsd.Models
@@ -43,15 +44,19 @@ namespace RadioSureMaster.Rsd.Models
         }
 
         [IgnoreDataMember]
+        [JsonIgnore]
         public string Name => Entry?.Name;
 
         [IgnoreDataMember]
+        [JsonIgnore]
         public string Genre => Entry?.Genre;
 
         [IgnoreDataMember]
+        [JsonIgnore]
         public string Country => Entry?.Country;
 
         [IgnoreDataMember]
+        [JsonIgnore]
         public string Language => Entry?.Language;
 
         [DataMember]
