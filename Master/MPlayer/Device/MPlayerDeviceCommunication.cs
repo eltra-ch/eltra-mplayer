@@ -136,16 +136,14 @@ namespace MPlayerMaster.Device
 
             _agentConnector = new AgentConnector() { Host = _settings.Host };
 
-            bool createAccount = false;
             if(string.IsNullOrEmpty(Settings.Default.RdsLoginName))
             {
                 Settings.Default.RdsLoginName = $"rds-{Guid.NewGuid()}@eltra.ch";
                 Settings.Default.RdsLoginPasswd = $"{Guid.NewGuid()}";
                 Settings.Default.Save();
-                createAccount = true;
             }
 
-            if (await _agentConnector.SignIn(new UserIdentity() { Login = Settings.Default.RdsLoginName, Password = Settings.Default.RdsLoginPasswd, Role = "developer" }, createAccount))
+            if (await _agentConnector.SignIn(new UserIdentity() { Login = Settings.Default.RdsLoginName, Password = Settings.Default.RdsLoginPasswd, Role = "developer" }, true))
             {
                 if (await _agentConnector.Connect(new UserIdentity() { Login = _settings.RadioSureLogin, Password = _settings.RadioSurePasswd, Role = "developer" }))
                 {
