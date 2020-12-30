@@ -77,7 +77,7 @@ namespace MPlayerMaster
                     Console.WriteLine("Signed in - Start service");
 
                     //heartbeat every 3 min, timeout device after 9 min
-                    connector.ConnectionSettings = new ConnectionSettings() { UpdateInterval = 180, Timeout = 540 };
+                    connector.ConnectionSettings = new ConnectionSettings() { UpdateInterval = 60, Timeout = 180 };
 
                     connector.StartService(serviceName, new MPlayerDeviceManager(settings.XddFile, settings));
                 }

@@ -8,6 +8,12 @@ namespace MPlayerMaster.Runner.Console
 {
     class MPlayerConsoleParser
     {
+        #region Private fields
+
+        private string _streamTitle;
+
+        #endregion
+
         #region Properties
 
         public Parameter ActiveStationParameter { get; set; }
@@ -86,7 +92,11 @@ namespace MPlayerMaster.Runner.Console
 
                             if (!string.IsNullOrEmpty(streamTitle))
                             {
-                                MsgLogger.WriteLine($"stream title: {streamTitle}");
+                                if (streamTitle != _streamTitle)
+                                {
+                                    MsgLogger.WriteLine($"stream title: {streamTitle}");
+                                    _streamTitle = streamTitle;
+                                }
 
                                 if (ActiveStationValue > 0)
                                 {
