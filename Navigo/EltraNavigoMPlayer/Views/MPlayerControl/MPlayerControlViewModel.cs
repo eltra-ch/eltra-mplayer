@@ -2,19 +2,18 @@
 using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application.Parameters.Events;
 using EltraCommon.ObjectDictionary.Xdd.DeviceDescription.Profiles.Application.Parameters;
 using EltraXamCommon.Controls;
-using System.Timers;
-using System;
 using System.Threading.Tasks;
 using Xamarin.Forms;
-using System.Diagnostics;
 using System.ComponentModel;
 using System.Collections.Generic;
 using EltraNavigoMPlayer.Views.MPlayerControl.Station;
 using System.Windows.Input;
 using EltraConnector.UserAgent.Definitions;
-using static EltraNavigoMPlayer.Views.MPlayerControl.Converters.StatusWordToImageConverter;
 using System.Reflection;
 using Xamarin.Forms.Internals;
+using EltraNavigoMPlayer.Views.VolumeControl;
+
+using static EltraNavigoMPlayer.Views.MPlayerControl.Converters.StatusWordToImageConverter;
 
 namespace EltraNavigoMPlayer.Views.MPlayerControl
 {
@@ -22,22 +21,16 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
     public class MPlayerControlViewModel : XamToolViewModel
     {
         #region Private fields
-
-        private double _volumeValue;
-        private bool _isMuteActive;
-        private bool _internalChange;
+                
         private ushort _statusWordValue;
         private string _turnOffButonText;
         private int _activeStationValue;
 
-        private XddParameter _volumeParameter;
-        private XddParameter _muteParameter;
         private XddParameter _statusWordParameter;
         private XddParameter _relayStateParameter;
         private XddParameter _activeStationParameter;
         private XddParameter _stationsCountParameter;
-        private Timer _valumeHistereseTimer;
-
+        
         private List<MPlayerStationViewModel> _stationList;
         
         private double _stationUpdateProgressValue;
@@ -45,6 +38,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
         private string _actualStreamLabel;
         private string _actualStationLabel;
         private string _actualPlayingLabel;
+
+        private VolumeControlViewModel _volumeControlViewModel;
 
         #endregion
 
@@ -63,6 +58,13 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
 
         #region Properties
 
+        public VolumeControlViewModel VolumeControlViewModel
+        {
+            get => _volumeControlViewModel ?? (_volumeControlViewModel = CreateVolumeControlViewModel());
+            set => SetProperty(ref _volumeControlViewModel, value);
+
+        }
+
         public List<MPlayerStationViewModel> StationList
         {
             get => _stationList ?? (_stationList = new List<MPlayerStationViewModel>());
@@ -73,18 +75,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
         {
             get => _statusWordValue;
             set => SetProperty(ref _statusWordValue, value);
-        }
-
-        public bool IsMuteActive
-        {
-            get => _isMuteActive;
-            set => SetProperty(ref _isMuteActive, value);
-        }
-
-        public double VolumeValue
-        {
-            get => _volumeValue;
-            set => SetProperty(ref _volumeValue, value);
         }
 
         public double StationUpdateProgressValue
@@ -205,34 +195,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             IsBusy = false;
         }
 
-        private void OnVolumeChanged()
-        {
-            if (_volumeParameter != null)
-            {
-                int volumeValue = Convert.ToInt32(VolumeValue);
-
-                if (_volumeParameter.SetValue(volumeValue))
-                {
-                    UpdateVolumeAsync(volumeValue);
-                }
-            }
-        }
-
-        public void SliderVolumeValueChanged(double newValue)
-        {
-            if (_volumeParameter != null && _volumeParameter.GetValue(out int volumeValue))
-            {
-                int newIntValue = Convert.ToInt32(newValue);
-
-                if (volumeValue != newIntValue)
-                {
-                    _volumeValue = Math.Round(newValue);
-
-                    CreateVolumeHistereseTimer();
-                }
-            }
-        }
-
         private void OnStationUpdateProgressParameterChanged(object sender, ParameterChangedEventArgs e)
         {
             if (e.Parameter is Parameter stationUpdateProgressParameter)
@@ -256,10 +218,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
 
             InitializeActiveStationParameter();
 
-            InitializeVolumeParameter();
-
-            InitializeMuteParameter();
-
             InitializeStationList();
 
             IsBusy = false;
@@ -274,17 +232,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             if (!IsEnabled)
             {
                 StatusWordValue = (ushort)StatusWordEnums.Undefined;
-            }
-        }
-
-        private void OnViewModelPropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if(e.PropertyName == "IsMuteActive")
-            {
-                if (!_internalChange)
-                {
-                    SetMuteActivityAsync();
-                }
             }
         }
 
@@ -324,17 +271,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             IsBusy = false;
         }
 
-        private void OnVolumeParameterChanged(object sender, ParameterChangedEventArgs e)
-        {
-            if(e.Parameter is Parameter volumeParameter)
-            {
-                if (volumeParameter.GetValue(out int volumeValue))
-                {
-                    VolumeValue = volumeValue;
-                }
-            }
-        }
-
         private void OnStatusWordParameterChanged(object sender, ParameterChangedEventArgs e)
         {
             if (e.Parameter is Parameter statusWordParameter)
@@ -357,16 +293,16 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             }
         }
 
-        private void OnVolumeHistereseElapsed(object sender, ElapsedEventArgs e)
-        {
-            _valumeHistereseTimer.Stop();
-
-            OnVolumeChanged();
-        }
-
         #endregion
 
         #region Methods
+
+        private VolumeControlViewModel CreateVolumeControlViewModel()
+        {
+            var result = new VolumeControlViewModel(this);
+
+            return result;
+        }
 
         public override void SetUp()
         {
@@ -378,25 +314,9 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
                 Image = ImageSource.FromResource($"{assemblyName.Name}.Resources.music_32px.png");
 
                 UpdateViewModels = false;
-
-                PropertyChanged += OnViewModelPropertyChanged;
             }
 
             base.SetUp();
-        }
-
-        private void CreateVolumeHistereseTimer()
-        {
-            if(_valumeHistereseTimer!=null)
-            {
-                _valumeHistereseTimer.Stop();
-                _valumeHistereseTimer.Dispose();
-            }
-
-            _valumeHistereseTimer = new Timer(500);
-            _valumeHistereseTimer.Elapsed += OnVolumeHistereseElapsed;
-            _valumeHistereseTimer.Enabled = true;
-            _valumeHistereseTimer.AutoReset = true;
         }
 
         private void InitializeStationList()
@@ -434,50 +354,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             {
                 IsEnabled = (Agent.Status == AgentStatus.Bound);
             }
-        }
-
-        private void InitializeMuteParameter()
-        {
-            _muteParameter = Device?.SearchParameter(0x4201, 0x00) as XddParameter;
-        }
-
-        private async Task UpdateMuteParameterAsync()
-        {
-            IsBusy = true;
-
-            if (_muteParameter != null)
-            {
-                await _muteParameter.UpdateValue();
-
-                if (_muteParameter.GetValue(out bool muteVal))
-                {
-                    IsMuteActive = muteVal;
-                }
-            }
-
-            IsBusy = false;
-        }
-
-        private void InitializeVolumeParameter()
-        {
-            _volumeParameter = Device?.SearchParameter(0x4200, 0x00) as XddParameter;
-        }
-
-        private async Task UpdateVolumeAsync()
-        {
-            IsBusy = true;
-
-            if (_volumeParameter != null)
-            {
-                await _volumeParameter.UpdateValue();
-
-                if (_volumeParameter.GetValue(out int volumeValue))
-                {
-                    VolumeValue = volumeValue;
-                }
-            }
-
-            IsBusy = false;
         }
 
         private void InitializeStateMachineParameter()
@@ -568,20 +444,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
                 _statusWordParameter.AutoUpdate();
             }
 
-            if (_volumeParameter != null)
-            {
-                _volumeParameter.ParameterChanged += OnVolumeParameterChanged;
-
-                _volumeParameter.AutoUpdate();
-            }
-
-            if (_muteParameter != null)
-            {
-                _muteParameter.ParameterChanged += OnVolumeParameterChanged;
-
-                _muteParameter.AutoUpdate();
-            }
-
             if (_relayStateParameter != null)
             {
                 _relayStateParameter.ParameterChanged += OnRelayStateParameterChanged;
@@ -608,13 +470,9 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
 
             await UpdateStatusWordAsync();
 
-            await UpdateMuteParameterAsync();
-
             await UpdateRelayStateAsync();
 
             UpdateAgentStatus();
-
-            await UpdateVolumeAsync();
         }
 
         protected override Task UnregisterAutoUpdate()
@@ -624,20 +482,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
                 _statusWordParameter.ParameterChanged -= OnStatusWordParameterChanged;
 
                 _statusWordParameter.StopUpdate();
-            }
-
-            if (_volumeParameter != null)
-            {
-                _volumeParameter.ParameterChanged -= OnVolumeParameterChanged;
-
-                _volumeParameter.StopUpdate();
-            }
-
-            if (_muteParameter != null)
-            {
-                _muteParameter.ParameterChanged -= OnVolumeParameterChanged;
-
-                _muteParameter.StopUpdate();
             }
 
             if (_relayStateParameter != null)
@@ -662,28 +506,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             return base.UnregisterAutoUpdate();
         }
 
-        private void UpdateVolumeAsync(int volumeValue)
-        {
-            if (_volumeParameter != null)
-            {
-                Task.Run(async () =>
-                {
-                    IsBusy = true;
-
-                    if (await _volumeParameter.Write())
-                    {
-                        Debug.Print($"after write, new value = {volumeValue}\r\n");
-                    }
-                    else
-                    {
-                        Debug.Print($"after write failed, value = {volumeValue}\r\n");
-                    }
-
-                    IsBusy = false;
-                });
-            }
-        }
-
         private void UpdateActualPlayingLabel()
         {
             if(string.IsNullOrEmpty(_actualStreamLabel))
@@ -694,28 +516,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             {
                 ActualPlayingLabel = $"{_actualStationLabel} / {_actualStreamLabel}";
             }
-        }
-
-        private void SetMuteActivityAsync()
-        {
-            Task.Run(async () =>
-            {
-                if (_muteParameter != null && _muteParameter.SetValue(IsMuteActive))
-                {
-                    IsBusy = true;
-
-                    if (!await _muteParameter.Write())
-                    {
-                        _internalChange = true;
-
-                        IsMuteActive = !IsMuteActive;
-
-                        _internalChange = false;
-                    }
-
-                    IsBusy = false;
-                }
-            });
         }
 
         protected override void GoingOnline()

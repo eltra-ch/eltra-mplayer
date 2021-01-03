@@ -78,6 +78,36 @@ namespace MPlayerMaster.Runner
 
             try
             {
+                int processId = Start(url);
+
+                if (processParam != null && processId >= 0)
+                {
+                    if (!processParam.SetValue(processId))
+                    {
+                        MsgLogger.WriteError($"{GetType().Name} - Start", "process id cannot be set");
+                    }
+                    else
+                    {
+                        result = true;
+                    }
+                }
+
+                MsgLogger.WriteFlow($"{GetType().Name} - Start", $"Set Station request: {url}, processId = {processId}");
+            }
+            catch (Exception e)
+            {
+                MsgLogger.Exception($"{GetType().Name} - Start", e);
+            }
+
+            return result;
+        }
+
+        public int Start(string url)
+        {
+            int result = -1;
+
+            try
+            {
                 var tempPath = Path.GetTempPath();
                 var startInfo = new ProcessStartInfo();
                 var p = new Process();
@@ -86,7 +116,7 @@ namespace MPlayerMaster.Runner
                 startInfo.RedirectStandardOutput = true;
 
                 startInfo.WindowStyle = ProcessWindowStyle.Normal;
-                
+
                 GetPlayListFlag(url, out string playlistFlag);
 
                 startInfo.Arguments = Settings.AppArgs + playlistFlag + $" {url}";
@@ -107,21 +137,14 @@ namespace MPlayerMaster.Runner
 
                 if (p != null)
                 {
-                    if (!processParam.SetValue(p.Id))
-                    {
-                        MsgLogger.WriteError($"{GetType().Name} - SetActiveStationAsync", "process id cannot be set");
-                    }
-                    else
-                    {
-                        result = true;
-                    }
+                    result = p.Id;
                 }
 
-                MsgLogger.WriteFlow($"{GetType().Name} - SetActiveStationAsync", $"Set Station request: {url}, result = {p != null}");
+                MsgLogger.WriteFlow($"{GetType().Name} - Start", $"Set Station request: {url}, result = {p != null}");
             }
             catch (Exception e)
             {
-                MsgLogger.Exception($"{GetType().Name} - SetActiveStationAsync", e);
+                MsgLogger.Exception($"{GetType().Name} - Start", e);
             }
 
             return result;
@@ -136,7 +159,7 @@ namespace MPlayerMaster.Runner
             string[] playlistExtensions = { ".asx", ".m3u", ".m3u8", ".pls", ".plst", ".qtl", ".ram", ".wax", ".wpl", ".xspf" };
             foreach (var playlistExtension in playlistExtensions)
             {
-                if (url.EndsWith(playlistExtension))
+                if (url.EndsWith(playlistExtension) || url.EndsWith(playlistExtension + "\""))
                 {
                     playlistFlag = " -playlist ";
                     break;

@@ -17,6 +17,7 @@ using EltraConnector.Agent;
 using EltraCommon.Contracts.CommandSets;
 using EltraCommon.Os.Linux;
 using ThermoMaster.DeviceManager.Wrapper;
+using MPlayerMaster.Media;
 
 namespace MPlayerMaster.Device
 {
@@ -27,6 +28,7 @@ namespace MPlayerMaster.Device
         private readonly List<Parameter> _urlParameters;
         private readonly List<Parameter> _stationTitleParameters;
         private readonly List<Parameter> _streamTitleParameters;
+
         private readonly List<Parameter> _volumeScalingParameters;
         private readonly List<Parameter> _processIdParameters;
         private readonly List<Parameter> _customTitleParameters;
@@ -38,6 +40,15 @@ namespace MPlayerMaster.Device
         private XddParameter _relayStateParameter;
         private Parameter _controlWordParameter;
         private Parameter _stationsCountParameter;
+        
+        //media
+        private XddParameter _mediaDataParameter;
+        private XddParameter _mediaDataCompressedParameter;
+        private XddParameter _mediaActiveArtistPositionParameter;
+        private XddParameter _mediaActiveAlbumPositionParameter;
+        private XddParameter _mediaActiveCompositionPositionParmeter;
+        private MediaPlayer _mediaPlayer;
+
         private AgentConnector _agentConnector;
 
         private MPlayerSettings _settings;
@@ -66,6 +77,8 @@ namespace MPlayerMaster.Device
         #endregion
 
         #region Properties
+
+        private MediaPlayer MediaPlayer => _mediaPlayer ?? (_mediaPlayer = CreateMediaPlayer());
 
         internal MPlayerRunner Runner => _runner ?? (_runner = CreateRunner());
 
@@ -106,6 +119,17 @@ namespace MPlayerMaster.Device
             return result;
         }
 
+        private MediaPlayer CreateMediaPlayer()
+        {
+            var result = new MediaPlayer()
+            {
+                MediaPath = _settings.MediaPath,
+                DataParameter = _mediaDataParameter
+            };
+
+            return result;
+        }
+
         protected override async void OnInitialized()
         {
             Console.WriteLine($"device (node id={Device.NodeId}) initialized, processing ...");
@@ -114,7 +138,9 @@ namespace MPlayerMaster.Device
 
             InitRelayState();
 
-            InitializeStationList();
+            InitStationList();
+
+            InitMedia();
 
             await SetActiveStation();
 
@@ -247,7 +273,18 @@ namespace MPlayerMaster.Device
             }
         }
 
-        private void InitializeStationList()
+        private void InitMedia()
+        {
+            _mediaDataParameter = Vcs.SearchParameter("PARAM_Media_Data") as XddParameter;
+            _mediaDataCompressedParameter = Vcs.SearchParameter("PARAM_Media_Data_Compressed") as XddParameter;
+            _mediaActiveArtistPositionParameter = Vcs.SearchParameter("PARAM_ActiveArtistPosition") as XddParameter;
+            _mediaActiveAlbumPositionParameter = Vcs.SearchParameter("PARAM_ActiveAlbumPosition") as XddParameter;
+            _mediaActiveCompositionPositionParmeter = Vcs.SearchParameter("PARAM_ActiveCompositionPosition") as XddParameter;
+
+            MediaPlayer.Start();
+        }
+
+        private void InitStationList()
         {
             _stationsCountParameter = Vcs.SearchParameter("PARAM_StationsCount") as XddParameter;
             
@@ -289,6 +326,13 @@ namespace MPlayerMaster.Device
         #endregion
 
         #region Events
+
+        protected override void OnStatusChanged(DeviceCommunicationEventArgs e)
+        {
+            Console.WriteLine($"status changed, status = {e.Device.Status}, error code = {e.LastErrorCode}");
+
+            base.OnStatusChanged(e);
+        }
 
         private void OnRelayStateParameterChanged(object sender, ParameterChangedEventArgs e)
         {
@@ -358,6 +402,8 @@ namespace MPlayerMaster.Device
 
         #endregion
 
+        #region Methods
+
         #region SDO
 
         public override bool GetObject(ushort objectIndex, byte objectSubindex, ref byte[] data)
@@ -367,7 +413,7 @@ namespace MPlayerMaster.Device
             //PARAM_ControlWord
             if (objectIndex == 0x6040 && objectSubindex == 0x0)
             {
-                if(_controlWordParameter.GetValue(out byte[] v))
+                if (_controlWordParameter.GetValue(out byte[] v))
                 {
                     data = v;
                     result = true;
@@ -380,7 +426,7 @@ namespace MPlayerMaster.Device
                     data = v;
                     result = true;
                 }
-            } 
+            }
             else if (objectIndex == 0x4100)
             {
                 if (_activeStationParameter.GetValue(out byte[] v))
@@ -459,9 +505,9 @@ namespace MPlayerMaster.Device
                     result = true;
                 }
             }
-            else if(objectIndex == 0x3141 && objectSubindex == 0x01)
+            else if (objectIndex == 0x3141 && objectSubindex == 0x01)
             {
-                if(GetRelayState(out var state))
+                if (GetRelayState(out var state))
                 {
                     data = BitConverter.GetBytes(state);
 
@@ -469,6 +515,47 @@ namespace MPlayerMaster.Device
                     {
                         result = _relayStateParameter.SetValue(state);
                     }
+                }
+            }
+            else if (objectIndex == 0x3200)
+            {
+                switch (objectSubindex)
+                {
+                    case 0x01:
+                        if (_mediaDataParameter != null && _mediaDataParameter.GetValue(out byte[] d1))
+                        {
+                            data = d1;
+                            result = true;
+                        }
+                        break;
+                    case 0x02:
+                        if (_mediaDataCompressedParameter != null && _mediaDataCompressedParameter.GetValue(out byte[] d2))
+                        {
+                            data = d2;
+                            result = true;
+                        }
+                        break;
+                    case 0x03:
+                        if (_mediaActiveArtistPositionParameter != null && _mediaActiveArtistPositionParameter.GetValue(out byte[] d3))
+                        {
+                            data = d3;
+                            result = true;
+                        }
+                        break;
+                    case 0x04:
+                        if (_mediaActiveAlbumPositionParameter != null && _mediaActiveAlbumPositionParameter.GetValue(out byte[] d4))
+                        {
+                            data = d4;
+                            result = true;
+                        }
+                        break;
+                    case 0x05:
+                        if (_mediaActiveCompositionPositionParmeter != null && _mediaActiveCompositionPositionParmeter.GetValue(out byte[] d5))
+                        {
+                            data = d5;
+                            result = true;
+                        }
+                        break;
                 }
             }
 
@@ -545,19 +632,82 @@ namespace MPlayerMaster.Device
                     result = _relayStateParameter.SetValue(relayState);
                 }
             }
+            else if (objectIndex == 0x3200)
+            {
+                switch (objectSubindex)
+                {
+                    case 0x01:
+                        if (_mediaDataParameter != null && _mediaDataParameter.SetValue(data))
+                        {
+                            result = true;
+                        }
+                        break;
+                    case 0x02:
+                        bool val = BitConverter.ToBoolean(data, 0);
+                        if (_mediaDataCompressedParameter != null && _mediaDataCompressedParameter.SetValue(val))
+                        {
+                            result = true;
+                        }
+                        break;
+                    case 0x03:
+                        int val1 = BitConverter.ToInt32(data, 0);
+                        if (_mediaActiveArtistPositionParameter != null && _mediaActiveArtistPositionParameter.SetValue(val1))
+                        {
+                            result = true;
+                        }
+                        break;
+                    case 0x04:
+                        int val2 = BitConverter.ToInt32(data, 0);
+                        if (_mediaActiveAlbumPositionParameter != null && _mediaActiveAlbumPositionParameter.SetValue(val2))
+                        {
+                            result = true;
+                        }
+                        break;
+                    case 0x05:
+                        int val3 = BitConverter.ToInt32(data, 0);
+                        if (_mediaActiveCompositionPositionParmeter != null && _mediaActiveCompositionPositionParmeter.SetValue(val3))
+                        {
+                            result = true;
+                        }
+                        break;
+                }
+            }
 
             return result;
         }
 
         #endregion
 
-        #region Events
-
-        protected override void OnStatusChanged(DeviceCommunicationEventArgs e)
+        internal bool StopMedia()
         {
-            Console.WriteLine($"status changed, status = {e.Device.Status}, error code = {e.LastErrorCode}");
+            return StopPlaying();
+        }
 
-            base.OnStatusChanged(e);
+        internal bool PlayMedia()
+        {
+            bool result = false;
+
+            SetExecutionStatus(StatusWordEnums.PendingExecution);
+
+            if (_mediaActiveArtistPositionParameter != null &&
+               _mediaActiveAlbumPositionParameter != null &&
+               _mediaActiveCompositionPositionParmeter != null && 
+               _mediaDataParameter != null)
+            {
+                _mediaActiveArtistPositionParameter.GetValue(out int activeArtistPosition);
+                _mediaActiveAlbumPositionParameter.GetValue(out int activeAlbumPosition);
+                _mediaActiveCompositionPositionParmeter.GetValue(out int activeCompositionPosition);
+
+                string url = _mediaPlayer.GetUrl(activeArtistPosition, activeAlbumPosition, activeCompositionPosition);
+
+                Runner.Stop();
+
+                result = Runner.Start(url) >= 0;
+            }
+
+            SetExecutionStatus(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
+
+            return result;
         }
 
         private void SetEmptyStreamLabel(ushort stationIndex)
@@ -585,16 +735,7 @@ namespace MPlayerMaster.Device
 
                     if (activeStationValue == 0)
                     {
-                        for (ushort i = 0; i < _maxStationsCount; i++)
-                        {
-                            SetEmptyStreamLabel(i);
-                        }
-
-                        SetExecutionStatus(StatusWordEnums.PendingExecution);
-
-                        result = Runner.Stop();
-
-                        SetExecutionStatus(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
+                        result = StopPlaying();
                     }
                     else if (_urlParameters.Count >= activeStationValue && activeStationValue > 0)
                     {
@@ -622,6 +763,23 @@ namespace MPlayerMaster.Device
             {
                 MsgLogger.WriteFlow($"{GetType().Name} - SetActiveStationAsync", $"another set active station task is running, id = {activeStationValue}");
             }
+        }
+
+        private bool StopPlaying()
+        {
+            bool result;
+            for (ushort i = 0; i < _maxStationsCount; i++)
+            {
+                SetEmptyStreamLabel(i);
+            }
+
+            SetExecutionStatus(StatusWordEnums.PendingExecution);
+
+            result = Runner.Stop();
+
+            SetExecutionStatus(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
+
+            return result;
         }
 
         private bool SetActiveStationAsync(Parameter activeStation)

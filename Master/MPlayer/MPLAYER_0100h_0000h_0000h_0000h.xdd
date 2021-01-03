@@ -28,7 +28,7 @@
 				<version versionType="SW" readOnly="true">0x0100</version>
 				<version versionType="HW" readOnly="true">0x0210</version>
 				<version versionType="APPNB" readOnly="true">0x0004</version>
-				<version versionType="APPVER" readOnly="true">0x0001</version>
+				<version versionType="APPVER" readOnly="true">0x0006</version>
 			</DeviceIdentity>
 			<DeviceManager>
 				<userLevelList>
@@ -52,11 +52,19 @@
 			</DeviceManager>
 			<DeviceHardware/>
 			<DeviceInteraction>
-				<DeviceTools>
-					<DeviceTool uniqueID="C999F6E2-1FF8-44E1-977C-5B8826E3B9CA" name="MPlayerTool" status="Enabled">
-						<Payload uniqueID="53AC0C08-8359-40CC-A70C-E4DA4CF5D22F"  hashCode="28CC580EE7513FDFA93C9CFC97432409"  mode="development" type="xamarin.forms" fileName="EltraNavigoMPlayer.dll" version="1.0.0.0"/>
-						<Payload uniqueID="00363C1D-F1A4-4D52-AE26-3E1082345BD1" hashCode="28CC580EE7513FDFA93C9CFC9743240A" mode="development" type="xamarin.forms" fileName="MPlayerCommon.dll" version="1.0.0.0"/>
+        <PayloadList>
+          <Payload uniqueID="53AC0C08-8359-40CC-A70C-E4DA4CF5D22F" hashCode="28CC580EE7513FDFA93C9CFC97432409" mode="development" type="xamarin.forms" fileName="EltraNavigoMPlayer.dll" version="1.0.0.0"/>
+          <Payload uniqueID="00363C1D-F1A4-4D52-AE26-3E1082345BD1" hashCode="28CC580EE7513FDFA93C9CFC9743240A" mode="development" type="xamarin.forms" fileName="MPlayerCommon.dll" version="1.0.0.0"/>
+        </PayloadList>
+        <DeviceTools>          
+					<DeviceTool uniqueID="C999F6E2-1FF8-44E1-977C-5B8826E3B9CA" name="MPlayerRadio" status="Enabled">
+            <Payload uniqueIDRef="53AC0C08-8359-40CC-A70C-E4DA4CF5D22F"/>
+            <Payload uniqueIDRef="00363C1D-F1A4-4D52-AE26-3E1082345BD1"/>
 					</DeviceTool>
+          <DeviceTool uniqueID="CC3FDCDB-DC76-41E4-B19B-15882D3893B8" name="MPlayerMedia" status="Enabled">
+            <Payload uniqueIDRef="53AC0C08-8359-40CC-A70C-E4DA4CF5D22F"/>
+            <Payload uniqueIDRef="00363C1D-F1A4-4D52-AE26-3E1082345BD1"/>
+          </DeviceTool>
 				</DeviceTools>
 			</DeviceInteraction>
 			<ApplicationProcess>
@@ -78,7 +86,6 @@
 					</flags>
 				</templateList>
 				<parameterList>
-
           <!-- Relay State -->
           <structuredParameter uniqueID="PARAM_RelayState">
             <index>0x3141</index>
@@ -123,6 +130,136 @@
             </userLevels>
             <displayFormat>hex</displayFormat>
           </parameter>
+          
+          <!-- Media -->
+          <structuredParameter uniqueID="PARAM_Media">
+            <index>0x3200</index>
+            <label lang="en-TT">Media Store</label>
+          </structuredParameter>
+          <parameter uniqueID="PARAM_Media_MaxSubIdx">
+            <index>0x3200</index>
+            <subIndex>0x00</subIndex>
+            <label lang="en-TT">Highest sub-index supported</label>
+            <dataType>
+              <type>UNSIGNED8</type>
+            </dataType>
+            <flagsIDRef uniqueIDRef="AT_RO" />
+            <defaultValue>5</defaultValue>
+            <userLevels />
+          </parameter>
+          <parameter uniqueID="PARAM_Media_Data">
+            <index>0x3200</index>
+            <subIndex>0x01</subIndex>
+            <label lang="en-TT">Media data</label>
+            <dataType>
+              <type>OCTET_STRING</type>
+              <size unit="byte">131072</size>
+            </dataType>
+            <flagsIDRef uniqueIDRef="AT_RO" />
+            <defaultValue>0</defaultValue>
+            <userLevels>
+              <userLevelIDRef uniqueIDRef="USR_Standard" />
+              <userLevelIDRef uniqueIDRef="USR_Expert" />
+              <userLevelIDRef uniqueIDRef="USR_Internal" />
+            </userLevels>
+          </parameter>
+          <parameter uniqueID="PARAM_Media_Data_Compressed">
+            <index>0x3200</index>
+            <subIndex>0x02</subIndex>
+            <label lang="en-TT">Media data compressed</label>
+            <dataType>
+              <type>BOOLEAN</type>
+            </dataType>
+            <flagsIDRef uniqueIDRef="AT_RO" />
+            <defaultValue>True</defaultValue>
+            <userLevels>
+              <userLevelIDRef uniqueIDRef="USR_Standard" />
+              <userLevelIDRef uniqueIDRef="USR_Expert" />
+              <userLevelIDRef uniqueIDRef="USR_Internal" />
+            </userLevels>
+          </parameter>
+          <!-- Active Artist Position -->
+          <parameter uniqueID="PARAM_ActiveArtistPosition">
+            <index>0x3200</index>
+            <subIndex>0x03</subIndex>
+            <label lang="en-TT">Active artist position</label>
+            <dataType>
+              <type>INTEGER32</type>
+            </dataType>
+            <flagsIDRef uniqueIDRef="AT_RW" />
+            <defaultValue>-1</defaultValue>
+            <allowedValues>
+              <range>
+                <minValue>
+                  <value>-1</value>
+                </minValue>
+                <maxValue>
+                  <value>999</value>
+                </maxValue>
+              </range>
+            </allowedValues>
+            <userLevels>
+              <userLevelIDRef uniqueIDRef="USR_Standard" />
+              <userLevelIDRef uniqueIDRef="USR_Expert" />
+              <userLevelIDRef uniqueIDRef="USR_Internal" />
+            </userLevels>
+            <displayFormat>dec</displayFormat>
+          </parameter>
+          <!-- Active Album Position -->
+          <parameter uniqueID="PARAM_ActiveAlbumPosition">
+            <index>0x3200</index>
+            <subIndex>0x04</subIndex>
+            <label lang="en-TT">Active album position</label>
+            <dataType>
+              <type>INTEGER32</type>
+            </dataType>
+            <flagsIDRef uniqueIDRef="AT_RW" />
+            <defaultValue>-1</defaultValue>
+            <allowedValues>
+              <range>
+                <minValue>
+                  <value>-1</value>
+                </minValue>
+                <maxValue>
+                  <value>99</value>
+                </maxValue>
+              </range>
+            </allowedValues>
+            <userLevels>
+              <userLevelIDRef uniqueIDRef="USR_Standard" />
+              <userLevelIDRef uniqueIDRef="USR_Expert" />
+              <userLevelIDRef uniqueIDRef="USR_Internal" />
+            </userLevels>
+            <displayFormat>dec</displayFormat>
+          </parameter>
+          <!-- Active Composition Position -->
+          <parameter uniqueID="PARAM_ActiveCompositionPosition">
+            <index>0x3200</index>
+            <subIndex>0x05</subIndex>
+            <label lang="en-TT">Active composition position</label>
+            <dataType>
+              <type>INTEGER32</type>
+            </dataType>
+            <flagsIDRef uniqueIDRef="AT_RW" />
+            <defaultValue>-1</defaultValue>
+            <allowedValues>
+              <range>
+                <minValue>
+                  <value>-1</value>
+                </minValue>
+                <maxValue>
+                  <value>99</value>
+                </maxValue>
+              </range>
+            </allowedValues>
+            <userLevels>
+              <userLevelIDRef uniqueIDRef="USR_Standard" />
+              <userLevelIDRef uniqueIDRef="USR_Expert" />
+              <userLevelIDRef uniqueIDRef="USR_Internal" />
+            </userLevels>
+            <displayFormat>dec</displayFormat>
+          </parameter>
+          <!-- End - Media Store -->
           
 					<!-- Stations date -->
 					<structuredParameter uniqueID="PARAM_StationsData">

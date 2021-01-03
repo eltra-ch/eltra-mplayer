@@ -1,4 +1,5 @@
-﻿using EltraNavigoMPlayer.Views.MPlayerControl;
+﻿using EltraNavigoMPlayer.Views.MediaControl;
+using EltraNavigoMPlayer.Views.MPlayerControl;
 using EltraUiCommon.Controls;
 using EltraXamCommon.Dialogs;
 using EltraXamCommon.Plugins;
@@ -15,7 +16,9 @@ namespace EltraNavigoMPlayer.Plugins
         #region Private fields
 
         private MPlayerControlViewModel _mPlayerControlViewModel;
+        private MediaControlViewModel _mediaControlViewModel;
         private MPlayerControlView _mPlayerControlView;
+        private MediaControlView _mediaControlView;
         private StationDialogViewModel _stationDialogViewModel;
 
         #endregion
@@ -27,9 +30,19 @@ namespace EltraNavigoMPlayer.Plugins
             get => _mPlayerControlViewModel ?? (_mPlayerControlViewModel = CreateMPlayerControlViewModel());
         }
 
+        private MediaControlViewModel MediaControlViewModel
+        {
+            get => _mediaControlViewModel ?? (_mediaControlViewModel = CreateMediaControlViewModel());
+        }
+
         private MPlayerControlView MPlayerControlView
         {
             get => _mPlayerControlView ?? (_mPlayerControlView = new MPlayerControlView());
+        }
+
+        private MediaControlView MediaControlView
+        {
+            get => _mediaControlView ?? (_mediaControlView = new MediaControlView());
         }
 
         private StationDialogViewModel StationDialogViewModel
@@ -50,11 +63,21 @@ namespace EltraNavigoMPlayer.Plugins
             return result;
         }
 
+        private MediaControlViewModel CreateMediaControlViewModel()
+        {
+            var result = new MediaControlViewModel();
+
+            result.PluginService = this;
+
+            return result;
+        }
+
         public override List<ToolViewModel> GetViewModels()
         {
             var result = new List<ToolViewModel>();
 
             result.Add(MPlayerControlViewModel);
+            result.Add(MediaControlViewModel);
 
             return result;
         }
@@ -67,7 +90,11 @@ namespace EltraNavigoMPlayer.Plugins
             {
                 result = MPlayerControlView;
             }
-            
+            else if (viewModel is MediaControlViewModel)
+            {
+                result = MediaControlView;
+            }
+
             return result;
         }
 

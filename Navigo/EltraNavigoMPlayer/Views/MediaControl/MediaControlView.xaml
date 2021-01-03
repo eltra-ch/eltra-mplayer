@@ -5,13 +5,12 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:behaviors="clr-namespace:EltraXamCommon.Controls.Behaviors;assembly=EltraXamCommon"
              mc:Ignorable="d"
-             xmlns:views="clr-namespace:EltraNavigoMPlayer.Views.MPlayerControl" 
-             xmlns:behaviors1="clr-namespace:EltraNavigoMPlayer.Views.MPlayerControl.Behaviors" 
-             xmlns:converters1="clr-namespace:EltraNavigoMPlayer.Views.MPlayerControl.Converters" 
-			 xmlns:station="clr-namespace:EltraNavigoMPlayer.Views.MPlayerControl.Station" 
-             xmlns:xamconverters="clr-namespace:EltraXamCommon.Controls.Converters;assembly=EltraXamCommon" xmlns:volumecontrol="clr-namespace:EltraNavigoMPlayer.Views.VolumeControl"
-             x:DataType="views:MPlayerControlViewModel"
-             x:Class="EltraNavigoMPlayer.Views.MPlayerControl.MPlayerControlView"
+             xmlns:views="clr-namespace:EltraNavigoMPlayer.Views.MediaControl" 
+             xmlns:converters="clr-namespace:EltraNavigoMPlayer.Views.MPlayerControl.Converters"
+             xmlns:xamconverters="clr-namespace:EltraXamCommon.Controls.Converters;assembly=EltraXamCommon" 
+             xmlns:volumecontrol="clr-namespace:EltraNavigoMPlayer.Views.VolumeControl" xmlns:behaviors1="clr-namespace:EltraNavigoMPlayer.Views.MediaControl.Behaviors"
+             x:DataType="views:MediaControlViewModel"
+             x:Class="EltraNavigoMPlayer.Views.MediaControl.MediaControlView"
              IsVisible="{Binding IsVisible}">
 
     <ContentView.Behaviors>
@@ -50,7 +49,7 @@
                 <!-- Status word -->
                 <Frame Grid.Row="1" Grid.Column="1" Padding="0">
                     <Frame.Resources>
-                        <converters1:StatusWordToImageConverter x:Key="StatusWordToImageConverter"/>
+                        <converters:StatusWordToImageConverter x:Key="StatusWordToImageConverter"/>
                     </Frame.Resources>
 
                     <Grid>
@@ -65,14 +64,24 @@
                     </Grid>
                 </Frame>
                 
-                <!-- Stations -->
+                <!-- Media -->
                 <Grid Grid.Row="2" Grid.Column="1">
-                    <StackLayout BindableLayout.ItemsSource="{Binding StationList}">
-                        <BindableLayout.ItemTemplate>
-                            <DataTemplate>
-                                <station:MPlayerStationView/>
-                            </DataTemplate>
-                        </BindableLayout.ItemTemplate>
+                    <StackLayout Orientation="Vertical">
+                        <Picker SelectedItem="{Binding ActiveArtist}" ItemsSource="{Binding Artists, Mode=OneWay}" ItemDisplayBinding="{Binding Name}">
+                            <Picker.Behaviors>
+                                <behaviors1:ArtistPickerBehavior/>
+                            </Picker.Behaviors>
+                        </Picker>
+                        <Picker SelectedItem="{Binding ActiveAlbum}" ItemsSource="{Binding Albums, Mode=OneWay}" ItemDisplayBinding="{Binding Name}">
+                            <Picker.Behaviors>
+                                <behaviors1:AlbumPickerBehavior/>
+                            </Picker.Behaviors>
+                        </Picker>
+                        <Picker SelectedItem="{Binding ActiveComposition}" ItemsSource="{Binding Compositions, Mode=OneWay}" ItemDisplayBinding="{Binding Title}">
+                            <Picker.Behaviors>
+                                <behaviors1:CompositionPickerBehavior/>
+                            </Picker.Behaviors>
+                        </Picker>
                     </StackLayout>
                 </Grid>
 
@@ -85,8 +94,8 @@
                 <Grid Grid.Row="4" Grid.Column="1">
                     <Grid.Resources>
                         <xamconverters:AllTrueMultiConverter x:Key="AllTrueMultiConverter"/>
-                        <converters1:StopPlayStateConverter x:Key="StopPlayStateConverter"/>
-                        <converters1:TurnOffButtonColorConverter x:Key="TurnOffButtonColorConverter"/>
+                        <converters:StopPlayStateConverter x:Key="StopPlayStateConverter"/>
+                        <converters:TurnOffButtonColorConverter x:Key="TurnOffButtonColorConverter"/>
                     </Grid.Resources>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="64"/>
@@ -97,14 +106,28 @@
                     </Grid.ColumnDefinitions>
                     <!-- Stop -->
                     <Frame Grid.Column="0" Padding="0" BackgroundColor="Transparent">
-                        <Button Text="Stop" Command="{Binding StopButtonCommand}">
-                            <Button.IsEnabled>
-                                <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
-                                    <Binding Path="IsEnabled" />
-                                    <Binding Path="ActiveStationValue" Converter="{StaticResource StopPlayStateConverter}" />
-                                </MultiBinding>
-                            </Button.IsEnabled>
-                        </Button>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Text="Play" Command="{Binding PlayButtonCommand}">
+                                <!--<Button.IsEnabled>
+                                    <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
+                                        <Binding Path="IsEnabled" />
+                                        <Binding Path="ActiveStationValue" Converter="{StaticResource StopPlayStateConverter}" />
+                                    </MultiBinding>
+                                </Button.IsEnabled>-->
+                            </Button>
+                            <Button Grid.Column="1" Text="Stop" Command="{Binding StopButtonCommand}">
+                                <!--<Button.IsEnabled>
+                                    <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
+                                        <Binding Path="IsEnabled" />
+                                        <Binding Path="ActiveStationValue" Converter="{StaticResource StopPlayStateConverter}" />
+                                    </MultiBinding>
+                                </Button.IsEnabled>-->
+                            </Button>
+                        </Grid>
                     </Frame>
                     <!-- Turn off -->
                     <Frame Grid.Column="1" Padding="0" BackgroundColor="Transparent">

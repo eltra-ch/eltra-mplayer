@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ContentView xmlns="http://xamarin.com/schemas/2014/forms"  
+			 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
+			 x:Class="EltraNavigoMPlayer.Views.VolumeControl.VolumeControlView" 
+             xmlns:volumeControl="clr-namespace:EltraNavigoMPlayer.Views.VolumeControl" 
+             xmlns:behaviors="clr-namespace:EltraNavigoMPlayer.Views.VolumeControl.Behaviors" 
+             xmlns:xamconverters="clr-namespace:EltraXamCommon.Controls.Converters;assembly=EltraXamCommon"
+             x:DataType="volumeControl:VolumeControlViewModel">
+	<ContentView.Content>
+        <Grid>
+            <Grid.Resources>
+                <xamconverters:NegateBooleanConverter x:Key="NegateBooleanConverter"/>
+            </Grid.Resources>
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Slider Grid.Row="0" Value="{Binding VolumeValue}" Minimum="0" Maximum="100"
+                                IsEnabled="{Binding IsMuteActive, Converter={StaticResource NegateBooleanConverter}}">
+                <Slider.Behaviors>
+                    <behaviors:MasterVolumeSliderBehavior/>
+                </Slider.Behaviors>
+            </Slider>
+
+            <Grid Grid.Row="1">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+
+                <Grid Grid.Column="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <CheckBox Grid.Column="0" IsChecked="{Binding IsMuteActive}" IsEnabled="{Binding IsEnabled}" Margin="0,0,0,0"/>
+                    <Label Grid.Column="1" Text="Mute" VerticalOptions="Center" IsEnabled="{Binding IsEnabled}" Margin="0,0,0,0"/>
+                </Grid>
+
+                <StackLayout Grid.Column="1" Orientation="Horizontal" HorizontalOptions="Center" VerticalOptions="Center">
+                    <Label Text="Volume"/>
+                    <Label Text="{Binding VolumeValue}" IsVisible="{Binding IsMuteActive, Converter={StaticResource NegateBooleanConverter}}" IsEnabled="{Binding IsEnabled}"/>
+                    <Label Text="0" IsVisible="{Binding IsMuteActive}"/>
+                    <Label Text="%"/>
+                </StackLayout>
+            </Grid>
+        </Grid>
+    </ContentView.Content>
+</ContentView>

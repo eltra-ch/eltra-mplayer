@@ -1,8 +1,6 @@
 ﻿using EltraCommon.Contracts.Parameters;
 using EltraConnector.Master.Device;
 using System;
-using System.IO;
-using EltraCommon.Contracts.ToolSet;
 using MPlayerMaster.Device.Commands;
 
 namespace MPlayerMaster.Device
@@ -21,6 +19,8 @@ namespace MPlayerMaster.Device
             Identification.SerialNumber = 0x102;
 
             AddCommand(new QueryStationCommand(this));
+            AddCommand(new PlayMediaCommand(this));
+            AddCommand(new StopMediaCommand(this));
         }
 
         protected override void OnStatusChanged()

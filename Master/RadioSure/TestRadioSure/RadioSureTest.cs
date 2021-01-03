@@ -13,8 +13,8 @@ namespace TestRadioSure
     {
         #region Private fields
 
-        private string _host = "https://eltra.ch";
-        //private string _host = "http://localhost:5001";
+        //private string _host = "https://eltra.ch";
+        private string _host = "http://localhost:5001";
 
         private readonly ITestOutputHelper _testOutputHelper;
 
@@ -82,7 +82,7 @@ namespace TestRadioSure
             //Arrange
             var result = await Connector.SignIn(Identity, true);
             int nodeId = 1;
-            string radiosureLogin = "radiosure2@eltra.ch";
+            string radiosureLogin = "radiosure3@eltra.ch";
             string radiosurePwd = "1234";
 
             var stopwatch1 = new Stopwatch();

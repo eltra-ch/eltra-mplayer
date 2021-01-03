@@ -4,7 +4,9 @@
 			 xmlns:parameters="clr-namespace:EltraXamCommon.Controls.Parameters;assembly=EltraXamCommon" 
 			 x:Class="EltraNavigoMPlayer.Views.MPlayerControl.Station.MPlayerStationView" 
              xmlns:station="clr-namespace:EltraNavigoMPlayer.Views.MPlayerControl.Station" 
-             xmlns:contracts="clr-namespace:MPlayerCommon.Contracts;assembly=MPlayerCommon" xmlns:behaviors="clr-namespace:EltraNavigoMPlayer.Views.MPlayerControl.Behaviors" xmlns:xamconverters="clr-namespace:EltraXamCommon.Controls.Converters;assembly=EltraXamCommon"
+             xmlns:contracts="clr-namespace:MPlayerCommon.Contracts;assembly=MPlayerCommon" 
+             xmlns:behaviors="clr-namespace:EltraNavigoMPlayer.Views.MPlayerControl.Behaviors" 
+             xmlns:xamconverters="clr-namespace:EltraXamCommon.Controls.Converters;assembly=EltraXamCommon"
              x:DataType="station:MPlayerStationViewModel">
 	<ContentView.Content>
 		<Grid>

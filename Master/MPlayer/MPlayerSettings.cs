@@ -183,6 +183,14 @@ namespace MPlayerMaster
             }
         }
 
+        public string MediaPath
+        {
+            get
+            {
+                return Configuration["MediaPath"];
+            }
+        }
+
         private IConfiguration Configuration
         {
             get => _configuration ?? (_configuration = new ConfigurationBuilder()
