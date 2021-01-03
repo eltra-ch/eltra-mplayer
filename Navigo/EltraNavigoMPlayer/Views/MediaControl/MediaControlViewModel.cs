@@ -405,7 +405,7 @@ namespace EltraNavigoMPlayer.Views.MediaControl
                 Assembly assembly = GetType().GetTypeInfo().Assembly;
                 var assemblyName = assembly.GetName();
                 
-                Image = ImageSource.FromResource($"{assemblyName.Name}.Resources.music_32px.png");
+                Image = ImageSource.FromResource($"{assemblyName.Name}.Resources.disc_32px.png");
 
                 UpdateViewModels = false;
             }
