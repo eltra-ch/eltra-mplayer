@@ -37,7 +37,7 @@ namespace MPlayerMaster
         {
             string serviceName = "MPLAYER";
 
-            var connector = new EltraMasterConnector() { ChannelId = GetChannelId() };
+            var connector = new EltraMasterConnector();
             var settings = new MPlayerSettings();
 
             MsgLogger.LogLevels = settings.LogLevels;

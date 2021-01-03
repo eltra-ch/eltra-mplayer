@@ -28,7 +28,7 @@
 				<version versionType="SW" readOnly="true">0x0100</version>
 				<version versionType="HW" readOnly="true">0x0210</version>
 				<version versionType="APPNB" readOnly="true">0x0004</version>
-				<version versionType="APPVER" readOnly="true">0x0006</version>
+				<version versionType="APPVER" readOnly="true">0x0007</version>
 			</DeviceIdentity>
 			<DeviceManager>
 				<userLevelList>
@@ -58,12 +58,12 @@
         </PayloadList>
         <DeviceTools>          
 					<DeviceTool uniqueID="C999F6E2-1FF8-44E1-977C-5B8826E3B9CA" name="MPlayerRadio" status="Enabled">
-            <Payload uniqueIDRef="53AC0C08-8359-40CC-A70C-E4DA4CF5D22F"/>
             <Payload uniqueIDRef="00363C1D-F1A4-4D52-AE26-3E1082345BD1"/>
+            <Payload uniqueIDRef="53AC0C08-8359-40CC-A70C-E4DA4CF5D22F"/>            
 					</DeviceTool>
           <DeviceTool uniqueID="CC3FDCDB-DC76-41E4-B19B-15882D3893B8" name="MPlayerMedia" status="Enabled">
-            <Payload uniqueIDRef="53AC0C08-8359-40CC-A70C-E4DA4CF5D22F"/>
             <Payload uniqueIDRef="00363C1D-F1A4-4D52-AE26-3E1082345BD1"/>
+            <Payload uniqueIDRef="53AC0C08-8359-40CC-A70C-E4DA4CF5D22F"/>            
           </DeviceTool>
 				</DeviceTools>
 			</DeviceInteraction>
