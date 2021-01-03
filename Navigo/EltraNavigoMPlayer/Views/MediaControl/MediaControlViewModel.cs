@@ -865,6 +865,13 @@ namespace EltraNavigoMPlayer.Views.MediaControl
                     {
                         ActiveAlbum = Albums[0];
                         ActiveAlbumPositionValue = 0;
+
+                        AddActiveAlbumCompositions();
+
+                        ActiveComposition = Compositions[0];
+                        ActiveCompositionPositionValue = -1;
+
+                        _internalChange = false;
                     }
                     else
                     {
