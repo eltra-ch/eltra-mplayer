@@ -3,6 +3,9 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Configurations>Debug;Release;Debug (UWP);Debug - UWP</Configurations>
+    <Version>1.0.1</Version>
+    <Authors>Dawid Sienkiewicz</Authors>
+    <Company>eltra.ch, Dawid Sienkiewicz</Company>
   </PropertyGroup>
 
   <ItemGroup>
