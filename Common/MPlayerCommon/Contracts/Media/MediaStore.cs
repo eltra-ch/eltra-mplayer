@@ -97,6 +97,8 @@ namespace MPlayerCommon.Contracts.Media
 
             try
             {
+                Artists.Clear();
+                    
                 var files = Directory.GetDirectories(musicPath);
 
                 foreach (var path in files)
