@@ -13,26 +13,6 @@ namespace MPlayerMaster
 {
     class Program
     {
-        private static string GetChannelId()
-        {
-            string result;
-
-            if (string.IsNullOrEmpty(Settings.Default.ChannelId))
-            {
-                result = Guid.NewGuid().ToString();
-                
-                Settings.Default.ChannelId = result;
-
-                Settings.Default.Save();
-            }
-            else
-            {
-                result = Settings.Default.ChannelId;
-            }
-
-            return result;
-        }
-
         static void Main(string[] args)
         {
             string serviceName = "MPLAYER";

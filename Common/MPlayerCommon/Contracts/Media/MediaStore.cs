@@ -15,6 +15,8 @@ namespace MPlayerCommon.Contracts.Media
         #region Private fields
 
         private List<Artist> _artists;
+        private string _json;
+        private byte[] _cache;
 
         #endregion
 
@@ -42,13 +44,26 @@ namespace MPlayerCommon.Contracts.Media
             {
                 var json = JsonSerializer.Serialize(this);
 
-                if (compress)
+                if (_json != json)
                 {
-                    result = ZipHelper.Compress(json);
+                    _json = json;
+
+                    if (compress)
+                    {
+                        result = ZipHelper.Compress(json);
+
+                        _cache = result;
+                    }
+                    else
+                    {
+                        result = Encoding.UTF8.GetBytes(json);
+
+                        _cache = result;
+                    }
                 }
                 else
                 {
-                    result = Encoding.UTF8.GetBytes(json);
+                    result = _cache;
                 }
             }
             catch(Exception e)

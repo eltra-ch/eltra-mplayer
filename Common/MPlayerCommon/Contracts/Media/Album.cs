@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
 
@@ -98,15 +99,21 @@ namespace MPlayerCommon.Contracts.Media
 
         private void Tag()
         {
-            string m3uFile = Path.Combine(FullPath, "album.m3u");
-
-            string content = string.Empty;
-            foreach(var composition in Compositions)
+            if (Compositions.Count > 0)
             {
-                content += composition.FileName + Environment.NewLine;
-            }
+                string m3uFile = Path.Combine(FullPath, "album.m3u");
 
-            File.WriteAllText(m3uFile, content);
+                string content = string.Empty;
+
+                var sortedCompositions = Compositions.OrderBy(o => o.FileName).ToList();
+
+                foreach (var composition in sortedCompositions)
+                {
+                    content += composition.FileName + Environment.NewLine;
+                }
+
+                File.WriteAllText(m3uFile, content);
+            }
         }
 
         #endregion
