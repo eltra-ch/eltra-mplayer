@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
 
@@ -55,6 +56,8 @@ namespace MPlayerCommon.Contracts.Media
             album.Build();
 
             Albums.Add(album);
+
+            Albums = Albums.OrderBy(o => o.Name).ToList();
         }
 
         private string GetName()

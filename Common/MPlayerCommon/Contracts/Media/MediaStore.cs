@@ -3,6 +3,7 @@ using EltraCommon.Logger;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.Json;
@@ -103,7 +104,11 @@ namespace MPlayerCommon.Contracts.Media
         {
             artist.Build();
 
+            var artists = new List<Artist>();
+            
             Artists.Add(artist);
+
+            Artists = Artists.OrderBy(o => o.Name).ToList();
         }
 
         public bool Build(string musicPath)
