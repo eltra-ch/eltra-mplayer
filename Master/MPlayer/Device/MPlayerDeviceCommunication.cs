@@ -18,6 +18,7 @@ using EltraCommon.Contracts.CommandSets;
 using EltraCommon.Os.Linux;
 using ThermoMaster.DeviceManager.Wrapper;
 using MPlayerMaster.Media;
+using MPlayerCommon.Definitions;
 
 namespace MPlayerMaster.Device
 {
@@ -47,6 +48,11 @@ namespace MPlayerMaster.Device
         private XddParameter _mediaActiveArtistPositionParameter;
         private XddParameter _mediaActiveAlbumPositionParameter;
         private XddParameter _mediaActiveCompositionPositionParmeter;
+        private XddParameter _mediaControlState;
+        private XddParameter _mediaControlStateDisplay;
+        private XddParameter _mediaControlShuffle;
+        private XddParameter _mediaControlRandom;
+
         private MediaPlayer _mediaPlayer;
 
         private AgentConnector _agentConnector;
@@ -140,7 +146,7 @@ namespace MPlayerMaster.Device
 
             InitStationList();
 
-            InitMedia();
+            await InitMedia();
 
             await SetActiveStation();
 
@@ -200,7 +206,12 @@ namespace MPlayerMaster.Device
             _controlWordParameter = Vcs.SearchParameter("PARAM_ControlWord") as XddParameter;
             _statusWordParameter = Vcs.SearchParameter("PARAM_StatusWord") as XddParameter;
 
-            if(!SetExecutionStatus(StatusWordEnums.Waiting))
+            if (_controlWordParameter != null)
+            {
+                _controlWordParameter.ParameterChanged += OnControlWordChanged;
+            }
+
+            if (!SetExecutionStatus(StatusWordEnums.Waiting))
             {
                 MsgLogger.WriteError($"{GetType().Name} - InitStateMachine", "Set execution state (waiting) failed!");
             }
@@ -273,13 +284,44 @@ namespace MPlayerMaster.Device
             }
         }
 
-        private void InitMedia()
+        private async Task InitMedia()
         {
             _mediaDataParameter = Vcs.SearchParameter("PARAM_Media_Data") as XddParameter;
             _mediaDataCompressedParameter = Vcs.SearchParameter("PARAM_Media_Data_Compressed") as XddParameter;
             _mediaActiveArtistPositionParameter = Vcs.SearchParameter("PARAM_ActiveArtistPosition") as XddParameter;
             _mediaActiveAlbumPositionParameter = Vcs.SearchParameter("PARAM_ActiveAlbumPosition") as XddParameter;
             _mediaActiveCompositionPositionParmeter = Vcs.SearchParameter("PARAM_ActiveCompositionPosition") as XddParameter;
+
+            _mediaControlState = Vcs.SearchParameter("PARAM_MediaControlState") as XddParameter;
+            _mediaControlStateDisplay = Vcs.SearchParameter("PARAM_MediaControlStateDisplay") as XddParameter;
+            _mediaControlShuffle = Vcs.SearchParameter("PARAM_MediaControlShuffle") as XddParameter;
+            _mediaControlRandom = Vcs.SearchParameter("PARAM_MediaControlRandom") as XddParameter;
+
+            if (_mediaControlState != null)
+            {
+                await _mediaControlState.UpdateValue();
+
+                _mediaControlState.ParameterChanged += OnMediaControlStateParameterChanged;
+            }
+
+            if (_mediaControlStateDisplay != null)
+            {
+                await _mediaControlStateDisplay.UpdateValue();
+            }
+
+            if (_mediaControlShuffle != null)
+            {
+                await _mediaControlShuffle.UpdateValue();
+
+                _mediaControlShuffle.ParameterChanged += OnMediaControlShuffleParameterChanged;
+            }
+
+            if (_mediaControlRandom != null)
+            {
+                await _mediaControlRandom.UpdateValue();
+
+                _mediaControlRandom.ParameterChanged += OnMediaControlRandomParameterChanged;
+            }
 
             MediaPlayer.Start();
         }
@@ -326,6 +368,17 @@ namespace MPlayerMaster.Device
         #endregion
 
         #region Events
+
+        private void OnControlWordChanged(object sender, ParameterChangedEventArgs e)
+        {
+            var parameterValue = e.NewValue;
+            ushort controlWordValue = 0;
+
+            if (parameterValue != null && parameterValue.GetValue(ref controlWordValue))
+            {
+
+            }
+        }
 
         protected override void OnStatusChanged(DeviceCommunicationEventArgs e)
         {
@@ -400,6 +453,54 @@ namespace MPlayerMaster.Device
             }
         }
 
+        private void OnMediaControlRandomParameterChanged(object sender, ParameterChangedEventArgs e)
+        {
+            var parameterValue = e.NewValue;
+            bool state = false;
+
+            if (parameterValue != null && parameterValue.GetValue(ref state))
+            {
+                OnMediaControlRandomChanged(state);
+            }
+        }
+
+        private void OnMediaControlShuffleParameterChanged(object sender, ParameterChangedEventArgs e)
+        {
+            var parameterValue = e.NewValue;
+            bool state = false;
+
+            if (parameterValue != null && parameterValue.GetValue(ref state))
+            {
+                OnMediaControlShuffleChanged(state);
+            }
+        }
+
+        private void OnMediaControlStateParameterChanged(object sender, ParameterChangedEventArgs e)
+        {
+            var parameterValue = e.NewValue;
+            ushort state = 0;
+
+            if (parameterValue != null && parameterValue.GetValue(ref state))
+            {
+                OnMediaControlStateChanged((MediaControlWordValue)state);
+            }
+        }
+
+        private void OnMediaControlStateChanged(MediaControlWordValue state)
+        {
+            MsgLogger.WriteFlow($"{GetType().Name} - OnMediaControlStateChanged", $"media control state changed, new state = {state}");
+        }
+
+        private void OnMediaControlShuffleChanged(bool state)
+        {
+            MsgLogger.WriteFlow($"{GetType().Name} - OnMediaControlShuffleChanged", $"shuffle state changed, new state = {state}");
+        }
+
+        private void OnMediaControlRandomChanged(bool state)
+        {
+            MsgLogger.WriteFlow($"{GetType().Name} - OnMediaControlRandomChanged", $"random state changed, new state = {state}");
+        }
+
         #endregion
 
         #region Methods
@@ -408,7 +509,7 @@ namespace MPlayerMaster.Device
 
         public override bool GetObject(ushort objectIndex, byte objectSubindex, ref byte[] data)
         {
-            bool result = false;
+            bool result = base.GetObject(objectIndex, objectSubindex, ref data);
 
             //PARAM_ControlWord
             if (objectIndex == 0x6040 && objectSubindex == 0x0)
@@ -558,7 +659,41 @@ namespace MPlayerMaster.Device
                         break;
                 }
             }
-
+            else if (objectIndex == 0x3201)
+            {
+                switch (objectSubindex)
+                {
+                    case 0x01:
+                        if(_mediaControlState.GetValue(out byte[] d1))
+                        {
+                            data = d1;
+                            result = true;
+                        }                            
+                        break;
+                    case 0x02:
+                        if (_mediaControlStateDisplay.GetValue(out byte[] d2))
+                        {
+                            data = d2;
+                            result = true;
+                        }
+                        break;
+                    case 0x03:
+                        if (_mediaControlShuffle.GetValue(out byte[] d3))
+                        {
+                            data = d3;
+                            result = true;
+                        }
+                        break;
+                    case 0x04:
+                        if (_mediaControlRandom.GetValue(out byte[] d4))
+                        {
+                            data = d4;
+                            result = true;
+                        }
+                        break;
+                }
+            }
+            
             return result;
         }
 
@@ -668,6 +803,41 @@ namespace MPlayerMaster.Device
                         if (_mediaActiveCompositionPositionParmeter != null && _mediaActiveCompositionPositionParmeter.SetValue(val3))
                         {
                             result = true;
+                        }
+                        break;
+                }
+            }
+            else if(objectIndex == 0x3201)
+            {
+                switch(objectSubindex)
+                {
+                    case 0x01:
+                        {
+                            ushort state = BitConverter.ToUInt16(data, 0);
+
+                            if (_mediaControlState != null)
+                            {
+                                result = _mediaControlState.SetValue(state);
+                            }
+                        } break;
+                    case 0x03:
+                        {
+                            bool state = BitConverter.ToBoolean(data, 0);
+
+                            if (_mediaControlShuffle != null)
+                            {
+                                result = _mediaControlShuffle.SetValue(state);
+                            }
+                        }
+                        break;
+                    case 0x04:
+                        {
+                            bool state = BitConverter.ToBoolean(data, 0);
+
+                            if (_mediaControlRandom != null)
+                            {
+                                result = _mediaControlRandom.SetValue(state);
+                            }
                         }
                         break;
                 }

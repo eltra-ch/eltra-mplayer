@@ -27,8 +27,8 @@
 				<orderNumber readOnly="true">000000</orderNumber>
 				<version versionType="SW" readOnly="true">0x0100</version>
 				<version versionType="HW" readOnly="true">0x0210</version>
-				<version versionType="APPNB" readOnly="true">0x0004</version>
-				<version versionType="APPVER" readOnly="true">0x0007</version>
+				<version versionType="APPNB" readOnly="true">0x0005</version>
+				<version versionType="APPVER" readOnly="true">0x0001</version>
 			</DeviceIdentity>
 			<DeviceManager>
 				<userLevelList>
@@ -134,7 +134,7 @@
           <!-- Media -->
           <structuredParameter uniqueID="PARAM_Media">
             <index>0x3200</index>
-            <label lang="en-TT">Media Store</label>
+            <label lang="en-TT">Media</label>
           </structuredParameter>
           <parameter uniqueID="PARAM_Media_MaxSubIdx">
             <index>0x3200</index>
@@ -259,7 +259,100 @@
             </userLevels>
             <displayFormat>dec</displayFormat>
           </parameter>
-          <!-- End - Media Store -->
+
+					<!-- Media Control-->
+          <structuredParameter uniqueID="PARAM_MediaControl">
+            <index>0x3201</index>
+            <label lang="en-TT">Media Control</label>
+          </structuredParameter>
+          <parameter uniqueID="PARAM_Media_MaxSubIdx">
+            <index>0x3201</index>
+            <subIndex>0x00</subIndex>
+            <label lang="en-TT">Highest sub-index supported</label>
+            <dataType>
+              <type>UNSIGNED8</type>
+            </dataType>
+            <flagsIDRef uniqueIDRef="AT_RO" />
+            <defaultValue>4</defaultValue>
+            <userLevels />
+          </parameter>          
+          <!-- Media Control Word -->
+          <parameter uniqueID="PARAM_MediaControlState">
+            <index>0x3201</index>
+            <subIndex>0x01</subIndex>
+            <label lang="en-TT">Media Control State</label>
+            <dataType>
+              <type>UNSIGNED16</type>
+            </dataType>
+            <flagsIDRef uniqueIDRef="AT_RW_BACKUP" />
+            <defaultValue>0</defaultValue>
+            <userLevels>
+              <userLevelIDRef uniqueIDRef="USR_Expert" />
+              <userLevelIDRef uniqueIDRef="USR_Internal" />
+            </userLevels>
+            <displayFormat>hex</displayFormat>
+          </parameter>
+          <!-- Media Status Word -->
+          <parameter uniqueID="PARAM_MediaControlStateDisplay">
+            <index>0x3201</index>
+            <subIndex>0x02</subIndex>
+            <label lang="en-TT">Media Control State Display</label>
+            <dataType>
+              <type>UNSIGNED16</type>
+            </dataType>
+            <flagsIDRef uniqueIDRef="AT_RO" />
+            <defaultValue>0x00</defaultValue>
+            <allowedValues>
+              <range>
+                <minValue>
+                  <value>0x00</value>
+                </minValue>
+                <maxValue>
+                  <value>0xFFFF</value>
+                </maxValue>
+              </range>
+            </allowedValues>
+            <userLevels>
+              <userLevelIDRef uniqueIDRef="USR_Expert" />
+              <userLevelIDRef uniqueIDRef="USR_Internal" />
+            </userLevels>
+            <displayFormat>hex</displayFormat>
+          </parameter>
+          <!-- Shuffle -->
+          <parameter uniqueID="PARAM_MediaControlShuffle">
+            <index>0x3201</index>
+            <subIndex>0x03</subIndex>
+            <label lang="en-TT">Media Control Shuffle</label>
+            <dataType>
+              <type>BOOLEAN</type>
+            </dataType>
+            <flagsIDRef uniqueIDRef="AT_RW" />
+            <defaultValue>False</defaultValue>
+            <userLevels>
+              <userLevelIDRef uniqueIDRef="USR_Standard" />
+              <userLevelIDRef uniqueIDRef="USR_Expert" />
+              <userLevelIDRef uniqueIDRef="USR_Internal" />
+            </userLevels>
+            <displayFormat>dec</displayFormat>
+          </parameter>
+          <!-- Random -->
+          <parameter uniqueID="PARAM_MediaControlRandom">
+            <index>0x3201</index>
+            <subIndex>0x04</subIndex>
+            <label lang="en-TT">Media Control Random</label>
+            <dataType>
+              <type>BOOLEAN</type>
+            </dataType>
+            <flagsIDRef uniqueIDRef="AT_RW" />
+            <defaultValue>False</defaultValue>
+            <userLevels>
+              <userLevelIDRef uniqueIDRef="USR_Standard" />
+              <userLevelIDRef uniqueIDRef="USR_Expert" />
+              <userLevelIDRef uniqueIDRef="USR_Internal" />
+            </userLevels>
+            <displayFormat>dec</displayFormat>
+          </parameter>
+          <!-- End - Media -->
           
 					<!-- Stations date -->
 					<structuredParameter uniqueID="PARAM_StationsData">
