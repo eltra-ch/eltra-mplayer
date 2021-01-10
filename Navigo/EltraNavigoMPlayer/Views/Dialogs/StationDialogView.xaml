@@ -35,7 +35,7 @@
                             <DataTemplate>
                                 <ViewCell>
                                     <StackLayout>
-                                        <RadioButton Text="{Binding Url}" GroupName="stationUrls" IsChecked="{Binding IsChecked}"/>
+                                        <RadioButton Content="{Binding Url}" GroupName="stationUrls" IsChecked="{Binding IsChecked}"/>
                                     </StackLayout>
                                 </ViewCell>
                             </DataTemplate>
