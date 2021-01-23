@@ -1,11 +1,15 @@
 ﻿using EltraCommon.Logger;
+using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application.Parameters.Events;
 using EltraCommon.ObjectDictionary.Xdd.DeviceDescription.Profiles.Application.Parameters;
+using EltraConnector.Master.Device;
 using MPlayerCommon.Contracts.Media;
+using MPlayerCommon.Definitions;
+using MPlayerMaster.Runner;
 using System;
 using System.Diagnostics;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using static MPlayerMaster.MPlayerDefinitions;
 
 namespace MPlayerMaster.Media
 {
@@ -17,7 +21,18 @@ namespace MPlayerMaster.Media
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private Task _workingTask = Task.CompletedTask;
         private MediaStore _mediaStore;
+        private bool _random;
+        private bool _shuffle;
+        private MediaPlanner _mediaPlanner;
+        private MPlayerRunner _runner;
 
+        //media
+        private XddParameter _mediaDataParameter;
+        private XddParameter _mediaDataCompressedParameter;
+        
+        private XddParameter _mediaControlState;
+        private XddParameter _mediaControlStateDisplay;
+        
         #endregion
 
         #region Constructors
@@ -33,17 +48,73 @@ namespace MPlayerMaster.Media
 
         #region Properties
 
-        public string MediaPath { get; set; }
+        private MediaPlanner MediaPlanner => _mediaPlanner ?? (_mediaPlanner = CreateMediaPlanner());
 
-        public XddParameter DataParameter { get; set; }
+        public XddParameter StatusWordParameter { get; set; }
+
+        public string MediaPath { get; set; }
 
         public TimeSpan UpdateInterval { get; set; }
 
         private MediaStore MediaStore => _mediaStore ?? (_mediaStore = new MediaStore());
 
+        public MPlayerRunner Runner 
+        { 
+            get => _runner; 
+            set
+            {
+                _runner = value;
+                OnRunnerChanged();
+            }
+        }
+
+        public MasterVcs Vcs { get; internal set; }
+
+        #endregion
+
+        #region Events handling
+
+        private void OnRunnerChanged()
+        {
+            Runner.MPlayerProcessExited += OnMPlayerProcessExited;
+        }
+
+        private void OnMPlayerProcessExited(object sender, EventArgs e)
+        {
+            var url = MediaPlanner.GetNextUrl();
+
+            if (!string.IsNullOrEmpty(url))
+            {
+                PlayMedia(url);
+            }
+        }
+
+        private void OnMediaControlStateParameterChanged(object sender, ParameterChangedEventArgs e)
+        {
+            var parameterValue = e.NewValue;
+            ushort state = 0;
+
+            if (parameterValue != null && parameterValue.GetValue(ref state))
+            {
+                OnMediaControlStateChanged((MediaControlWordValue)state);
+            }
+        }
+
+        private void OnMediaControlStateChanged(MediaControlWordValue state)
+        {
+            MsgLogger.WriteFlow($"{GetType().Name} - OnMediaControlStateChanged", $"media control state changed, new state = {state}");
+        }
+
         #endregion
 
         #region Methods
+
+        private MediaPlanner CreateMediaPlanner()
+        {
+            var mediaPlanner = new MediaPlanner() { MediaStore = MediaStore, Vcs = Vcs };
+
+            return mediaPlanner;
+        }
 
         internal bool Start()
         {
@@ -82,13 +153,13 @@ namespace MPlayerMaster.Media
         {
             bool result = false;
             
-            if (DataParameter != null)
+            if (_mediaDataParameter != null)
             {
                 if (MediaStore.Build(MediaPath))
                 {
                     var data = MediaStore.Serialize();
 
-                    result = DataParameter.SetValue(data);
+                    result = _mediaDataParameter.SetValue(data);
                 }
                 else
                 {
@@ -125,37 +196,140 @@ namespace MPlayerMaster.Media
             GC.SuppressFinalize(this);
         }
 
-        internal string GetUrl(int activeArtistPosition, int activeAlbumPosition, int activeCompositionPosition)
+        
+
+        internal async Task InitParameters()
         {
-            string result = string.Empty;
-
-            if (activeAlbumPosition >= 0 && MediaStore.Artists.Count > activeAlbumPosition)
-            {
-                var artist = MediaStore.Artists[activeArtistPosition];
+            _mediaDataParameter = Vcs.SearchParameter("PARAM_Media_Data") as XddParameter;
+            _mediaDataCompressedParameter = Vcs.SearchParameter("PARAM_Media_Data_Compressed") as XddParameter;
             
-                if(artist!=null && activeAlbumPosition >= 0 && artist.Albums.Count > activeAlbumPosition)
+            _mediaControlState = Vcs.SearchParameter("PARAM_MediaControlState") as XddParameter;
+            _mediaControlStateDisplay = Vcs.SearchParameter("PARAM_MediaControlStateDisplay") as XddParameter;
+            
+            if (_mediaControlState != null)
+            {
+                await _mediaControlState.UpdateValue();
+
+                _mediaControlState.ParameterChanged += OnMediaControlStateParameterChanged;
+            }
+
+            if (_mediaControlStateDisplay != null)
+            {
+                await _mediaControlStateDisplay.UpdateValue();
+            }
+
+            await MediaPlanner.InitParameters();
+
+            Start();
+        }
+
+        private bool SetStatusWord(StatusWordEnums status)
+        {
+            bool result = false;
+
+            if (StatusWordParameter != null)
+            {
+                result = StatusWordParameter.SetValue((ushort)status);
+            }
+
+            return result;
+        }
+
+        public bool PlayMedia()
+        {
+            bool result = false;
+
+            if(MediaPlanner.IsPlaylistEmpty)
+            {
+                if (MediaPlanner.GetPositions(out int activeArtistPosition, out int activeAlbumPosition, out int activeCompositionPosition))
                 {
-                    var album = artist.Albums[activeAlbumPosition];
+                    MediaPlanner.BuildPlaylist(activeArtistPosition, activeAlbumPosition, activeCompositionPosition);
+                }
+                else
+                {
+                    MsgLogger.WriteError($"{GetType().Name} - PlayMedia", "planner get url positions failed!");
+                }
+            }
+            else
+            {
+                var url = MediaPlanner.GetNextUrl();
 
-                    if(album != null)
-                    {
-                        if(activeCompositionPosition == -1)
+                if (!string.IsNullOrEmpty(url))
+                {
+                    result = PlayMedia(url);
+                }
+            }                
+
+            return result;
+        }
+
+        private bool PlayMedia(string url)
+        {
+            SetStatusWord(StatusWordEnums.PendingExecution);
+
+            bool result = Runner.Start(url) >= 0;
+
+            SetStatusWord(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
+
+            return result;
+        }
+
+        internal bool StopMedia()
+        {
+            SetStatusWord(StatusWordEnums.PendingExecution);
+
+            MediaPlanner.ClearPlaylist();
+
+            bool result = Runner.Stop();
+
+            SetStatusWord(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
+
+            return result;
+        }
+
+        internal bool SetObject(ushort objectIndex, byte objectSubindex, byte[] data)
+        {
+            bool result = false;
+
+            if (objectIndex == 0x3200)
+            {
+                switch (objectSubindex)
+                {
+                    case 0x01:
+                        if (_mediaDataParameter != null && _mediaDataParameter.SetValue(data))
                         {
-                            string playlistPath = Path.Combine(album.FullPath, "album.m3u");
-
-                            result = $"\"{playlistPath}\"";
+                            result = true;
                         }
-                        else if(activeCompositionPosition >= 0 && album.Compositions.Count > activeCompositionPosition)
+                        break;
+                    case 0x02:
+                        bool val = BitConverter.ToBoolean(data, 0);
+                        if (_mediaDataCompressedParameter != null && _mediaDataCompressedParameter.SetValue(val))
                         {
-                            var composition = album.Compositions[activeCompositionPosition];
+                            result = true;
+                        }
+                        break;                    
+                }
+            }
+            else if (objectIndex == 0x3201)
+            {
+                switch (objectSubindex)
+                {
+                    case 0x01:
+                        {
+                            ushort state = BitConverter.ToUInt16(data, 0);
 
-                            if (composition != null)
+                            if (_mediaControlState != null)
                             {
-                                result = $"\"{composition.FullPath}\"";
+                                result = _mediaControlState.SetValue(state);
                             }
                         }
-                    }
-                }                
+                        break;                    
+                }
+            }
+
+            if(!result)
+            {
+                result = MediaPlanner.SetObject(objectIndex, objectSubindex, data);
             }
 
             return result;

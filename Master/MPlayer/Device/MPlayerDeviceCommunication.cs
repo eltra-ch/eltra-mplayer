@@ -18,7 +18,6 @@ using EltraCommon.Contracts.CommandSets;
 using EltraCommon.Os.Linux;
 using ThermoMaster.DeviceManager.Wrapper;
 using MPlayerMaster.Media;
-using MPlayerCommon.Definitions;
 
 namespace MPlayerMaster.Device
 {
@@ -42,17 +41,6 @@ namespace MPlayerMaster.Device
         private Parameter _controlWordParameter;
         private Parameter _stationsCountParameter;
         
-        //media
-        private XddParameter _mediaDataParameter;
-        private XddParameter _mediaDataCompressedParameter;
-        private XddParameter _mediaActiveArtistPositionParameter;
-        private XddParameter _mediaActiveAlbumPositionParameter;
-        private XddParameter _mediaActiveCompositionPositionParmeter;
-        private XddParameter _mediaControlState;
-        private XddParameter _mediaControlStateDisplay;
-        private XddParameter _mediaControlShuffle;
-        private XddParameter _mediaControlRandom;
-
         private MediaPlayer _mediaPlayer;
 
         private AgentConnector _agentConnector;
@@ -130,7 +118,8 @@ namespace MPlayerMaster.Device
             var result = new MediaPlayer()
             {
                 MediaPath = _settings.MediaPath,
-                DataParameter = _mediaDataParameter
+                Runner = Runner,
+                Vcs = Vcs
             };
 
             return result;
@@ -146,13 +135,13 @@ namespace MPlayerMaster.Device
 
             InitStationList();
 
-            await InitMedia();
-
-            await SetActiveStation();
-
             await InitVolumeControl();
 
             await InitQueryStation();
+
+            await MediaPlayer.InitParameters();
+
+            await SetActiveStation();
 
             base.OnInitialized();
         }
@@ -211,7 +200,7 @@ namespace MPlayerMaster.Device
                 _controlWordParameter.ParameterChanged += OnControlWordChanged;
             }
 
-            if (!SetExecutionStatus(StatusWordEnums.Waiting))
+            if (!SetStatusWord(StatusWordEnums.Waiting))
             {
                 MsgLogger.WriteError($"{GetType().Name} - InitStateMachine", "Set execution state (waiting) failed!");
             }
@@ -279,51 +268,7 @@ namespace MPlayerMaster.Device
                 _activeStationParameter.ParameterChanged += OnActiveStationParameterChanged;
 
                 await _activeStationParameter.UpdateValue();
-
-                SetActiveStationAsync(_activeStationParameter);
             }
-        }
-
-        private async Task InitMedia()
-        {
-            _mediaDataParameter = Vcs.SearchParameter("PARAM_Media_Data") as XddParameter;
-            _mediaDataCompressedParameter = Vcs.SearchParameter("PARAM_Media_Data_Compressed") as XddParameter;
-            _mediaActiveArtistPositionParameter = Vcs.SearchParameter("PARAM_ActiveArtistPosition") as XddParameter;
-            _mediaActiveAlbumPositionParameter = Vcs.SearchParameter("PARAM_ActiveAlbumPosition") as XddParameter;
-            _mediaActiveCompositionPositionParmeter = Vcs.SearchParameter("PARAM_ActiveCompositionPosition") as XddParameter;
-
-            _mediaControlState = Vcs.SearchParameter("PARAM_MediaControlState") as XddParameter;
-            _mediaControlStateDisplay = Vcs.SearchParameter("PARAM_MediaControlStateDisplay") as XddParameter;
-            _mediaControlShuffle = Vcs.SearchParameter("PARAM_MediaControlShuffle") as XddParameter;
-            _mediaControlRandom = Vcs.SearchParameter("PARAM_MediaControlRandom") as XddParameter;
-
-            if (_mediaControlState != null)
-            {
-                await _mediaControlState.UpdateValue();
-
-                _mediaControlState.ParameterChanged += OnMediaControlStateParameterChanged;
-            }
-
-            if (_mediaControlStateDisplay != null)
-            {
-                await _mediaControlStateDisplay.UpdateValue();
-            }
-
-            if (_mediaControlShuffle != null)
-            {
-                await _mediaControlShuffle.UpdateValue();
-
-                _mediaControlShuffle.ParameterChanged += OnMediaControlShuffleParameterChanged;
-            }
-
-            if (_mediaControlRandom != null)
-            {
-                await _mediaControlRandom.UpdateValue();
-
-                _mediaControlRandom.ParameterChanged += OnMediaControlRandomParameterChanged;
-            }
-
-            MediaPlayer.Start();
         }
 
         private void InitStationList()
@@ -453,54 +398,6 @@ namespace MPlayerMaster.Device
             }
         }
 
-        private void OnMediaControlRandomParameterChanged(object sender, ParameterChangedEventArgs e)
-        {
-            var parameterValue = e.NewValue;
-            bool state = false;
-
-            if (parameterValue != null && parameterValue.GetValue(ref state))
-            {
-                OnMediaControlRandomChanged(state);
-            }
-        }
-
-        private void OnMediaControlShuffleParameterChanged(object sender, ParameterChangedEventArgs e)
-        {
-            var parameterValue = e.NewValue;
-            bool state = false;
-
-            if (parameterValue != null && parameterValue.GetValue(ref state))
-            {
-                OnMediaControlShuffleChanged(state);
-            }
-        }
-
-        private void OnMediaControlStateParameterChanged(object sender, ParameterChangedEventArgs e)
-        {
-            var parameterValue = e.NewValue;
-            ushort state = 0;
-
-            if (parameterValue != null && parameterValue.GetValue(ref state))
-            {
-                OnMediaControlStateChanged((MediaControlWordValue)state);
-            }
-        }
-
-        private void OnMediaControlStateChanged(MediaControlWordValue state)
-        {
-            MsgLogger.WriteFlow($"{GetType().Name} - OnMediaControlStateChanged", $"media control state changed, new state = {state}");
-        }
-
-        private void OnMediaControlShuffleChanged(bool state)
-        {
-            MsgLogger.WriteFlow($"{GetType().Name} - OnMediaControlShuffleChanged", $"shuffle state changed, new state = {state}");
-        }
-
-        private void OnMediaControlRandomChanged(bool state)
-        {
-            MsgLogger.WriteFlow($"{GetType().Name} - OnMediaControlRandomChanged", $"random state changed, new state = {state}");
-        }
-
         #endregion
 
         #region Methods
@@ -530,7 +427,7 @@ namespace MPlayerMaster.Device
             }
             else if (objectIndex == 0x4100)
             {
-                if (_activeStationParameter.GetValue(out byte[] v))
+                if (_activeStationParameter != null && _activeStationParameter.GetValue(out byte[] v))
                 {
                     data = v;
                     result = true;
@@ -618,81 +515,6 @@ namespace MPlayerMaster.Device
                     }
                 }
             }
-            else if (objectIndex == 0x3200)
-            {
-                switch (objectSubindex)
-                {
-                    case 0x01:
-                        if (_mediaDataParameter != null && _mediaDataParameter.GetValue(out byte[] d1))
-                        {
-                            data = d1;
-                            result = true;
-                        }
-                        break;
-                    case 0x02:
-                        if (_mediaDataCompressedParameter != null && _mediaDataCompressedParameter.GetValue(out byte[] d2))
-                        {
-                            data = d2;
-                            result = true;
-                        }
-                        break;
-                    case 0x03:
-                        if (_mediaActiveArtistPositionParameter != null && _mediaActiveArtistPositionParameter.GetValue(out byte[] d3))
-                        {
-                            data = d3;
-                            result = true;
-                        }
-                        break;
-                    case 0x04:
-                        if (_mediaActiveAlbumPositionParameter != null && _mediaActiveAlbumPositionParameter.GetValue(out byte[] d4))
-                        {
-                            data = d4;
-                            result = true;
-                        }
-                        break;
-                    case 0x05:
-                        if (_mediaActiveCompositionPositionParmeter != null && _mediaActiveCompositionPositionParmeter.GetValue(out byte[] d5))
-                        {
-                            data = d5;
-                            result = true;
-                        }
-                        break;
-                }
-            }
-            else if (objectIndex == 0x3201)
-            {
-                switch (objectSubindex)
-                {
-                    case 0x01:
-                        if(_mediaControlState.GetValue(out byte[] d1))
-                        {
-                            data = d1;
-                            result = true;
-                        }                            
-                        break;
-                    case 0x02:
-                        if (_mediaControlStateDisplay.GetValue(out byte[] d2))
-                        {
-                            data = d2;
-                            result = true;
-                        }
-                        break;
-                    case 0x03:
-                        if (_mediaControlShuffle.GetValue(out byte[] d3))
-                        {
-                            data = d3;
-                            result = true;
-                        }
-                        break;
-                    case 0x04:
-                        if (_mediaControlRandom.GetValue(out byte[] d4))
-                        {
-                            data = d4;
-                            result = true;
-                        }
-                        break;
-                }
-            }
             
             return result;
         }
@@ -767,80 +589,9 @@ namespace MPlayerMaster.Device
                     result = _relayStateParameter.SetValue(relayState);
                 }
             }
-            else if (objectIndex == 0x3200)
+            else if (objectIndex == 0x3200 || objectIndex == 0x3201)
             {
-                switch (objectSubindex)
-                {
-                    case 0x01:
-                        if (_mediaDataParameter != null && _mediaDataParameter.SetValue(data))
-                        {
-                            result = true;
-                        }
-                        break;
-                    case 0x02:
-                        bool val = BitConverter.ToBoolean(data, 0);
-                        if (_mediaDataCompressedParameter != null && _mediaDataCompressedParameter.SetValue(val))
-                        {
-                            result = true;
-                        }
-                        break;
-                    case 0x03:
-                        int val1 = BitConverter.ToInt32(data, 0);
-                        if (_mediaActiveArtistPositionParameter != null && _mediaActiveArtistPositionParameter.SetValue(val1))
-                        {
-                            result = true;
-                        }
-                        break;
-                    case 0x04:
-                        int val2 = BitConverter.ToInt32(data, 0);
-                        if (_mediaActiveAlbumPositionParameter != null && _mediaActiveAlbumPositionParameter.SetValue(val2))
-                        {
-                            result = true;
-                        }
-                        break;
-                    case 0x05:
-                        int val3 = BitConverter.ToInt32(data, 0);
-                        if (_mediaActiveCompositionPositionParmeter != null && _mediaActiveCompositionPositionParmeter.SetValue(val3))
-                        {
-                            result = true;
-                        }
-                        break;
-                }
-            }
-            else if(objectIndex == 0x3201)
-            {
-                switch(objectSubindex)
-                {
-                    case 0x01:
-                        {
-                            ushort state = BitConverter.ToUInt16(data, 0);
-
-                            if (_mediaControlState != null)
-                            {
-                                result = _mediaControlState.SetValue(state);
-                            }
-                        } break;
-                    case 0x03:
-                        {
-                            bool state = BitConverter.ToBoolean(data, 0);
-
-                            if (_mediaControlShuffle != null)
-                            {
-                                result = _mediaControlShuffle.SetValue(state);
-                            }
-                        }
-                        break;
-                    case 0x04:
-                        {
-                            bool state = BitConverter.ToBoolean(data, 0);
-
-                            if (_mediaControlRandom != null)
-                            {
-                                result = _mediaControlRandom.SetValue(state);
-                            }
-                        }
-                        break;
-                }
+                result = MediaPlayer.SetObject(objectIndex, objectSubindex, data);
             }
 
             return result;
@@ -850,32 +601,12 @@ namespace MPlayerMaster.Device
 
         internal bool StopMedia()
         {
-            return StopPlaying();
+            return MediaPlayer.StopMedia();
         }
 
         internal bool PlayMedia()
         {
-            bool result = false;
-
-            SetExecutionStatus(StatusWordEnums.PendingExecution);
-
-            if (_mediaActiveArtistPositionParameter != null &&
-               _mediaActiveAlbumPositionParameter != null &&
-               _mediaActiveCompositionPositionParmeter != null && 
-               _mediaDataParameter != null)
-            {
-                _mediaActiveArtistPositionParameter.GetValue(out int activeArtistPosition);
-                _mediaActiveAlbumPositionParameter.GetValue(out int activeAlbumPosition);
-                _mediaActiveCompositionPositionParmeter.GetValue(out int activeCompositionPosition);
-
-                string url = _mediaPlayer.GetUrl(activeArtistPosition, activeAlbumPosition, activeCompositionPosition);
-
-                Runner.Stop();
-
-                result = Runner.Start(url) >= 0;
-            }
-
-            SetExecutionStatus(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
+            bool result = MediaPlayer.PlayMedia();
 
             return result;
         }
@@ -914,15 +645,13 @@ namespace MPlayerMaster.Device
 
                         if (urlParam.GetValue(out string url))
                         {
-                            SetExecutionStatus(StatusWordEnums.PendingExecution);
+                            SetStatusWord(StatusWordEnums.PendingExecution);
 
                             SetEmptyStreamLabel((ushort)(activeStationValue - 1));
 
-                            Runner.Stop();
-
                             result = Runner.Start(processParam, url);
 
-                            SetExecutionStatus(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
+                            SetStatusWord(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
                         }
                     }
 
@@ -943,11 +672,11 @@ namespace MPlayerMaster.Device
                 SetEmptyStreamLabel(i);
             }
 
-            SetExecutionStatus(StatusWordEnums.PendingExecution);
+            SetStatusWord(StatusWordEnums.PendingExecution);
 
             result = Runner.Stop();
 
-            SetExecutionStatus(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
+            SetStatusWord(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
 
             return result;
         }
@@ -1015,11 +744,11 @@ namespace MPlayerMaster.Device
                         startInfo.WindowStyle = ProcessWindowStyle.Hidden;
                         startInfo.Arguments = args;
 
-                        SetExecutionStatus(StatusWordEnums.PendingExecution);
+                        SetStatusWord(StatusWordEnums.PendingExecution);
 
                         var startResult = Process.Start(startInfo);
 
-                        SetExecutionStatus(startResult != null ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
+                        SetStatusWord(startResult != null ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
 
                         MsgLogger.WriteFlow($"{GetType().Name} - SetVolumeAsync", $"Set Volume request: {volumeValue}, result = {startResult != null}");
                     }
@@ -1073,13 +802,13 @@ namespace MPlayerMaster.Device
                             Arguments = args
                         };
 
-                        SetExecutionStatus(StatusWordEnums.PendingExecution);
+                        SetStatusWord(StatusWordEnums.PendingExecution);
 
                         var startResult = Process.Start(startInfo);
 
                         MsgLogger.WriteFlow($"{GetType().Name} - SetMuteAsync", $"Mute request: {muteString}, result = {startResult!=null}");
 
-                        SetExecutionStatus(startResult != null ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
+                        SetStatusWord(startResult != null ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
                     }
                     catch (Exception e)
                     {
@@ -1091,7 +820,7 @@ namespace MPlayerMaster.Device
             return result;
         }
 
-        private bool SetExecutionStatus(StatusWordEnums status)
+        private bool SetStatusWord(StatusWordEnums status)
         {
             bool result = false;
 

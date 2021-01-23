@@ -13,6 +13,7 @@ namespace MPlayerMaster.Runner
         #region Private fields
 
         private MPlayerConsoleParser _parser;
+        private Process _process;
 
         #endregion
 
@@ -54,6 +55,21 @@ namespace MPlayerMaster.Runner
         public MPlayerSettings Settings;
 
         internal MPlayerConsoleParser Parser => _parser ?? (_parser = CreateParser());
+
+        #endregion
+
+        #region Events
+
+        public event EventHandler MPlayerProcessExited;
+
+        #endregion
+
+        #region Events handling
+
+        private void OnProcessExited(object sender, EventArgs e)
+        {
+            MPlayerProcessExited?.Invoke(this, e);
+        }
 
         #endregion
 
@@ -108,9 +124,19 @@ namespace MPlayerMaster.Runner
 
             try
             {
+                Stop();
+
+                if(!_process.HasExited)
+                {
+                    _process.Kill();
+                }
+
                 var tempPath = Path.GetTempPath();
                 var startInfo = new ProcessStartInfo();
-                var p = new Process();
+                
+                _process = new Process();
+
+                _process.Exited += OnProcessExited;
 
                 startInfo.UseShellExecute = false;
                 startInfo.RedirectStandardOutput = true;
@@ -124,23 +150,20 @@ namespace MPlayerMaster.Runner
 
                 startInfo.FileName = Settings.MPlayerProcessPath;
 
-                p.StartInfo = startInfo;
+                _process.StartInfo = startInfo;
 
-                p.OutputDataReceived += (sender, args) =>
+                _process.OutputDataReceived += (sender, args) =>
                 {
                     Parser.ProcessLine(args.Data);
                 };
 
-                p.Start();
+                _process.Start();
 
-                p.BeginOutputReadLine();
+                _process.BeginOutputReadLine();
 
-                if (p != null)
-                {
-                    result = p.Id;
-                }
+                result = _process.Id;
 
-                MsgLogger.WriteFlow($"{GetType().Name} - Start", $"Set Station request: {url}, result = {p != null}");
+                MsgLogger.WriteFlow($"{GetType().Name} - Start", $"Set Station request: {url}, result = {_process != null}");
             }
             catch (Exception e)
             {
@@ -184,7 +207,7 @@ namespace MPlayerMaster.Runner
 
                 if (!result)
                 {
-                    CloseBruteForce();
+                    result = CloseBruteForce();
                 }
             }
             catch (Exception e)
@@ -232,14 +255,27 @@ namespace MPlayerMaster.Runner
             return result;
         }
 
-        private void CloseBruteForce()
+        private bool CloseBruteForce()
         {
+            bool result = false;
+
             MsgLogger.WriteFlow($"close '{Settings.MPlayerProcessName}' brute force");
 
-            foreach (var p in Process.GetProcessesByName(Settings.MPlayerProcessName))
+            try
             {
-                p.Kill();
+                foreach (var p in Process.GetProcessesByName(Settings.MPlayerProcessName))
+                {
+                    p.Kill();
+
+                    result = true;
+                }
             }
+            catch(Exception e)
+            {
+                MsgLogger.Exception($"{GetType().Name} - CloseBruteForce", e);
+            }
+            
+            return result;
         }
 
         private bool CloseProcess(int processId)
