@@ -8,7 +8,7 @@
              xmlns:views="clr-namespace:EltraNavigoMPlayer.Views.MediaControl" 
              xmlns:converters="clr-namespace:EltraNavigoMPlayer.Views.MPlayerControl.Converters"
              xmlns:xamconverters="clr-namespace:EltraXamCommon.Controls.Converters;assembly=EltraXamCommon" 
-             xmlns:volumecontrol="clr-namespace:EltraNavigoMPlayer.Views.VolumeControl" xmlns:behaviors1="clr-namespace:EltraNavigoMPlayer.Views.MediaControl.Behaviors"
+             xmlns:volumecontrol="clr-namespace:EltraNavigoMPlayer.Views.VolumeControl" xmlns:behaviors1="clr-namespace:EltraNavigoMPlayer.Views.MediaControl.Behaviors" xmlns:converters1="clr-namespace:EltraNavigoMPlayer.Views.MediaControl.Converters"
              x:DataType="views:MediaControlViewModel"
              x:Class="EltraNavigoMPlayer.Views.MediaControl.MediaControlView"
              IsVisible="{Binding IsVisible}">
@@ -66,18 +66,21 @@
                 
                 <!-- Media -->
                 <Grid Grid.Row="2" Grid.Column="1">
+                    <Grid.Resources>
+                        <converters1:CompositionPositionToIndexConverter x:Key="CompositionPositionToIndexConverter"/>
+                    </Grid.Resources>
                     <StackLayout Orientation="Vertical">
-                        <Picker SelectedItem="{Binding ActiveArtist}" ItemsSource="{Binding Artists, Mode=OneWay}" ItemDisplayBinding="{Binding Name}">
+                        <Picker SelectedItem="{Binding ActiveArtist}" ItemsSource="{Binding Artists}" ItemDisplayBinding="{Binding Name}">
                             <Picker.Behaviors>
                                 <behaviors1:ArtistPickerBehavior/>
                             </Picker.Behaviors>
                         </Picker>
-                        <Picker SelectedItem="{Binding ActiveAlbum}" ItemsSource="{Binding Albums, Mode=OneWay}" ItemDisplayBinding="{Binding Name}">
+                        <Picker SelectedItem="{Binding ActiveAlbum}" ItemsSource="{Binding Albums}" ItemDisplayBinding="{Binding Name}">
                             <Picker.Behaviors>
                                 <behaviors1:AlbumPickerBehavior/>
                             </Picker.Behaviors>
                         </Picker>
-                        <Picker SelectedItem="{Binding ActiveComposition}" ItemsSource="{Binding Compositions, Mode=OneWay}" ItemDisplayBinding="{Binding Title}">
+                        <Picker SelectedItem="{Binding ActiveComposition}" ItemsSource="{Binding Compositions}" ItemDisplayBinding="{Binding Title}">
                             <Picker.Behaviors>
                                 <behaviors1:CompositionPickerBehavior/>
                             </Picker.Behaviors>
@@ -98,7 +101,7 @@
                         <converters:TurnOffButtonColorConverter x:Key="TurnOffButtonColorConverter"/>
                     </Grid.Resources>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="64"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition/>
@@ -107,26 +110,74 @@
                     <!-- Stop -->
                     <Frame Grid.Column="0" Padding="0" BackgroundColor="Transparent">
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition/>
-                                <ColumnDefinition/>
-                            </Grid.ColumnDefinitions>
-                            <Button Grid.Column="0" Text="Play" Command="{Binding PlayButtonCommand}">
-                                <!--<Button.IsEnabled>
-                                    <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
-                                        <Binding Path="IsEnabled" />
-                                        <Binding Path="ActiveStationValue" Converter="{StaticResource StopPlayStateConverter}" />
-                                    </MultiBinding>
-                                </Button.IsEnabled>-->
-                            </Button>
-                            <Button Grid.Column="1" Text="Stop" Command="{Binding StopButtonCommand}">
-                                <!--<Button.IsEnabled>
-                                    <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
-                                        <Binding Path="IsEnabled" />
-                                        <Binding Path="ActiveStationValue" Converter="{StaticResource StopPlayStateConverter}" />
-                                    </MultiBinding>
-                                </Button.IsEnabled>-->
-                            </Button>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid Grid.Row="0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Text="Play" Command="{Binding PlayButtonCommand}">
+                                    <!--<Button.IsEnabled>
+                                        <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
+                                            <Binding Path="IsEnabled" />
+                                            <Binding Path="ActiveStationValue" Converter="{StaticResource StopPlayStateConverter}" />
+                                        </MultiBinding>
+                                    </Button.IsEnabled>-->
+                                </Button>
+                                <Button Grid.Column="1" Text="Stop" Command="{Binding StopButtonCommand}">
+                                    <!--<Button.IsEnabled>
+                                        <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
+                                            <Binding Path="IsEnabled" />
+                                            <Binding Path="ActiveStationValue" Converter="{StaticResource StopPlayStateConverter}" />
+                                        </MultiBinding>
+                                    </Button.IsEnabled>-->
+                                </Button>
+                                <Button Grid.Row="1" Grid.Column="0" Text="Next" Command="{Binding NextButtonCommand}">
+                                    <!--<Button.IsEnabled>
+                                        <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
+                                            <Binding Path="IsEnabled" />
+                                            <Binding Path="ActiveStationValue" Converter="{StaticResource StopPlayStateConverter}" />
+                                        </MultiBinding>
+                                    </Button.IsEnabled>-->
+                                </Button>
+                                <Button Grid.Row="1" Grid.Column="1" Text="Preview" Command="{Binding PrevButtonCommand}">
+                                    <!--<Button.IsEnabled>
+                                        <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
+                                            <Binding Path="IsEnabled" />
+                                            <Binding Path="ActiveStationValue" Converter="{StaticResource StopPlayStateConverter}" />
+                                        </MultiBinding>
+                                    </Button.IsEnabled>-->
+                                </Button>
+                            </Grid>
+
+                            <Grid Grid.Row="1">
+
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Label Grid.Column="0" Grid.Row="0" Text="Random" VerticalOptions="Center"/>
+                                <CheckBox Grid.Column="1" Grid.Row="0" IsChecked="{Binding IsRandom}"/>
+
+                                <Label Grid.Column="2" Grid.Row="0" Text="Shuffle" VerticalOptions="Center"/>
+                                <CheckBox Grid.Column="3" Grid.Row="0" IsChecked="{Binding IsShuffle}"/>
+
+                            </Grid>
+                        
                         </Grid>
                     </Frame>
                     <!-- Turn off -->
@@ -137,7 +188,7 @@
                 </Grid>
                 
                 <!-- Volume -->
-                <Frame Grid.Row="6" Grid.Column="1" BorderColor="Transparent" Padding="4">
+                <Frame Grid.Row="6" Grid.Column="1" BorderColor="Transparent" Padding="4,16,4,4">
                     <volumecontrol:VolumeControlView BindingContext="{Binding VolumeControlViewModel}"/>
                 </Frame>
 

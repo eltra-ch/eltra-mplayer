@@ -1,8 +1,8 @@
 ﻿using EltraCommon.Logger;
 using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application.Parameters;
+using MPlayerMaster.Radio;
 using MPlayerMaster.Runner.Console;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
@@ -32,8 +32,10 @@ namespace MPlayerMaster.Runner
             get
             {
                 int result = -1;
+                
+                var activeStationParameter = RadioPlayer?.ActiveStationParameter;
 
-                if (ActiveStationParameter != null && ActiveStationParameter.GetValue(out int activeStationValue))
+                if (activeStationParameter != null && activeStationParameter.GetValue(out int activeStationValue))
                 {
                     result = activeStationValue;
                 }
@@ -42,15 +44,7 @@ namespace MPlayerMaster.Runner
             }
         }
 
-        public List<Parameter> StationTitleParameters { get; set; }
-        public List<Parameter> ProcessIdParameters { get; set; }
-        public List<Parameter> StreamTitleParameters { get; set; }
-
-        public List<Parameter> StreamCustomTitleParameters { get; set; }
-
-        public Parameter StationsCountParameter { get; set; }
-        public Parameter StatusWordParameter { get; set; }
-        public Parameter ActiveStationParameter { get; set; }
+        public RadioPlayer RadioPlayer { get; set; }
 
         public MPlayerSettings Settings;
 
@@ -79,10 +73,7 @@ namespace MPlayerMaster.Runner
         {
             var result = new MPlayerConsoleParser
             {
-                ActiveStationParameter = ActiveStationParameter,
-                StreamTitleParameters = StreamTitleParameters,
-                CustomStationTitleParameters = StreamCustomTitleParameters,
-                StationTitleParameters = StationTitleParameters
+                RadioPlayer = RadioPlayer
             };
 
             return result;
@@ -126,7 +117,7 @@ namespace MPlayerMaster.Runner
             {
                 Stop();
 
-                if(!_process.HasExited)
+                if(_process != null && !_process.HasExited)
                 {
                     _process.Kill();
                 }
@@ -222,11 +213,14 @@ namespace MPlayerMaster.Runner
         {
             bool result = false;
 
-            if (StationsCountParameter.GetValue(out ushort maxCount))
+            var stationsCountParameter = RadioPlayer?.StationsCountParameter;
+            var processIdParameters = RadioPlayer?.ProcessIdParameters;
+                
+            if (stationsCountParameter != null && stationsCountParameter.GetValue(out ushort maxCount))
             {
                 for (ushort i = 0; i < maxCount; i++)
                 {
-                    if (ProcessIdParameters[i].GetValue(out int processId) && processId > 0)
+                    if (processIdParameters != null && processIdParameters[i].GetValue(out int processId) && processId > 0)
                     {
                         if(CloseProcess(processId))
                         {
@@ -246,7 +240,9 @@ namespace MPlayerMaster.Runner
 
             if (i >= 0)
             {
-                if (ProcessIdParameters[i].GetValue(out int processId) && processId > 0)
+                var processIdParameters = RadioPlayer?.ProcessIdParameters;
+
+                if (processIdParameters != null && processIdParameters[i].GetValue(out int processId) && processId > 0)
                 {
                     result = CloseProcess(processId);
                 }

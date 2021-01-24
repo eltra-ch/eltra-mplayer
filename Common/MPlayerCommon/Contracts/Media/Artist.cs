@@ -47,6 +47,10 @@ namespace MPlayerCommon.Contracts.Media
             }
         }
 
+        [IgnoreDataMember]
+        [JsonIgnore]
+        public bool Asterisk { get; set; }
+
         #endregion
 
         #region Methods

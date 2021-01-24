@@ -1,6 +1,7 @@
 ﻿using EltraCommon.Logger;
 using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application.Parameters.Events;
 using EltraCommon.ObjectDictionary.Xdd.DeviceDescription.Profiles.Application.Parameters;
+using EltraCommon.Os.Linux;
 using EltraConnector.Master.Device;
 using MPlayerCommon.Contracts.Media;
 using MPlayerCommon.Definitions;
@@ -9,6 +10,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using ThermoMaster.DeviceManager.Wrapper;
 using static MPlayerMaster.MPlayerDefinitions;
 
 namespace MPlayerMaster.Media
@@ -21,10 +23,8 @@ namespace MPlayerMaster.Media
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private Task _workingTask = Task.CompletedTask;
         private MediaStore _mediaStore;
-        private bool _random;
-        private bool _shuffle;
         private MediaPlanner _mediaPlanner;
-        private MPlayerRunner _runner;
+        private PlayerControl _playerControl;
 
         //media
         private XddParameter _mediaDataParameter;
@@ -32,7 +32,10 @@ namespace MPlayerMaster.Media
         
         private XddParameter _mediaControlState;
         private XddParameter _mediaControlStateDisplay;
-        
+
+        //relay
+        private XddParameter _relayStateParameter;
+
         #endregion
 
         #region Constructors
@@ -52,31 +55,43 @@ namespace MPlayerMaster.Media
 
         public XddParameter StatusWordParameter { get; set; }
 
-        public string MediaPath { get; set; }
+        public string MediaPath => Settings?.MediaPath;
 
         public TimeSpan UpdateInterval { get; set; }
 
         private MediaStore MediaStore => _mediaStore ?? (_mediaStore = new MediaStore());
 
-        public MPlayerRunner Runner 
+        public PlayerControl PlayerControl
         { 
-            get => _runner; 
+            get => _playerControl; 
             set
             {
-                _runner = value;
-                OnRunnerChanged();
+                _playerControl = value;
+                OnPlayerControlChanged();
             }
         }
 
         public MasterVcs Vcs { get; internal set; }
 
+        public MPlayerSettings Settings { get; set; }
+
         #endregion
 
         #region Events handling
 
-        private void OnRunnerChanged()
+        private void OnRelayStateParameterChanged(object sender, ParameterChangedEventArgs e)
         {
-            Runner.MPlayerProcessExited += OnMPlayerProcessExited;
+            if (_relayStateParameter != null && _relayStateParameter.GetValue(out ushort state))
+            {
+                Task.Run(() => {
+                    SetRelayState(state);
+                });
+            }
+        }
+
+        private void OnPlayerControlChanged()
+        {
+            PlayerControl.MPlayerProcessExited += OnMPlayerProcessExited;
         }
 
         private void OnMPlayerProcessExited(object sender, EventArgs e)
@@ -103,11 +118,91 @@ namespace MPlayerMaster.Media
         private void OnMediaControlStateChanged(MediaControlWordValue state)
         {
             MsgLogger.WriteFlow($"{GetType().Name} - OnMediaControlStateChanged", $"media control state changed, new state = {state}");
+        
+            switch(state)
+            {
+                case MediaControlWordValue.Next:
+                    NextMedia();
+                    break;
+                case MediaControlWordValue.Previous:
+                    PreviousMedia();
+                    break;
+                case MediaControlWordValue.Stop:
+                    StopMedia();
+                    break;
+            }
         }
 
         #endregion
 
         #region Methods
+
+        private bool InitRelayState()
+        {
+            bool result = false;
+
+            _relayStateParameter = Vcs.SearchParameter(0x3141, 0x01) as XddParameter;
+
+            if (_relayStateParameter != null)
+            {
+                _relayStateParameter.ParameterChanged += OnRelayStateParameterChanged;
+
+                if (GetRelayState(out ushort state))
+                {
+                    result = _relayStateParameter.SetValue(state);
+
+                    if (!result)
+                    {
+                        MsgLogger.WriteError($"{GetType().Name} - InitRelayState", "set relay state failed!");
+                    }
+                }
+                else
+                {
+                    MsgLogger.WriteError($"{GetType().Name} - InitRelayState", "get relay state failed!");
+                }
+            }
+
+            return result;
+        }
+
+        private bool StopMedia()
+        {
+            SetStatusWord(StatusWordEnums.PendingExecution);
+
+            MediaPlanner.ClearPlaylist();
+
+            bool result = PlayerControl.Stop();
+
+            SetStatusWord(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
+
+            return result;
+        }
+
+        private bool NextMedia()
+        {
+            bool result = false;
+            var url = MediaPlanner.GetNextUrl();
+
+            if (!string.IsNullOrEmpty(url))
+            {
+                result = PlayMedia(url);
+            }
+
+            return result;
+        }
+
+        private bool PreviousMedia()
+        {
+            bool result = false;
+            var url = MediaPlanner.GetPreviousUrl();
+
+            if (!string.IsNullOrEmpty(url))
+            {
+                result = PlayMedia(url);
+            }
+
+            return result;
+        }
 
         private MediaPlanner CreateMediaPlanner()
         {
@@ -200,6 +295,8 @@ namespace MPlayerMaster.Media
 
         internal async Task InitParameters()
         {
+            InitRelayState();
+
             _mediaDataParameter = Vcs.SearchParameter("PARAM_Media_Data") as XddParameter;
             _mediaDataCompressedParameter = Vcs.SearchParameter("PARAM_Media_Data_Compressed") as XddParameter;
             
@@ -235,30 +332,9 @@ namespace MPlayerMaster.Media
             return result;
         }
 
-        public bool PlayMedia()
+        public bool Play()
         {
-            bool result = false;
-
-            if(MediaPlanner.IsPlaylistEmpty)
-            {
-                if (MediaPlanner.GetPositions(out int activeArtistPosition, out int activeAlbumPosition, out int activeCompositionPosition))
-                {
-                    MediaPlanner.BuildPlaylist(activeArtistPosition, activeAlbumPosition, activeCompositionPosition);
-                }
-                else
-                {
-                    MsgLogger.WriteError($"{GetType().Name} - PlayMedia", "planner get url positions failed!");
-                }
-            }
-            else
-            {
-                var url = MediaPlanner.GetNextUrl();
-
-                if (!string.IsNullOrEmpty(url))
-                {
-                    result = PlayMedia(url);
-                }
-            }                
+            bool result = SetMediaControlWordValue(MediaControlWordValue.Play);          
 
             return result;
         }
@@ -267,22 +343,16 @@ namespace MPlayerMaster.Media
         {
             SetStatusWord(StatusWordEnums.PendingExecution);
 
-            bool result = Runner.Start(url) >= 0;
+            bool result = PlayerControl.Start(url) >= 0;
 
             SetStatusWord(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
 
             return result;
         }
 
-        internal bool StopMedia()
+        internal bool Stop()
         {
-            SetStatusWord(StatusWordEnums.PendingExecution);
-
-            MediaPlanner.ClearPlaylist();
-
-            bool result = Runner.Stop();
-
-            SetStatusWord(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
+            var result = SetMediaControlWordValue(MediaControlWordValue.Stop);
 
             return result;
         }
@@ -326,10 +396,126 @@ namespace MPlayerMaster.Media
                         break;                    
                 }
             }
+            else if (objectIndex == 0x3141 && objectSubindex == 0x01)
+            {
+                ushort relayState = BitConverter.ToUInt16(data, 0);
 
-            if(!result)
+                if (_relayStateParameter != null)
+                {
+                    result = _relayStateParameter.SetValue(relayState);
+                }
+            }
+
+            if (!result)
             {
                 result = MediaPlanner.SetObject(objectIndex, objectSubindex, data);
+            }
+
+            return result;
+        }
+
+        private bool SetMediaControlWordValue(MediaControlWordValue state)
+        {
+            bool result = false;
+
+            if (_mediaControlState != null)
+            {
+                result = _mediaControlState.SetValue((ushort) state);
+            }
+
+            return result;
+        }
+
+        private bool GetRelayState(out ushort state)
+        {
+            bool result = false;
+            int pinValue = 0;
+
+            state = 0;
+
+            MsgLogger.WriteDebug($"{GetType().Name} - GetChannelState", $"get channel - state ...");
+
+            try
+            {
+                if (SystemHelper.IsLinux)
+                {
+                    EltraRelayWrapper.RelayRead((ushort)Settings.RelayGpioPin, ref pinValue);
+
+                    state = (byte)pinValue;
+
+                    MsgLogger.WriteDebug($"{GetType().Name} - GetChannelState", $"get channel, pin={Settings.RelayGpioPin} state success, value = {state}");
+
+                    result = true;
+                }
+                else
+                {
+                    MsgLogger.WriteLine(LogMsgType.Warning, "GPIO library is not supported on windows, simulate success");
+                    result = true;
+                }
+            }
+            catch (Exception e)
+            {
+                MsgLogger.Exception($"{GetType().Name} - GetChannelState", e);
+            }
+
+            return result;
+        }
+
+        private bool SetRelayState(ushort state)
+        {
+            bool result = false;
+            int pinValue = 0;
+
+            try
+            {
+                if (SystemHelper.IsLinux)
+                {
+                    MsgLogger.WriteFlow($"digital write - {Settings.RelayGpioPin} state = {state} ...");
+
+                    EltraRelayWrapper.RelayWrite((ushort)Settings.RelayGpioPin, state);
+
+                    EltraRelayWrapper.RelayRead((ushort)Settings.RelayGpioPin, ref pinValue);
+
+                    if (pinValue == state)
+                    {
+                        MsgLogger.WriteFlow($"set channel, pin={Settings.RelayGpioPin} state -> {state} success");
+
+                        result = true;
+                    }
+                    else
+                    {
+                        MsgLogger.WriteError($"{GetType().Name} - SetChannelState", $"set channel - state -> {state} failed!");
+                    }
+                }
+                else
+                {
+                    MsgLogger.WriteLine(LogMsgType.Warning, "GPIO library is not supported on windows, simulate success");
+                    result = true;
+                }
+            }
+            catch (Exception e)
+            {
+                MsgLogger.Exception($"{GetType().Name} - SetChannelState", e);
+            }
+
+            return result;
+        }
+
+        public bool GetObject(ushort objectIndex, byte objectSubindex, ref byte[] data)
+        {
+            bool result = false;
+
+            if (objectIndex == 0x3141 && objectSubindex == 0x01)
+            {
+                if (GetRelayState(out var state))
+                {
+                    data = BitConverter.GetBytes(state);
+
+                    if (_relayStateParameter != null)
+                    {
+                        result = _relayStateParameter.SetValue(state);
+                    }
+                }
             }
 
             return result;

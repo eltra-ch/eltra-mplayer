@@ -12,9 +12,11 @@ using System.Reflection;
 using Xamarin.Forms.Internals;
 using MPlayerCommon.Contracts.Media;
 using EltraNavigoMPlayer.Views.VolumeControl;
-using System;
 using System.Collections.Generic;
 using EltraUiCommon.Helpers;
+using EltraXamCommon.Controls.Toast;
+using System.Linq;
+using MPlayerCommon.Definitions;
 
 namespace EltraNavigoMPlayer.Views.MediaControl
 {
@@ -27,6 +29,8 @@ namespace EltraNavigoMPlayer.Views.MediaControl
         private string _turnOffButonText;
         private int _activeStationValue;
         private bool _internalChange;
+
+        private XddParameter _mediaControlParameter;
         private XddParameter _statusWordParameter;
         private XddParameter _relayStateParameter;
         private XddParameter _activeStationParameter;
@@ -37,18 +41,30 @@ namespace EltraNavigoMPlayer.Views.MediaControl
         private XddParameter _activeAlbumPositionParameter;
         private XddParameter _activeCompositionPositionParameter;
 
+        private XddParameter _randomParameter;
+        private XddParameter _shuffleParameter;
+
         private MediaStore _mediaStore;
         private List<Artist> _artists;
         private List<Album> _albums;
         private List<Composition> _compositions;
+
         private Artist _activeArtist;
         private Album _activeAlbum;
         private Composition _activeComposition;
+
         private double _stationUpdateProgressValue;
         private ushort _relayStateValue;
         private string _actualPlayingLabel;
 
         private VolumeControlViewModel _volumeControlViewModel;
+
+        private int _activeAlbumPositionValue;
+        private int _activeArtistPositionValue;
+        private int _activeCompositionPositionValue;
+
+        private bool _isRandom;
+        private bool _isShuffle;
 
         #endregion
 
@@ -66,6 +82,24 @@ namespace EltraNavigoMPlayer.Views.MediaControl
         #endregion
 
         #region Properties
+
+        public Artist ActiveArtist
+        {
+            get => _activeArtist;
+            set => SetProperty(ref _activeArtist, value);
+        }
+
+        public Album ActiveAlbum
+        {
+            get => _activeAlbum;
+            set => SetProperty(ref _activeAlbum, value);
+        }
+
+        public Composition ActiveComposition
+        {
+            get => _activeComposition;
+            set => SetProperty(ref _activeComposition, value);
+        }
 
         public VolumeControlViewModel VolumeControlViewModel
         {
@@ -109,20 +143,21 @@ namespace EltraNavigoMPlayer.Views.MediaControl
             set => SetProperty(ref _actualPlayingLabel, value);
         }
 
-        #endregion
+        public bool IsRandom
+        {
+            get => _isRandom;
+            set => SetProperty(ref _isRandom, value);
+        }
+        public bool IsShuffle
+        {
+            get => _isShuffle;
+            set => SetProperty(ref _isShuffle, value);
+        }
 
-        #region Commands 
-
-        public ICommand TurnOffButtonCommand => new Command(OnTurnOffButtonPressed);
-
-        public ICommand StopButtonCommand => new Command(OnStopButtonPressed);
-
-        public ICommand PlayButtonCommand => new Command(OnPlayButtonPressed);
-
-        public List<Artist> Artists 
-        { 
-            get => _artists; 
-            set => SetProperty(ref _artists, value); 
+        public List<Artist> Artists
+        {
+            get => _artists;
+            set => SetProperty(ref _artists, value);
         }
 
         public List<Album> Albums
@@ -137,42 +172,38 @@ namespace EltraNavigoMPlayer.Views.MediaControl
             set => SetProperty(ref _compositions, value);
         }
 
-        public Artist ActiveArtist
-        {
-            get => _activeArtist;
-            set => SetProperty(ref _activeArtist, value);
-        }
-
-        public Album ActiveAlbum
-        {
-            get => _activeAlbum;
-            set => SetProperty(ref _activeAlbum, value);
-        }
-
-        public Composition ActiveComposition
-        {
-            get => _activeComposition;
-            set => SetProperty(ref _activeComposition, value);
-        }
-
         public int ActiveAlbumPositionValue
         {
-            get => ReadPosition(_activeAlbumPositionParameter);
-            set => WritePosition(_activeAlbumPositionParameter, value);
+            get => _activeAlbumPositionValue;
+            set => SetProperty(ref _activeAlbumPositionValue, value);
         }
 
         public int ActiveArtistPositionValue
         {
-            get => ReadPosition(_activeArtistPositionParameter);
-            set => WritePosition(_activeArtistPositionParameter, value);
+            get => _activeArtistPositionValue;
+            set => SetProperty(ref _activeArtistPositionValue, value);
         }
 
         public int ActiveCompositionPositionValue
         {
-            get => ReadPosition(_activeCompositionPositionParameter);
-            set => WritePosition(_activeCompositionPositionParameter, value);
+            get => _activeCompositionPositionValue;
+            set => SetProperty(ref _activeCompositionPositionValue, value);
         }
 
+        #endregion
+
+        #region Commands 
+
+        public ICommand TurnOffButtonCommand => new Command(OnTurnOffButtonPressed);
+
+        public ICommand StopButtonCommand => new Command(OnStopButtonPressed);
+
+        public ICommand PlayButtonCommand => new Command(OnPlayButtonPressed);
+
+        public ICommand NextButtonCommand => new Command(OnNextButtonPressed);
+
+        public ICommand PrevButtonCommand => new Command(OnPrevButtonPressed);
+        
         #endregion
 
         #region Events handling
@@ -202,6 +233,14 @@ namespace EltraNavigoMPlayer.Views.MediaControl
             {
                 UpdateTurnOffText();
             }
+            else if(e.PropertyName == "IsRandom")
+            {
+                WriteIsRandom();
+            }
+            else if (e.PropertyName == "IsShuffle")
+            {
+                WriteIsShuffle();
+            }
         }
 
         private async void OnStopButtonPressed(object obj)
@@ -222,11 +261,50 @@ namespace EltraNavigoMPlayer.Views.MediaControl
         {
             IsBusy = true;
 
-            var command = await Device.GetCommand("PlayMedia");
+            bool result = await WriteActivePositions();
 
-            if (command != null)
+            if (result)
             {
-                await command.Execute();
+                var command = await Device.GetCommand("PlayMedia");
+
+                if (command != null)
+                {
+                    await command.Execute();
+                }
+            }
+            else
+            {
+                ToastMessage.ShortAlert("Setting position failed! Check your internet connectivity and try again!");
+            }
+
+            IsBusy = false;
+        }
+
+        private async void OnNextButtonPressed(object obj)
+        {
+            IsBusy = true;
+
+            if(_mediaControlParameter!=null && _mediaControlParameter.SetValue((ushort)MediaControlWordValue.Next))
+            {
+                if (!await _mediaControlParameter.Write())
+                {
+                    ToastMessage.ShortAlert("Next failed!");
+                }
+            }
+
+            IsBusy = false;
+        }
+
+        private async void OnPrevButtonPressed(object obj)
+        {
+            IsBusy = true;
+
+            if (_mediaControlParameter != null && _mediaControlParameter.SetValue((ushort)MediaControlWordValue.Previous))
+            {
+                if (!await _mediaControlParameter.Write())
+                {
+                    ToastMessage.ShortAlert("Previous failed!");
+                }
             }
 
             IsBusy = false;
@@ -248,7 +326,7 @@ namespace EltraNavigoMPlayer.Views.MediaControl
                 //ON -> turn off
                 newState = 0;
             }
-            
+
             if (_relayStateParameter != null && _relayStateParameter.SetValue(newState))
             {                
                 if(await _relayStateParameter.Write())
@@ -272,6 +350,8 @@ namespace EltraNavigoMPlayer.Views.MediaControl
 
             InitializeActiveStationParameter();
 
+            InitializeRandomShuffleParameters();
+
             InitializeMedia();
 
             IsBusy = false;
@@ -286,6 +366,147 @@ namespace EltraNavigoMPlayer.Views.MediaControl
             if (!IsEnabled)
             {
                 StatusWordValue = (ushort)StatusWordEnums.Undefined;
+            }
+        }
+
+        internal void OnArtistIndexChanged(int selectedIndex)
+        {
+            if (Artists != null && selectedIndex >= 0 && !_internalChange)
+            {
+                _internalChange = true;
+
+                ActiveArtistPositionValue = selectedIndex;
+
+                if (selectedIndex < Artists.Count)
+                {
+                    var activeArtist = Artists[selectedIndex];
+
+                    AddAlbums(activeArtist);
+
+                    if (Albums != null && Albums.Count > 0)
+                    {
+                        ActiveAlbumPositionValue = -1;
+                        ActiveAlbum = Albums[0];
+
+                        AddAlbumCompositions(ActiveAlbum);
+
+                        ActiveCompositionPositionValue = 0;
+
+                        if (Compositions != null && Compositions.Count > 0)
+                        {
+                            ActiveComposition = Compositions[0];
+                        }
+                    }
+                    else
+                    {
+                        ActiveAlbumPositionValue = -1;
+                    }
+                }
+                else if (Artists.Count > 0)
+                {
+                    var activeArtist = Artists[0];
+
+                    if (activeArtist != null)
+                    {
+                        AddAlbums(activeArtist);
+
+                        if (Albums != null)
+                        {
+                            ActiveAlbumPositionValue = 0;
+                            ActiveCompositionPositionValue = -1;
+                        }
+                        else
+                        {
+                            ActiveAlbumPositionValue = 0;
+                            ActiveCompositionPositionValue = 0;
+                        }
+                    }
+                }
+                else
+                {
+                    ActiveArtistPositionValue = -1;
+                    ActiveAlbumPositionValue = -1;
+                    ActiveCompositionPositionValue = -1;
+                }
+
+                _internalChange = false;
+            }
+        }
+
+        internal void OnAlbumIndexChanged(int selectedIndex)
+        {
+            if (Albums != null && selectedIndex >= 0 && !_internalChange)
+            {
+                _internalChange = true;
+
+                if (selectedIndex < Albums.Count)
+                {
+                    ActiveAlbumPositionValue = selectedIndex;
+                    var activeAlbum = Albums[selectedIndex];
+
+                    AddAlbumCompositions(activeAlbum);
+
+                    if (Compositions != null && Compositions.Count > 0)
+                    {
+                        ActiveCompositionPositionValue = -1;
+                        ActiveComposition = Compositions[0];
+                    }
+                }
+                else if (Albums.Count > 0)
+                {
+                    var activeAlbum = Albums[0];
+
+                    if (activeAlbum != null)
+                    {
+                        AddAlbumCompositions(activeAlbum);
+
+                        if (Compositions != null)
+                        {
+                            ActiveCompositionPositionValue = -1;
+                            ActiveComposition = Compositions[0];
+                        }
+                    }
+                }
+                else
+                {
+                    ActiveAlbum = null;
+                    ActiveComposition = null;
+
+                    ActiveAlbumPositionValue = -1;
+                    ActiveCompositionPositionValue = -1;
+                }
+
+                _internalChange = false;
+            }
+        }
+
+        internal void OnCompositionIndexChanged(int selectedIndex)
+        {
+            if (Compositions != null && selectedIndex >= 0 && !_internalChange)
+            {
+                _internalChange = true;
+
+                if (selectedIndex < Compositions.Count - 1 && selectedIndex >= 0)
+                {
+                    ActiveCompositionPositionValue = selectedIndex - 1;
+                }
+                else if (Compositions.Count > 0)
+                {
+                    var activeComposition = Compositions[0];
+
+                    if (activeComposition != null)
+                    {
+                        ActiveComposition = activeComposition;
+                        ActiveCompositionPositionValue = -1;
+                    }
+                }
+                else
+                {
+                    ActiveComposition = null;
+                    ActiveCompositionPositionValue = -1;
+                }
+
+                _internalChange = false;
             }
         }
 
@@ -351,30 +572,25 @@ namespace EltraNavigoMPlayer.Views.MediaControl
 
         #region Methods
 
-        private int ReadPosition(XddParameter parameter)
+        private async Task<int> ReadPosition(XddParameter parameter)
         {
             int result = -1;
+            int position = -1;
 
             if (parameter != null)
             {
-                var task = Task.Run(async () =>
-                {
-                    await parameter.UpdateValue();
-                }).ContinueWith((t) =>
-                {
-                    if (parameter.GetValue(out int albumPosition))
-                    {
-                        result = albumPosition;
-                    }
-                });
+                var parameterValue = await parameter.ReadValue();
 
-                task.Wait();
+                if (parameterValue != null && parameterValue.GetValue(ref position))
+                {
+                    result = position;
+                }
             }
 
             return result;
         }
 
-        private bool WritePosition(XddParameter parameter, int value)
+        private async Task<bool> WritePosition(XddParameter parameter, int value)
         {
             bool result = false;
 
@@ -382,9 +598,7 @@ namespace EltraNavigoMPlayer.Views.MediaControl
             {
                 if (parameter.SetValue(value))
                 {
-                    Task.Run(async () => { await parameter.Write(); });
-
-                    result = true;
+                    result = await parameter.Write();
                 }
             }
 
@@ -415,6 +629,7 @@ namespace EltraNavigoMPlayer.Views.MediaControl
 
         private void InitializeMedia()
         {
+            _mediaControlParameter = Device?.SearchParameter("PARAM_MediaControlState") as XddParameter;
             _mediaDataParameter = Device?.SearchParameter("PARAM_Media_Data") as XddParameter;
             _compressedMediaParameter = Device?.SearchParameter("PARAM_Media_Data_Compressed") as XddParameter;
             _activeArtistPositionParameter = Device?.SearchParameter("PARAM_ActiveArtistPosition") as XddParameter;
@@ -434,113 +649,105 @@ namespace EltraNavigoMPlayer.Views.MediaControl
                         if (compressed)
                         {
                             _mediaStore = MediaStore.Deserialize(data, compressed);
-
-                            if (_mediaStore != null)
-                            {
-                                UpdateMediaViewModels();
-                            }
                         }
                     }
                 }
             }
         }
 
-        private void UpdateMediaViewModels()
-        {
+        private void UpdateArtist(int activeArtistPositionValue)
+        {            
+            _internalChange = true;
+
             if (_mediaStore != null)
             {
-                Artists = _mediaStore.Artists;
+                AddArtists();
 
                 if (Artists.Count > 0)
                 {
-                    var artistPosition = ActiveArtistPositionValue;
-
-                    _internalChange = true;
-
-                    if (artistPosition >= 0 && artistPosition < Artists.Count)
+                    if (activeArtistPositionValue >= -1)
                     {
-                        ActiveArtist = Artists[artistPosition];
-                    }
-                    else if (Artists.Count > 0)
-                    {
-                        ActiveArtist = Artists[0];
-                    }
-                    else
-                    {
-                        ActiveArtist = null;
-                    }
-                    
-                    if (ActiveArtist != null)
-                    {
-                        Albums = ActiveArtist.Albums;
-
-                        if (Albums != null)
-                        {
-                            var albumPosition = ActiveAlbumPositionValue;
-
-                            if (albumPosition >= 0 && albumPosition < Albums.Count)
-                            {
-                                _internalChange = true;
-
-                                ActiveAlbum = Albums[albumPosition];
-
-                                _internalChange = false;
-                            }
-                            else if(Albums.Count > 0)
-                            {
-                                _internalChange = true;
-
-                                ActiveAlbum = Albums[0];
-
-                                _internalChange = false;
-                            }
-                            else
-                            {
-                                _internalChange = true;
-
-                                ActiveAlbum = null;
-
-                                _internalChange = false;
-                            }
-
-                            if(ActiveAlbum!=null)
-                            {
-                                AddActiveAlbumCompositions();
-
-                                var compositionPosition = ActiveCompositionPositionValue;
-
-                                if (compositionPosition >= 0 && compositionPosition < Compositions.Count)
-                                {
-                                    _internalChange = true;
-
-                                    ActiveComposition = Compositions[compositionPosition];
-
-                                    _internalChange = false;
-                                }
-                                else if (Compositions.Count > 0)
-                                {
-                                    _internalChange = true;
-
-                                    ActiveComposition = Compositions[0];
-
-                                    _internalChange = false;
-                                }
-                                else
-                                {
-                                    _internalChange = true;
-
-                                    ActiveComposition = null;
-
-                                    _internalChange = false;
-                                }
-                            }
-                        }
+                        ActiveArtist = Artists[activeArtistPositionValue + 1];
                     }
 
-                    _internalChange = false;
-
+                    ActiveArtistPositionValue = activeArtistPositionValue;
                 }
             }
+
+            _internalChange = false;   
+        }
+
+        private void UpdateAlbum(int activeAlbumPositionValue)
+        {            
+            _internalChange = true;
+
+            ActiveAlbumPositionValue = -1;
+            ActiveAlbum = null;
+
+            if (ActiveArtistPositionValue >= -1 &&
+                Artists != null && Artists.Count > 0 &&
+                ActiveArtistPositionValue < Artists.Count)
+            {
+                var artist = Artists[ActiveArtistPositionValue + 1];
+
+                AddAlbums(artist);
+            }
+
+            if (Albums != null && Albums.Count > 0)
+            {
+                ActiveAlbumPositionValue = activeAlbumPositionValue;
+
+                if (activeAlbumPositionValue >= -1)
+                {
+                    ActiveAlbum = Albums[activeAlbumPositionValue + 1];
+                }
+                else
+                {
+                    ActiveAlbum = Albums[0];
+                }
+            }
+            else
+            {
+                ActiveAlbumPositionValue = 0;
+            }
+
+            _internalChange = false;   
+        }
+
+        private void UpdateComposition(int activeCompositionPositionValue)
+        {            
+            _internalChange = true;
+
+            ActiveCompositionPositionValue = -1;
+            ActiveComposition = null;
+
+            if (ActiveAlbumPositionValue >= -1 &&
+                Albums != null && Albums.Count > 0 &&
+                ActiveAlbumPositionValue < Albums.Count)
+            {
+                var activeAlbum = Albums[ActiveAlbumPositionValue + 1];
+
+                AddAlbumCompositions(activeAlbum);
+            }
+
+            if (Compositions != null && Compositions.Count > 0)
+            {
+                if (activeCompositionPositionValue >= -1)
+                {
+                    ActiveComposition = Compositions[activeCompositionPositionValue + 1];
+                    ActiveCompositionPositionValue = activeCompositionPositionValue;
+                }
+                else
+                {
+                    ActiveComposition = Compositions[0];
+                }
+            }
+            else
+            {
+                ActiveCompositionPositionValue = 0;
+            }
+
+            _internalChange = false;   
         }
 
         private void UpdateAgentStatus()
@@ -565,8 +772,8 @@ namespace EltraNavigoMPlayer.Views.MediaControl
                 await _mediaDataParameter.UpdateValue();
             }
 
-            ThreadHelper.RunOnMainThread(()=> { UpdateMediaStore(); });
-            
+            UpdateMediaStore();
+
             IsBusy = false;
         }
 
@@ -595,6 +802,12 @@ namespace EltraNavigoMPlayer.Views.MediaControl
         private void InitializeActiveStationParameter()
         {
             _activeStationParameter = Device?.SearchParameter(0x4100, 0x00) as XddParameter;
+        }
+
+        private void InitializeRandomShuffleParameters()
+        {
+            _randomParameter = Device?.SearchParameter(0x3201, 0x04) as XddParameter;
+            _shuffleParameter = Device?.SearchParameter(0x3201, 0x03) as XddParameter;
         }
 
         private bool GetActiveStationValue(out int activeStationValue)
@@ -629,6 +842,32 @@ namespace EltraNavigoMPlayer.Views.MediaControl
             IsBusy = false;
         }
 
+        private async Task UpdateRandomShuffleAsync()
+        {
+            IsBusy = true;
+
+            if (_randomParameter != null && _shuffleParameter != null)
+            {
+                var randomParameterValue = await _randomParameter.ReadValue();
+                var shuffleParameterValue = await _shuffleParameter.ReadValue();
+
+                bool random = false;
+                bool shuffle = false;
+
+                if (randomParameterValue != null && randomParameterValue.GetValue(ref random))
+                {
+                    IsRandom = random;
+                }
+
+                if (shuffleParameterValue != null && shuffleParameterValue.GetValue(ref shuffle))
+                {
+                    IsShuffle = shuffle;
+                }
+            }
+
+            IsBusy = false;
+        }
+
         private void RegisterStationParameterEvent()
         {
             UnregisterStationParameterEvent();
@@ -645,6 +884,55 @@ namespace EltraNavigoMPlayer.Views.MediaControl
             {
                 _activeStationParameter.ParameterChanged -= OnActiveStationParameterChanged;
             }
+        }
+
+        public override Task Show()
+        {
+            Task.Run(async () =>
+            {
+                await UpdateMediaAsync();
+
+                var activeArtistPositionValue = await ReadPosition(_activeArtistPositionParameter);
+                var activeAlbumPositionValue = await ReadPosition(_activeAlbumPositionParameter);
+                var activeCompositionPositionValue = await ReadPosition(_activeCompositionPositionParameter);
+
+                ThreadHelper.RunOnMainThread(() =>
+                {
+                    UpdateArtist(activeArtistPositionValue);
+                    UpdateAlbum(activeAlbumPositionValue);
+                    UpdateComposition(activeCompositionPositionValue);
+                });
+
+                await UpdateActiveStationAsync();
+
+                await UpdateRandomShuffleAsync();
+            });
+            
+            return base.Show();
+        }
+
+        public async override Task Hide()
+        {
+            await WriteActivePositions();
+
+            await base.Hide();
+        }
+
+        private async Task<bool> WriteActivePositions()
+        {
+            bool result = await WritePosition(_activeAlbumPositionParameter, ActiveAlbumPositionValue);
+            
+            if (result)
+            {
+                result = await WritePosition(_activeArtistPositionParameter, ActiveArtistPositionValue);
+            
+                if(result)
+                {
+                    result = await WritePosition(_activeCompositionPositionParameter, ActiveCompositionPositionValue);
+                }    
+            }
+
+            return result;
         }
 
         protected override async Task RegisterAutoUpdate()
@@ -699,10 +987,6 @@ namespace EltraNavigoMPlayer.Views.MediaControl
 
         protected override async Task UpdateAllControls()
         {
-            await UpdateMediaAsync();
-
-            await UpdateActiveStationAsync();
-
             await UpdateStatusWordAsync();
 
             await UpdateRelayStateAsync();
@@ -770,73 +1054,79 @@ namespace EltraNavigoMPlayer.Views.MediaControl
             IsEnabled = false;
         }
 
-        internal void OnAlbumIndexChanged(int selectedIndex)
+        private async void WriteIsShuffle()
         {
-            if (Albums != null && selectedIndex >= 0 && !_internalChange)
+            if (_shuffleParameter != null)
             {
-                if (selectedIndex < Albums.Count)
+                if(_shuffleParameter.SetValue(IsShuffle))
                 {
-                    ActiveAlbumPositionValue = selectedIndex;
-
-                    _internalChange = true;
-                    
-                    AddActiveAlbumCompositions();
-
-                    if (Compositions != null && Compositions.Count > 0)
-                    {
-                        ActiveComposition = Compositions[0];
-                        ActiveCompositionPositionValue = 0;
-                    }
-                    else
-                    {
-                        ActiveCompositionPositionValue = -1;
-                    }
-
-                    _internalChange = false;
-                }
-                else if (Albums.Count > 0)
-                {
-                    var activeAlbum = Albums[0];
-
-                    if (activeAlbum != ActiveAlbum)
-                    {
-                        _internalChange = true;
-
-                        ActiveAlbum = activeAlbum;
-
-                        AddActiveAlbumCompositions();
-
-                        if (Compositions != null)
-                        {
-                            ActiveComposition = Compositions[0];
-                            ActiveCompositionPositionValue = 0;
-                        }
-                        else
-                        {
-                            ActiveCompositionPositionValue = -1;
-                        }
-
-                        _internalChange = false;
-                    }
-                }
-                else
-                {
-                    _internalChange = true;
-
-                    ActiveAlbum = null;
-                    ActiveComposition = null;
-
-                    ActiveAlbumPositionValue = -1;
-                    ActiveCompositionPositionValue = -1;
-
-                    _internalChange = false;
+                    await _shuffleParameter.Write();
                 }
             }
         }
 
-        private void AddActiveAlbumCompositions()
+        private async void WriteIsRandom()
         {
-            var compositions = ActiveAlbum?.Compositions;
+            if (_randomParameter != null)
+            {
+                if (_randomParameter.SetValue(IsRandom))
+                {
+                    await _randomParameter.Write();
+                }
+            }
+        }
+
+        private void AddArtists()
+        {
+            ActiveArtistPositionValue = 0;
+            ActiveArtist = null;
+            var artists = _mediaStore?.Artists;
+
+            if (artists != null)
+            {
+                var artistList = new List<Artist>();
+
+                var allArtist = new Artist() { Asterisk = true, Name = "--- All ---" };
+
+                foreach(var artist in artists)
+                {
+                    allArtist.Albums.AddRange(artist.Albums);
+                }
+
+                allArtist.Albums = allArtist.Albums.OrderBy(o => o.Name).ToList();
+
+                artistList.Add(allArtist);
+                artistList.AddRange(artists);
+
+                Artists = artistList;
+            }
+        }
+
+        private void AddAlbums(Artist artist)
+        {
+            if (artist != null)
+            {
+                var albumList = new List<Album>();
+
+                var allAlbums = new Album() { Asterisk = true, Name = "--- All ---" };
+
+                foreach(var album in artist.Albums)
+                {
+                    allAlbums.Compositions.AddRange(album.Compositions);
+                }
+
+                allAlbums.Compositions = allAlbums.Compositions.OrderBy(o=>o.FileName).ToList();
+
+                albumList.Add(allAlbums);
+                albumList.AddRange(artist.Albums);
+
+                Albums = albumList;
+            }
+        }
+
+        private void AddAlbumCompositions(Album album)
+        {
+            var compositions = album?.Compositions;
             if (compositions != null)
             {
                 var compositionList = new List<Composition>();
@@ -845,115 +1135,6 @@ namespace EltraNavigoMPlayer.Views.MediaControl
                 compositionList.AddRange(compositions);
 
                 Compositions = compositionList;
-            }
-        }
-
-        internal void OnArtistIndexChanged(int selectedIndex)
-        {
-            if (Artists != null && selectedIndex >= 0 && !_internalChange)
-            {
-                ActiveArtistPositionValue = selectedIndex;
-
-                if (selectedIndex < Artists.Count)
-                {
-                    var activeArtist = Artists[selectedIndex];
-
-                    _internalChange = true;
-
-                    Albums = activeArtist?.Albums;
-                    if (Albums != null && Albums.Count > 0)
-                    {
-                        ActiveAlbum = Albums[0];
-                        ActiveAlbumPositionValue = 0;
-
-                        AddActiveAlbumCompositions();
-
-                        ActiveComposition = Compositions[0];
-                        ActiveCompositionPositionValue = -1;
-
-                        _internalChange = false;
-                    }
-                    else
-                    {
-                        ActiveAlbumPositionValue = -1;
-                    }
-
-                    _internalChange = false;
-                }
-                else if (Artists.Count > 0)
-                {
-                    var activeArtist = Artists[0];
-
-                    if (activeArtist != ActiveArtist)
-                    {
-                        _internalChange = true;
-
-                        ActiveArtist = activeArtist;
-
-                        Albums = ActiveArtist?.Albums;
-                        if (Albums != null)
-                        {
-                            ActiveAlbum = Albums[0];
-                            ActiveAlbumPositionValue = 0;
-                        }
-                        else
-                        {
-                            ActiveAlbumPositionValue = -1;
-                        }
-
-                        _internalChange = false;
-                    }
-                }
-                else
-                {
-                    _internalChange = true;
-
-                    ActiveArtist = null;
-                    ActiveComposition = null;
-                    ActiveArtistPositionValue = -1;
-                    ActiveAlbumPositionValue = -1;
-                    ActiveCompositionPositionValue = -1;
-
-                    _internalChange = false;
-                }         
-            }
-        }
-
-        internal void OnCompositionIndexChanged(int selectedIndex)
-        {
-            if (Compositions != null && selectedIndex >= 0 && !_internalChange)
-            {
-                if (selectedIndex < Compositions.Count - 1 && selectedIndex >= 0)
-                {
-                    ActiveCompositionPositionValue = selectedIndex - 1;
-
-                    _internalChange = true;
-
-                    _internalChange = false;
-                }
-                else if (Compositions.Count > 0)
-                {
-                    var activeComposition = Compositions[0];
-
-                    if (activeComposition != ActiveComposition)
-                    {
-                        _internalChange = true;
-
-                        ActiveComposition = activeComposition;
-                        ActiveCompositionPositionValue = -1;
-
-                        _internalChange = false;
-                    }
-                }
-                else
-                {
-                    _internalChange = true;
-
-                    ActiveComposition = null;
-                    ActiveCompositionPositionValue = -1;
-
-                    _internalChange = false;
-                }
             }
         }
 
