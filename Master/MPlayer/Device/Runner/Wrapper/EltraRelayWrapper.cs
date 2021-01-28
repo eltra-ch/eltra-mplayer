@@ -3,7 +3,7 @@ using EltraCommon.Dll;
 using System;
 using System.Runtime.InteropServices;
 
-namespace ThermoMaster.DeviceManager.Wrapper
+namespace MPlayerMaster.Device.Runner.Wrapper
 {
     public class EltraRelayWrapper : EltraDllWrapper
     {

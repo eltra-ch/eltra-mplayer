@@ -5,15 +5,15 @@ using EltraCommon.Os.Linux;
 using EltraConnector.Master.Device;
 using MPlayerCommon.Contracts.Media;
 using MPlayerCommon.Definitions;
-using MPlayerMaster.Runner;
+using MPlayerMaster.Device.Runner;
 using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using ThermoMaster.DeviceManager.Wrapper;
+using MPlayerMaster.Device.Runner.Wrapper;
 using static MPlayerMaster.MPlayerDefinitions;
 
-namespace MPlayerMaster.Media
+namespace MPlayerMaster.Device.Media
 {
     class MediaPlayer : IDisposable
     {

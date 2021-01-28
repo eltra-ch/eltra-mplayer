@@ -1,6 +1,6 @@
 ﻿using MPlayerCommon.Contracts.Media;
 
-namespace MPlayerMaster.Contracts
+namespace MPlayerMaster.Device.Contracts
 {
     class PlannerComposition
     {

@@ -1,4 +1,4 @@
-﻿namespace MPlayerMaster.Contracts
+﻿namespace MPlayerMaster.Device.Contracts
 {
     enum PlayingState
     {

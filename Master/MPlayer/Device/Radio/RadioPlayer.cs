@@ -6,13 +6,13 @@ using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application
 using EltraCommon.ObjectDictionary.Xdd.DeviceDescription.Profiles.Application.Parameters;
 using EltraConnector.Agent;
 using EltraConnector.Master.Device;
-using MPlayerMaster.Runner;
+using MPlayerMaster.Device.Runner;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using static MPlayerMaster.MPlayerDefinitions;
 
-namespace MPlayerMaster.Radio
+namespace MPlayerMaster.Device.Radio
 {
     class RadioPlayer
     {

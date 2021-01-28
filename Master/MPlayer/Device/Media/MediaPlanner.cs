@@ -3,13 +3,13 @@ using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application
 using EltraCommon.ObjectDictionary.Xdd.DeviceDescription.Profiles.Application.Parameters;
 using EltraConnector.Master.Device;
 using MPlayerCommon.Contracts.Media;
-using MPlayerMaster.Contracts;
+using MPlayerMaster.Device.Contracts;
 using MPlayerMaster.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace MPlayerMaster.Media
+namespace MPlayerMaster.Device.Media
 {
     class MediaPlanner
     {

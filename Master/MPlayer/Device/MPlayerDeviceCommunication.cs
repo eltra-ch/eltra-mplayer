@@ -2,9 +2,9 @@
 using System;
 using EltraConnector.Master.Device;
 using System.Threading.Tasks;
-using MPlayerMaster.Runner;
-using MPlayerMaster.Media;
-using MPlayerMaster.Radio;
+using MPlayerMaster.Device.Runner;
+using MPlayerMaster.Device.Media;
+using MPlayerMaster.Device.Radio;
 using EltraCommon.Logger;
 
 namespace MPlayerMaster.Device

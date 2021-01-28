@@ -1,13 +1,11 @@
 ﻿using EltraCommon.Os.Linux;
 using EltraConnector.Master.Device;
-using ThermoMaster.DeviceManager.Wrapper;
+using MPlayerMaster.Device.Runner.Wrapper;
 
 namespace MPlayerMaster.Device
 {
     class MPlayerDeviceManager : MasterDeviceManager
     {
-
-
         public MPlayerDeviceManager(string deviceDescriptionFilePath, MPlayerSettings settings)
         {
             if (SystemHelper.IsLinux)

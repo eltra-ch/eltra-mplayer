@@ -1,12 +1,12 @@
 ﻿using EltraCommon.Logger;
 using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application.Parameters;
-using MPlayerMaster.Radio;
-using MPlayerMaster.Runner.Console;
+using MPlayerMaster.Device.Radio;
+using MPlayerMaster.Device.Runner.Console;
 using System;
 using System.Diagnostics;
 using System.IO;
 
-namespace MPlayerMaster.Runner
+namespace MPlayerMaster.Device.Runner
 {
     internal class MPlayerRunner
     {

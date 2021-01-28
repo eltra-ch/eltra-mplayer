@@ -3,14 +3,14 @@ using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application
 using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application.Parameters.Events;
 using EltraCommon.ObjectDictionary.Xdd.DeviceDescription.Profiles.Application.Parameters;
 using EltraConnector.Master.Device;
-using MPlayerMaster.Radio;
+using MPlayerMaster.Device.Radio;
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using static MPlayerMaster.MPlayerDefinitions;
 
-namespace MPlayerMaster.Runner
+namespace MPlayerMaster.Device.Runner
 {
     class PlayerControl
     {

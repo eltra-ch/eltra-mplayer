@@ -1,11 +1,9 @@
 ﻿using EltraCommon.Logger;
-using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application.Parameters;
-using MPlayerMaster.Radio;
+using MPlayerMaster.Device.Radio;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
-namespace MPlayerMaster.Runner.Console
+namespace MPlayerMaster.Device.Runner.Console
 {
     class MPlayerConsoleParser
     {
