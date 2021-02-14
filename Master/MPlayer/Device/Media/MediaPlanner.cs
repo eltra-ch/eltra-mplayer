@@ -103,6 +103,15 @@ namespace MPlayerMaster.Device.Media
 
         private void OnMediaPositionParameterChanged(object sender, ParameterChangedEventArgs e)
         {
+            BuildPlaylist();
+        }
+
+        #endregion
+
+        #region Methods
+
+        internal void BuildPlaylist()
+        {
             if (GetPositions(out int activeArtistPosition, out int activeAlbumPosition, out int activeCompositionPosition))
             {
                 BuildPlaylist(activeArtistPosition, activeAlbumPosition, activeCompositionPosition);
@@ -112,10 +121,6 @@ namespace MPlayerMaster.Device.Media
                 MsgLogger.WriteError($"{GetType().Name} - PlayMedia", "planner get url positions failed!");
             }
         }
-
-        #endregion
-
-        #region Methods
 
         private bool GetPositions(out int activeArtistPosition, out int activeAlbumPosition, out int activeCompositionPosition)
         {
@@ -176,17 +181,22 @@ namespace MPlayerMaster.Device.Media
 
             if (_mediaControlRandom != null)
             {
-                await _mediaControlRandom.UpdateValue();
+                var randomParameterValue = await _mediaControlRandom.UpdateValue();
+
+                if(randomParameterValue!=null)
+                {
+                    randomParameterValue.GetValue(ref _random);
+                }
 
                 _mediaControlRandom.ParameterChanged += OnMediaControlRandomParameterChanged;
             }
+
+            BuildPlaylist();
         }
 
-        
-
-        internal string GetNextUrl(bool repeat = true)
+        internal PlannerComposition GetNextUrl(bool repeat = true)
         {
-            string result = string.Empty;
+            PlannerComposition result = null;
 
             if(CurrentPlaylist.Count > 0)
             {
@@ -198,11 +208,11 @@ namespace MPlayerMaster.Device.Media
 
                     if (composition != null)
                     {
-                        result = $"\"{composition.FullPath}\"";
-
                         composition.State = PlayingState.Played;
 
                         _currentComposition = composition;
+
+                        result = composition;
                     }
                 }
                 else
@@ -243,9 +253,9 @@ namespace MPlayerMaster.Device.Media
             return result;
         }
 
-        internal string GetPreviousUrl(bool repeat = true)
+        internal PlannerComposition GetPreviousUrl(bool repeat = true)
         {
-            string result = string.Empty;
+            PlannerComposition result = null;
 
             if (CurrentPlaylist.Count > 0)
             {
@@ -272,11 +282,11 @@ namespace MPlayerMaster.Device.Media
 
                     if (composition != null)
                     {
-                        result = $"\"{composition.FullPath}\"";
-
                         composition.State = PlayingState.Played;
 
                         _currentComposition = composition;
+
+                        result = composition;
                     }
                 }
                 else
@@ -366,9 +376,12 @@ namespace MPlayerMaster.Device.Media
             return result;
         }
 
-        internal void ClearPlaylist()
+        internal void SetPlayListToReady()
         {
-            CurrentPlaylist.Clear();
+            foreach(var composition in CurrentPlaylist)
+            {
+                composition.State = PlayingState.Ready;
+            }
         }
 
         private Album GetAlbum(Artist artist, int activeAlbumPosition)
@@ -397,7 +410,7 @@ namespace MPlayerMaster.Device.Media
 
         internal void BuildPlaylist(int activeArtistPosition, int activeAlbumPosition, int activeCompositionPosition)
         {
-            ClearPlaylist();
+            CurrentPlaylist.Clear();
 
             var artist = GetArtist(activeArtistPosition);
 

@@ -12,6 +12,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using MPlayerMaster.Device.Runner.Wrapper;
 using static MPlayerMaster.MPlayerDefinitions;
+using MPlayerMaster.Device.Contracts;
+using MPlayerMaster.Extensions;
 
 namespace MPlayerMaster.Device.Media
 {
@@ -32,6 +34,8 @@ namespace MPlayerMaster.Device.Media
         
         private XddParameter _mediaControlState;
         private XddParameter _mediaControlStateDisplay;
+
+        private XddParameter _mediaCompositionPlaying;
 
         //relay
         private XddParameter _relayStateParameter;
@@ -96,11 +100,11 @@ namespace MPlayerMaster.Device.Media
 
         private void OnMPlayerProcessExited(object sender, EventArgs e)
         {
-            var url = MediaPlanner.GetNextUrl();
+            var composition = MediaPlanner.GetNextUrl();
 
-            if (!string.IsNullOrEmpty(url))
+            if (composition != null)
             {
-                PlayMedia(url);
+                PlayMedia(composition);
             }
         }
 
@@ -115,22 +119,16 @@ namespace MPlayerMaster.Device.Media
             }
         }
 
+        private void OnMediaDataStateParameterChanged(object sender, ParameterChangedEventArgs e)
+        {
+            MediaPlanner.BuildPlaylist();
+        }
+
         private void OnMediaControlStateChanged(MediaControlWordValue state)
         {
             MsgLogger.WriteFlow($"{GetType().Name} - OnMediaControlStateChanged", $"media control state changed, new state = {state}");
         
-            switch(state)
-            {
-                case MediaControlWordValue.Next:
-                    NextMedia();
-                    break;
-                case MediaControlWordValue.Previous:
-                    PreviousMedia();
-                    break;
-                case MediaControlWordValue.Stop:
-                    StopMedia();
-                    break;
-            }
+            
         }
 
         #endregion
@@ -169,7 +167,9 @@ namespace MPlayerMaster.Device.Media
         {
             SetStatusWord(StatusWordEnums.PendingExecution);
 
-            MediaPlanner.ClearPlaylist();
+            MediaPlanner.SetPlayListToReady();
+
+            _mediaCompositionPlaying?.SetValue(string.Empty);
 
             bool result = PlayerControl.Stop();
 
@@ -181,11 +181,11 @@ namespace MPlayerMaster.Device.Media
         private bool NextMedia()
         {
             bool result = false;
-            var url = MediaPlanner.GetNextUrl();
+            var composition = MediaPlanner.GetNextUrl();
 
-            if (!string.IsNullOrEmpty(url))
+            if (composition != null)
             {
-                result = PlayMedia(url);
+                result = PlayMedia(composition);
             }
 
             return result;
@@ -194,11 +194,11 @@ namespace MPlayerMaster.Device.Media
         private bool PreviousMedia()
         {
             bool result = false;
-            var url = MediaPlanner.GetPreviousUrl();
+            var composition = MediaPlanner.GetPreviousUrl();
 
-            if (!string.IsNullOrEmpty(url))
+            if (composition != null)
             {
-                result = PlayMedia(url);
+                result = PlayMedia(composition);
             }
 
             return result;
@@ -290,9 +290,7 @@ namespace MPlayerMaster.Device.Media
         
             GC.SuppressFinalize(this);
         }
-
         
-
         internal async Task InitParameters()
         {
             InitRelayState();
@@ -302,7 +300,20 @@ namespace MPlayerMaster.Device.Media
             
             _mediaControlState = Vcs.SearchParameter("PARAM_MediaControlState") as XddParameter;
             _mediaControlStateDisplay = Vcs.SearchParameter("PARAM_MediaControlStateDisplay") as XddParameter;
-            
+            _mediaCompositionPlaying = Vcs.SearchParameter("PARAM_CompositionPlaying") as XddParameter;
+
+            if(_mediaCompositionPlaying != null)
+            {
+                await _mediaCompositionPlaying.UpdateValue();
+            }
+
+            if (_mediaDataParameter != null)
+            {
+                await _mediaDataParameter.UpdateValue();
+
+                _mediaDataParameter.ParameterChanged += OnMediaDataStateParameterChanged;
+            }
+
             if (_mediaControlState != null)
             {
                 await _mediaControlState.UpdateValue();
@@ -332,26 +343,75 @@ namespace MPlayerMaster.Device.Media
             return result;
         }
 
-        public bool Play()
+        internal bool ControlMedia(MediaControlWordValue state)
         {
-            bool result = SetMediaControlWordValue(MediaControlWordValue.Play);          
+            bool result = SetMediaControlWordValue(state);
+
+            if (result)
+            {
+                switch (state)
+                {
+                    case MediaControlWordValue.Play:
+                        NextMedia();
+                        break;
+                    case MediaControlWordValue.Next:
+                        NextMedia();
+                        break;
+                    case MediaControlWordValue.Previous:
+                        PreviousMedia();
+                        break;
+                    case MediaControlWordValue.Stop:
+                        StopMedia();
+                        break;
+                }
+            }
+            else
+            {
+                MsgLogger.WriteError($"{GetType().Name} - ControlMedia", $"setting state {state} failed!");
+            }
 
             return result;
         }
 
-        private bool PlayMedia(string url)
+        public bool Play()
         {
+            bool result = SetMediaControlWordValue(MediaControlWordValue.Stop);
+
+            if (result)
+            {
+                result = SetMediaControlWordValue(MediaControlWordValue.Play);
+            }
+
+            return result;
+        }
+
+        private bool PlayMedia(PlannerComposition composition)
+        {
+            bool result = false;
+
             SetStatusWord(StatusWordEnums.PendingExecution);
 
-            bool result = PlayerControl.Start(url) >= 0;
+            if (composition != null)
+            {
+                _mediaCompositionPlaying?.SetValue(composition.GetTitle());
 
-            SetStatusWord(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
+                result = PlayerControl.Start(composition.GetUrl()) >= 0;
+
+                SetStatusWord(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
+            }
 
             return result;
         }
 
         internal bool Stop()
         {
+            if(GetMediaControlWordValue(out var state) && state == MediaControlWordValue.Stop)
+            {
+                SetMediaControlWordValue(MediaControlWordValue.Idle);
+            }
+
+            _mediaCompositionPlaying?.SetValue(string.Empty);
+
             var result = SetMediaControlWordValue(MediaControlWordValue.Stop);
 
             return result;
@@ -421,6 +481,24 @@ namespace MPlayerMaster.Device.Media
             if (_mediaControlState != null)
             {
                 result = _mediaControlState.SetValue((ushort) state);
+            }
+
+            return result;
+        }
+
+        private bool GetMediaControlWordValue(out MediaControlWordValue state)
+        {
+            bool result = false;
+
+            state = MediaControlWordValue.Idle;
+
+            if (_mediaControlState != null)
+            {
+                if(_mediaControlState.GetValue(out ushort s))
+                {
+                    state = (MediaControlWordValue)s;
+                    result = true;
+                }
             }
 
             return result;

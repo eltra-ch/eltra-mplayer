@@ -28,7 +28,7 @@
 				<version versionType="SW" readOnly="true">0x0100</version>
 				<version versionType="HW" readOnly="true">0x0210</version>
 				<version versionType="APPNB" readOnly="true">0x0005</version>
-				<version versionType="APPVER" readOnly="true">0x0001</version>
+				<version versionType="APPVER" readOnly="true">0x0003</version>
 			</DeviceIdentity>
 			<DeviceManager>
 				<userLevelList>
@@ -144,7 +144,7 @@
               <type>UNSIGNED8</type>
             </dataType>
             <flagsIDRef uniqueIDRef="AT_RO" />
-            <defaultValue>5</defaultValue>
+            <defaultValue>6</defaultValue>
             <userLevels />
           </parameter>
           <parameter uniqueID="PARAM_Media_Data">
@@ -259,7 +259,22 @@
             </userLevels>
             <displayFormat>dec</displayFormat>
           </parameter>
-
+          <!-- Currently playing composition -->
+          <parameter uniqueID="PARAM_CompositionPlaying">
+            <index>0x3200</index>
+            <subIndex>0x06</subIndex>
+            <label lang="en-TT">Composition playing</label>
+            <dataType>
+              <type>VISIBLE_STRING</type>
+            </dataType>
+            <flagsIDRef uniqueIDRef="AT_RO" />
+            <defaultValue></defaultValue>
+            <userLevels>
+              <userLevelIDRef uniqueIDRef="USR_Standard" />
+              <userLevelIDRef uniqueIDRef="USR_Expert" />
+              <userLevelIDRef uniqueIDRef="USR_Internal" />
+            </userLevels>
+          </parameter>          
 					<!-- Media Control-->
           <structuredParameter uniqueID="PARAM_MediaControl">
             <index>0x3201</index>

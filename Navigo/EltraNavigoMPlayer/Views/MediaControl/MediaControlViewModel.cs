@@ -227,7 +227,7 @@ namespace EltraNavigoMPlayer.Views.MediaControl
             }
         }
 
-        private void OnViewPropertyChanged(object sender, PropertyChangedEventArgs e)
+        private async void OnViewPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == "RelayStateValue")
             {
@@ -241,17 +241,29 @@ namespace EltraNavigoMPlayer.Views.MediaControl
             {
                 WriteIsShuffle();
             }
+            else if(e.PropertyName == "ActiveAlbumPositionValue")
+            {
+                await WritePosition(_activeAlbumPositionParameter, ActiveAlbumPositionValue);
+            }
+            else if (e.PropertyName == "ActiveArtistPositionValue")
+            {
+                await WritePosition(_activeArtistPositionParameter, ActiveArtistPositionValue);
+            }
+            else if (e.PropertyName == "ActiveCompositionPositionValue")
+            {
+                await WritePosition(_activeCompositionPositionParameter, ActiveCompositionPositionValue);
+            }
         }
 
         private async void OnStopButtonPressed(object obj)
         {
             IsBusy = true;
 
-            var command = await Device.GetCommand("StopMedia");
+            bool result = await ExecuteMediaControl(MediaControlWordValue.Stop);
 
-            if (command != null)
+            if(!result)
             {
-                await command.Execute();
+                ToastMessage.ShortAlert("Stop failed!");
             }
 
             IsBusy = false;
@@ -265,11 +277,11 @@ namespace EltraNavigoMPlayer.Views.MediaControl
 
             if (result)
             {
-                var command = await Device.GetCommand("PlayMedia");
+                result = await ExecuteMediaControl(MediaControlWordValue.Play);
 
-                if (command != null)
+                if(!result)
                 {
-                    await command.Execute();
+                    ToastMessage.ShortAlert("Play failed!");
                 }
             }
             else
@@ -280,16 +292,37 @@ namespace EltraNavigoMPlayer.Views.MediaControl
             IsBusy = false;
         }
 
+        private async Task<bool> ExecuteMediaControl(MediaControlWordValue mediaControlWordValue)
+        {
+            bool result = false;
+            var controlCommand = await Device?.GetCommand("MediaControl");
+
+            if (controlCommand != null)
+            {
+                controlCommand.SetParameterValue("State", (int)mediaControlWordValue);
+
+                var response = await controlCommand.Execute();
+
+                if (response != null)
+                {
+                    var responseResult = response.GetParameter("Result");
+
+                    responseResult?.GetValue(ref result);
+                }
+            }
+
+            return result;
+        }
+
         private async void OnNextButtonPressed(object obj)
         {
             IsBusy = true;
 
-            if(_mediaControlParameter!=null && _mediaControlParameter.SetValue((ushort)MediaControlWordValue.Next))
+            bool result = await ExecuteMediaControl(MediaControlWordValue.Next);
+
+            if (!result)
             {
-                if (!await _mediaControlParameter.Write())
-                {
-                    ToastMessage.ShortAlert("Next failed!");
-                }
+                ToastMessage.ShortAlert("Next failed!");
             }
 
             IsBusy = false;
@@ -299,12 +332,11 @@ namespace EltraNavigoMPlayer.Views.MediaControl
         {
             IsBusy = true;
 
-            if (_mediaControlParameter != null && _mediaControlParameter.SetValue((ushort)MediaControlWordValue.Previous))
+            bool result = await ExecuteMediaControl(MediaControlWordValue.Previous);
+
+            if (!result)
             {
-                if (!await _mediaControlParameter.Write())
-                {
-                    ToastMessage.ShortAlert("Previous failed!");
-                }
+                ToastMessage.ShortAlert("Previous failed!");
             }
 
             IsBusy = false;
@@ -375,7 +407,7 @@ namespace EltraNavigoMPlayer.Views.MediaControl
             {
                 _internalChange = true;
 
-                ActiveArtistPositionValue = selectedIndex;
+                ActiveArtistPositionValue = selectedIndex - 1;
 
                 if (selectedIndex < Artists.Count)
                 {
@@ -390,7 +422,7 @@ namespace EltraNavigoMPlayer.Views.MediaControl
 
                         AddAlbumCompositions(ActiveAlbum);
 
-                        ActiveCompositionPositionValue = 0;
+                        ActiveCompositionPositionValue = -1;
 
                         if (Compositions != null && Compositions.Count > 0)
                         {
@@ -441,7 +473,7 @@ namespace EltraNavigoMPlayer.Views.MediaControl
 
                 if (selectedIndex < Albums.Count)
                 {
-                    ActiveAlbumPositionValue = selectedIndex;
+                    ActiveAlbumPositionValue = selectedIndex - 1;
                     var activeAlbum = Albums[selectedIndex];
 
                     AddAlbumCompositions(activeAlbum);
@@ -665,7 +697,7 @@ namespace EltraNavigoMPlayer.Views.MediaControl
 
                 if (Artists.Count > 0)
                 {
-                    if (activeArtistPositionValue >= -1)
+                    if (activeArtistPositionValue >= -1 && Artists.Count > activeArtistPositionValue + 1)
                     {
                         ActiveArtist = Artists[activeArtistPositionValue + 1];
                     }
@@ -688,18 +720,24 @@ namespace EltraNavigoMPlayer.Views.MediaControl
                 Artists != null && Artists.Count > 0 &&
                 ActiveArtistPositionValue < Artists.Count)
             {
-                var artist = Artists[ActiveArtistPositionValue + 1];
+                if (Artists.Count > ActiveArtistPositionValue + 1)
+                {
+                    var artist = Artists[ActiveArtistPositionValue + 1];
 
-                AddAlbums(artist);
+                    AddAlbums(artist);
+                }
             }
 
             if (Albums != null && Albums.Count > 0)
             {
                 ActiveAlbumPositionValue = activeAlbumPositionValue;
 
-                if (activeAlbumPositionValue >= -1)
+                if (activeAlbumPositionValue >= -1 && Albums.Count > activeAlbumPositionValue)
                 {
-                    ActiveAlbum = Albums[activeAlbumPositionValue + 1];
+                    if (Albums.Count > activeAlbumPositionValue + 1)
+                    {
+                        ActiveAlbum = Albums[activeAlbumPositionValue + 1];
+                    }
                 }
                 else
                 {
@@ -725,14 +763,17 @@ namespace EltraNavigoMPlayer.Views.MediaControl
                 Albums != null && Albums.Count > 0 &&
                 ActiveAlbumPositionValue < Albums.Count)
             {
-                var activeAlbum = Albums[ActiveAlbumPositionValue + 1];
+                if (Albums.Count > ActiveAlbumPositionValue + 1)
+                {
+                    var activeAlbum = Albums[ActiveAlbumPositionValue + 1];
 
-                AddAlbumCompositions(activeAlbum);
+                    AddAlbumCompositions(activeAlbum);
+                }
             }
 
             if (Compositions != null && Compositions.Count > 0)
             {
-                if (activeCompositionPositionValue >= -1)
+                if (activeCompositionPositionValue >= -1 && Compositions.Count > activeCompositionPositionValue + 1)
                 {
                     ActiveComposition = Compositions[activeCompositionPositionValue + 1];
                     ActiveCompositionPositionValue = activeCompositionPositionValue;

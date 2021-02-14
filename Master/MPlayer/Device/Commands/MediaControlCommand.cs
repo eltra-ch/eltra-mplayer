@@ -1,19 +1,22 @@
 ﻿using System;
 using EltraCommon.Contracts.CommandSets;
 using EltraCommon.Contracts.Devices;
+using MPlayerCommon.Definitions;
 
 namespace MPlayerMaster.Device.Commands
 {
-    public class StopMediaCommand : DeviceCommand
+    public class MediaControlCommand : DeviceCommand
     {
-        public StopMediaCommand()
+        public MediaControlCommand()
         {
         }
 
-        public StopMediaCommand(EltraDevice device)
+        public MediaControlCommand(EltraDevice device)
             : base(device)
         {
-            Name = "StopMedia";
+            Name = "MediaControl";
+
+            AddParameter("State", TypeCode.Int16, ParameterType.In);
 
             //Result
             AddParameter("Result", TypeCode.String, ParameterType.Out);
@@ -22,7 +25,7 @@ namespace MPlayerMaster.Device.Commands
 
         public override DeviceCommand Clone()
         {
-            Clone(out StopMediaCommand result);
+            Clone(out MediaControlCommand result);
 
             return result;
         }
@@ -35,7 +38,11 @@ namespace MPlayerMaster.Device.Commands
             
             if (communication is MPlayerDeviceCommunication deviceCommunication)
             {
-                var commandResult = deviceCommunication.StopMedia();
+                int stateValue = -1;
+
+                GetParameterValue("State", ref stateValue);
+
+                var commandResult = deviceCommunication.ControlMedia((MediaControlWordValue)stateValue);
 
                 SetParameterValue("ErrorCode", communication.LastErrorCode);
                 SetParameterValue("Result", commandResult);

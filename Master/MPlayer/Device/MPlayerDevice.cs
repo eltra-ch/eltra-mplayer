@@ -16,11 +16,10 @@ namespace MPlayerMaster.Device
             
             DeviceToolPayloadsPath = settings.NavigoPluginsPath;
 
-            Identification.SerialNumber = 0x102;
+            Identification.SerialNumber = 0x104;
 
             AddCommand(new QueryStationCommand(this));
-            AddCommand(new PlayMediaCommand(this));
-            AddCommand(new StopMediaCommand(this));
+            AddCommand(new MediaControlCommand(this));
         }
 
         protected override void OnStatusChanged()

@@ -6,6 +6,7 @@ using MPlayerMaster.Device.Runner;
 using MPlayerMaster.Device.Media;
 using MPlayerMaster.Device.Radio;
 using EltraCommon.Logger;
+using MPlayerCommon.Definitions;
 
 namespace MPlayerMaster.Device
 {
@@ -51,6 +52,13 @@ namespace MPlayerMaster.Device
                 PlayerControl = PlayerControl,
                 Vcs = Vcs
             };
+
+            return result;
+        }
+
+        internal object ControlMedia(MediaControlWordValue state)
+        {
+            bool result = MediaPlayer.ControlMedia(state);
 
             return result;
         }
