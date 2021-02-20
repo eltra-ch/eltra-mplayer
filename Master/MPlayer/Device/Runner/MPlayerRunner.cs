@@ -119,6 +119,9 @@ namespace MPlayerMaster.Device.Runner
 
                 if(_process != null && !_process.HasExited)
                 {
+                    _process.EnableRaisingEvents = false;
+                    _process.Exited -= OnProcessExited;
+
                     _process.Kill();
                 }
 
@@ -126,7 +129,7 @@ namespace MPlayerMaster.Device.Runner
                 var startInfo = new ProcessStartInfo();
                 
                 _process = new Process();
-
+                _process.EnableRaisingEvents = true;
                 _process.Exited += OnProcessExited;
 
                 startInfo.UseShellExecute = false;
@@ -187,6 +190,12 @@ namespace MPlayerMaster.Device.Runner
         {
             bool result = false;
 
+            if (_process != null)
+            {
+                _process.EnableRaisingEvents = false;
+                _process.Exited -= OnProcessExited;
+            }
+
             try
             {
                 result = CloseActualStationProcess();
@@ -205,7 +214,7 @@ namespace MPlayerMaster.Device.Runner
             {
                 MsgLogger.Exception($"{GetType().Name} - Stop [2]", e);
             }
-
+                        
             return result;
         }
 

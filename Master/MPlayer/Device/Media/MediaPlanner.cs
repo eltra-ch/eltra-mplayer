@@ -61,6 +61,8 @@ namespace MPlayerMaster.Device.Media
 
         public bool IsPlaylistEmpty => CurrentPlaylist.Count == 0;
 
+        public PlannerComposition CurrentComposition => _currentComposition;
+
         #endregion
 
         #region Events handling
@@ -174,7 +176,12 @@ namespace MPlayerMaster.Device.Media
 
             if (_mediaControlShuffle != null)
             {
-                await _mediaControlShuffle.UpdateValue();
+                var shuffleParameterValue = await _mediaControlShuffle.UpdateValue();
+
+                if(shuffleParameterValue != null)
+                {
+                    shuffleParameterValue.GetValue(ref _shuffle);
+                }
 
                 _mediaControlShuffle.ParameterChanged += OnMediaControlShuffleParameterChanged;
             }

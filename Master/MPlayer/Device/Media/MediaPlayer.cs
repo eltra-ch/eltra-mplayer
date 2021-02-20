@@ -100,11 +100,14 @@ namespace MPlayerMaster.Device.Media
 
         private void OnMPlayerProcessExited(object sender, EventArgs e)
         {
-            var composition = MediaPlanner.GetNextUrl();
-
-            if (composition != null)
+            if (MediaPlanner.Shuffle)
             {
-                PlayMedia(composition);
+                var composition = MediaPlanner.GetNextUrl();
+
+                if (composition != null)
+                {
+                    PlayMedia(composition);
+                }
             }
         }
 
@@ -174,6 +177,24 @@ namespace MPlayerMaster.Device.Media
             bool result = PlayerControl.Stop();
 
             SetStatusWord(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
+
+            return result;
+        }
+
+        private bool CurrentMedia()
+        {
+            bool result = false;
+            var composition = MediaPlanner.CurrentComposition;
+
+            if(composition == null)
+            {
+                composition = MediaPlanner.GetNextUrl();
+            }
+
+            if (composition != null)
+            {
+                result = PlayMedia(composition);
+            }
 
             return result;
         }
@@ -352,7 +373,7 @@ namespace MPlayerMaster.Device.Media
                 switch (state)
                 {
                     case MediaControlWordValue.Play:
-                        NextMedia();
+                        CurrentMedia();
                         break;
                     case MediaControlWordValue.Next:
                         NextMedia();
