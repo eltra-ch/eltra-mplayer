@@ -7,14 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EltraNavigoMPlayer", "Eltra
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MPlayerCommon", "..\..\Common\MPlayerCommon\MPlayerCommon.csproj", "{458433E7-0710-48A6-B8A0-2172D87B6F02}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EltraCommon", "..\..\..\eltra-sdk\xternals\common\EltraCommon\EltraCommon.csproj", "{670F2EFD-2587-4F8A-BCDC-B43FED79DA3F}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EltraConnector", "..\..\..\eltra-sdk\connect\EltraConnector\EltraConnector.csproj", "{DD4FF961-B3C4-4AFD-B56D-9B86CF48EC81}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EltraUiCommon", "..\..\..\eltra-sdk\xternals\common\EltraUiCommon\EltraUiCommon.csproj", "{ABB4545A-8653-4EE9-96D5-E22822F36011}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EltraXamCommon", "..\..\..\eltra-sdk\xternals\common\EltraXamCommon\EltraXamCommon.csproj", "{D1ED2FD1-B9B4-4F2E-BFB1-DDA8FC6A5708}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug - UWP|Any CPU = Debug - UWP|Any CPU
@@ -33,30 +25,6 @@ Global
 		{458433E7-0710-48A6-B8A0-2172D87B6F02}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{458433E7-0710-48A6-B8A0-2172D87B6F02}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{458433E7-0710-48A6-B8A0-2172D87B6F02}.Release|Any CPU.Build.0 = Release|Any CPU
-		{670F2EFD-2587-4F8A-BCDC-B43FED79DA3F}.Debug - UWP|Any CPU.ActiveCfg = Debug - UWP|Any CPU
-		{670F2EFD-2587-4F8A-BCDC-B43FED79DA3F}.Debug - UWP|Any CPU.Build.0 = Debug - UWP|Any CPU
-		{670F2EFD-2587-4F8A-BCDC-B43FED79DA3F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{670F2EFD-2587-4F8A-BCDC-B43FED79DA3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{670F2EFD-2587-4F8A-BCDC-B43FED79DA3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{670F2EFD-2587-4F8A-BCDC-B43FED79DA3F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DD4FF961-B3C4-4AFD-B56D-9B86CF48EC81}.Debug - UWP|Any CPU.ActiveCfg = Debug - UWP|Any CPU
-		{DD4FF961-B3C4-4AFD-B56D-9B86CF48EC81}.Debug - UWP|Any CPU.Build.0 = Debug - UWP|Any CPU
-		{DD4FF961-B3C4-4AFD-B56D-9B86CF48EC81}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DD4FF961-B3C4-4AFD-B56D-9B86CF48EC81}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DD4FF961-B3C4-4AFD-B56D-9B86CF48EC81}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DD4FF961-B3C4-4AFD-B56D-9B86CF48EC81}.Release|Any CPU.Build.0 = Release|Any CPU
-		{ABB4545A-8653-4EE9-96D5-E22822F36011}.Debug - UWP|Any CPU.ActiveCfg = Debug - UWP|Any CPU
-		{ABB4545A-8653-4EE9-96D5-E22822F36011}.Debug - UWP|Any CPU.Build.0 = Debug - UWP|Any CPU
-		{ABB4545A-8653-4EE9-96D5-E22822F36011}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{ABB4545A-8653-4EE9-96D5-E22822F36011}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{ABB4545A-8653-4EE9-96D5-E22822F36011}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{ABB4545A-8653-4EE9-96D5-E22822F36011}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D1ED2FD1-B9B4-4F2E-BFB1-DDA8FC6A5708}.Debug - UWP|Any CPU.ActiveCfg = Debug - UWP|Any CPU
-		{D1ED2FD1-B9B4-4F2E-BFB1-DDA8FC6A5708}.Debug - UWP|Any CPU.Build.0 = Debug - UWP|Any CPU
-		{D1ED2FD1-B9B4-4F2E-BFB1-DDA8FC6A5708}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D1ED2FD1-B9B4-4F2E-BFB1-DDA8FC6A5708}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D1ED2FD1-B9B4-4F2E-BFB1-DDA8FC6A5708}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D1ED2FD1-B9B4-4F2E-BFB1-DDA8FC6A5708}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
