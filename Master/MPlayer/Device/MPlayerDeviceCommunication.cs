@@ -154,18 +154,6 @@ namespace MPlayerMaster.Device
 
         #endregion
 
-        internal bool StopMedia()
-        {
-            return MediaPlayer.Stop();
-        }
-
-        internal bool PlayMedia()
-        {
-            bool result = MediaPlayer.Play();
-
-            return result;
-        }
-
         public string QueryStation(string query)
         {
             var result = string.Empty;

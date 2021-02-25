@@ -84,7 +84,7 @@ namespace MPlayerCommon.Contracts.Media
 
             foreach (var path in paths)
             {
-                var album = new Album(path);
+                var album = new Album(this, path);
 
                 Add(album);
             }

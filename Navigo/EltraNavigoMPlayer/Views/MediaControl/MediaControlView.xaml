@@ -110,6 +110,9 @@
                     <!-- Stop -->
                     <Frame Grid.Column="0" Padding="0" BackgroundColor="Transparent">
                         <Grid>
+                            <Grid.Resources>
+                                <xamconverters:NegateBooleanConverter x:Key="NegateBooleanConverter"/>
+                            </Grid.Resources>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
@@ -124,36 +127,34 @@
                                     <ColumnDefinition/>
                                 </Grid.ColumnDefinitions>
                                 <Button Grid.Column="0" Text="Play" Command="{Binding PlayButtonCommand}">
-                                    <!--<Button.IsEnabled>
+                                    <Button.IsEnabled>
                                         <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
                                             <Binding Path="IsEnabled" />
-                                            <Binding Path="ActiveStationValue" Converter="{StaticResource StopPlayStateConverter}" />
+                                            <Binding Path="IsPlaying" Converter="{StaticResource NegateBooleanConverter}" />
                                         </MultiBinding>
-                                    </Button.IsEnabled>-->
+                                    </Button.IsEnabled>
                                 </Button>
                                 <Button Grid.Column="1" Text="Stop" Command="{Binding StopButtonCommand}">
-                                    <!--<Button.IsEnabled>
+                                    <Button.IsEnabled>
                                         <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
                                             <Binding Path="IsEnabled" />
-                                            <Binding Path="ActiveStationValue" Converter="{StaticResource StopPlayStateConverter}" />
+                                            <Binding Path="IsPlaying"/>
                                         </MultiBinding>
-                                    </Button.IsEnabled>-->
+                                    </Button.IsEnabled>
                                 </Button>
                                 <Button Grid.Row="1" Grid.Column="0" Text="Next" Command="{Binding NextButtonCommand}">
-                                    <!--<Button.IsEnabled>
+                                    <Button.IsEnabled>
                                         <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
-                                            <Binding Path="IsEnabled" />
-                                            <Binding Path="ActiveStationValue" Converter="{StaticResource StopPlayStateConverter}" />
+                                            <Binding Path="IsEnabled" />                                            
                                         </MultiBinding>
-                                    </Button.IsEnabled>-->
+                                    </Button.IsEnabled>
                                 </Button>
-                                <Button Grid.Row="1" Grid.Column="1" Text="Preview" Command="{Binding PrevButtonCommand}">
-                                    <!--<Button.IsEnabled>
+                                <Button Grid.Row="1" Grid.Column="1" Text="Previous" Command="{Binding PrevButtonCommand}">
+                                    <Button.IsEnabled>
                                         <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
                                             <Binding Path="IsEnabled" />
-                                            <Binding Path="ActiveStationValue" Converter="{StaticResource StopPlayStateConverter}" />
                                         </MultiBinding>
-                                    </Button.IsEnabled>-->
+                                    </Button.IsEnabled>
                                 </Button>
                             </Grid>
 

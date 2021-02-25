@@ -65,6 +65,7 @@ namespace EltraNavigoMPlayer.Views.MediaControl
 
         private bool _isRandom;
         private bool _isShuffle;
+        private bool _isPlaying;
 
         #endregion
 
@@ -190,6 +191,12 @@ namespace EltraNavigoMPlayer.Views.MediaControl
             set => SetProperty(ref _activeCompositionPositionValue, value);
         }
 
+        public bool IsPlaying
+        {
+            get => _isPlaying;
+            set => SetProperty(ref _isPlaying, value);
+        }
+
         #endregion
 
         #region Commands 
@@ -207,6 +214,16 @@ namespace EltraNavigoMPlayer.Views.MediaControl
         #endregion
 
         #region Events handling
+
+        private void OnMediaControlParameterChanged(object sender, ParameterChangedEventArgs e)
+        {
+            var parameter = e.Parameter;
+                        
+            if (parameter != null && parameter.GetValue(out ushort mediaControlStateValue))
+            {
+                UpdatePlayingState(mediaControlStateValue);
+            }
+        }
 
         private void OnMediaDataParameterChanged(object sender, ParameterChangedEventArgs e)
         {
@@ -799,6 +816,41 @@ namespace EltraNavigoMPlayer.Views.MediaControl
             }
         }
 
+        private async Task UpdateMediaControlAsync()
+        {
+            IsBusy = true;
+
+            if (_mediaControlParameter != null)
+            {
+                var mediaControlState = await _mediaControlParameter.ReadValue();
+                ushort mediaControlStateValue = 0;
+                if(mediaControlState!=null)
+                {
+                    if(mediaControlState.GetValue(ref mediaControlStateValue))
+                    {
+                        UpdatePlayingState(mediaControlStateValue);
+                    }
+                }
+            }
+
+            IsBusy = false;
+        }
+
+        private void UpdatePlayingState(ushort mediaControlStateValue)
+        {
+            var mcv = (MediaControlWordValue)mediaControlStateValue;
+
+            switch (mcv)
+            {
+                case MediaControlWordValue.Stop:
+                    IsPlaying = false;
+                    break;
+                default:
+                    IsPlaying = true;
+                    break;
+            }
+        }
+
         private async Task UpdateMediaAsync()
         {
             IsBusy = true;
@@ -931,6 +983,8 @@ namespace EltraNavigoMPlayer.Views.MediaControl
         {
             Task.Run(async () =>
             {
+                await UpdateMediaControlAsync();
+
                 await UpdateMediaAsync();
 
                 var activeArtistPositionValue = await ReadPosition(_activeArtistPositionParameter);
@@ -946,7 +1000,7 @@ namespace EltraNavigoMPlayer.Views.MediaControl
 
                 await UpdateActiveStationAsync();
 
-                await UpdateRandomShuffleAsync();
+                await UpdateRandomShuffleAsync();                 
             });
             
             return base.Show();
@@ -1004,6 +1058,13 @@ namespace EltraNavigoMPlayer.Views.MediaControl
                 Agent.StatusChanged += OnAgentStatusChanged;
             }
 
+            if(_mediaControlParameter!=null)
+            {
+                _mediaControlParameter.ParameterChanged += OnMediaControlParameterChanged;
+
+                _mediaControlParameter.AutoUpdate();
+            }
+
             RegisterMediaParameterEvent();
 
             RegisterStationParameterEvent();
@@ -1054,6 +1115,11 @@ namespace EltraNavigoMPlayer.Views.MediaControl
             if (_activeStationParameter != null)
             {
                 _activeStationParameter.StopUpdate();
+            }
+
+            if(_mediaControlParameter != null)
+            {
+                _mediaControlParameter.StopUpdate();
             }
 
             if (Agent != null)

@@ -14,14 +14,19 @@ namespace MPlayerCommon.Contracts.Media
         {
         }
 
-        public Composition(string path)
+        public Composition(Album album, string path)
         {
+            Album = album;
             FullPath = path;
         }
 
         #endregion
 
         #region Properties
+
+        [IgnoreDataMember]
+        [JsonIgnore]
+        public Album Album { get; set; }
 
         [IgnoreDataMember]
         [JsonIgnore]

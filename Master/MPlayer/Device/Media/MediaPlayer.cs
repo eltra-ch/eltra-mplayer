@@ -33,8 +33,7 @@ namespace MPlayerMaster.Device.Media
         private XddParameter _mediaDataCompressedParameter;
         
         private XddParameter _mediaControlState;
-        private XddParameter _mediaControlStateDisplay;
-
+        
         private XddParameter _mediaCompositionPlaying;
 
         //relay
@@ -175,6 +174,11 @@ namespace MPlayerMaster.Device.Media
             _mediaCompositionPlaying?.SetValue(string.Empty);
 
             bool result = PlayerControl.Stop();
+
+            if (result)
+            {
+                SetMediaStatusWordValue(MediaStatusWordValue.Stopped);
+            }
 
             SetStatusWord(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
 
@@ -320,7 +324,7 @@ namespace MPlayerMaster.Device.Media
             _mediaDataCompressedParameter = Vcs.SearchParameter("PARAM_Media_Data_Compressed") as XddParameter;
             
             _mediaControlState = Vcs.SearchParameter("PARAM_MediaControlState") as XddParameter;
-            _mediaControlStateDisplay = Vcs.SearchParameter("PARAM_MediaControlStateDisplay") as XddParameter;
+            
             _mediaCompositionPlaying = Vcs.SearchParameter("PARAM_CompositionPlaying") as XddParameter;
 
             if(_mediaCompositionPlaying != null)
@@ -338,13 +342,6 @@ namespace MPlayerMaster.Device.Media
             if (_mediaControlState != null)
             {
                 await _mediaControlState.UpdateValue();
-
-                _mediaControlState.ParameterChanged += OnMediaControlStateParameterChanged;
-            }
-
-            if (_mediaControlStateDisplay != null)
-            {
-                await _mediaControlStateDisplay.UpdateValue();
             }
 
             await MediaPlanner.InitParameters();
@@ -366,41 +363,55 @@ namespace MPlayerMaster.Device.Media
 
         internal bool ControlMedia(MediaControlWordValue state)
         {
-            bool result = SetMediaControlWordValue(state);
+            bool result = false;
 
-            if (result)
+            switch (state)
             {
-                switch (state)
-                {
-                    case MediaControlWordValue.Play:
-                        CurrentMedia();
-                        break;
-                    case MediaControlWordValue.Next:
-                        NextMedia();
-                        break;
-                    case MediaControlWordValue.Previous:
-                        PreviousMedia();
-                        break;
-                    case MediaControlWordValue.Stop:
-                        StopMedia();
-                        break;
-                }
+                case MediaControlWordValue.Play:
+                    if (CurrentMedia())
+                    {
+                        result = SetMediaStatusWordValue(MediaStatusWordValue.Playing);
+                    }
+                    else
+                    {
+                        MsgLogger.WriteError($"{GetType().Name} - ControlMedia", $"play current media failed!");
+                    }
+                    break;
+                case MediaControlWordValue.Next:
+                    if (NextMedia())
+                    {
+                        result = SetMediaStatusWordValue(MediaStatusWordValue.Playing);
+                    }
+                    else
+                    {
+                        MsgLogger.WriteError($"{GetType().Name} - ControlMedia", $"play next media failed!");
+                    }
+                    break;
+                case MediaControlWordValue.Previous:
+                    if (PreviousMedia())
+                    {
+                        result = SetMediaStatusWordValue(MediaStatusWordValue.Playing);
+                    }
+                    else
+                    {
+                        MsgLogger.WriteError($"{GetType().Name} - ControlMedia", $"play previous media failed!");
+                    }
+                    break;
+                case MediaControlWordValue.Stop:
+                    if (StopMedia())
+                    {
+                        result = SetMediaStatusWordValue(MediaStatusWordValue.Stopped);
+                    }
+                    else
+                    {
+                        MsgLogger.WriteError($"{GetType().Name} - ControlMedia", $"stop media failed!");
+                    }
+                    break;
             }
-            else
+
+            if (!result)
             {
                 MsgLogger.WriteError($"{GetType().Name} - ControlMedia", $"setting state {state} failed!");
-            }
-
-            return result;
-        }
-
-        public bool Play()
-        {
-            bool result = SetMediaControlWordValue(MediaControlWordValue.Stop);
-
-            if (result)
-            {
-                result = SetMediaControlWordValue(MediaControlWordValue.Play);
             }
 
             return result;
@@ -414,26 +425,14 @@ namespace MPlayerMaster.Device.Media
 
             if (composition != null)
             {
+                //composition.
+
                 _mediaCompositionPlaying?.SetValue(composition.GetTitle());
 
                 result = PlayerControl.Start(composition.GetUrl()) >= 0;
 
                 SetStatusWord(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
             }
-
-            return result;
-        }
-
-        internal bool Stop()
-        {
-            if(GetMediaControlWordValue(out var state) && state == MediaControlWordValue.Stop)
-            {
-                SetMediaControlWordValue(MediaControlWordValue.Idle);
-            }
-
-            _mediaCompositionPlaying?.SetValue(string.Empty);
-
-            var result = SetMediaControlWordValue(MediaControlWordValue.Stop);
 
             return result;
         }
@@ -461,22 +460,6 @@ namespace MPlayerMaster.Device.Media
                         break;                    
                 }
             }
-            else if (objectIndex == 0x3201)
-            {
-                switch (objectSubindex)
-                {
-                    case 0x01:
-                        {
-                            ushort state = BitConverter.ToUInt16(data, 0);
-
-                            if (_mediaControlState != null)
-                            {
-                                result = _mediaControlState.SetValue(state);
-                            }
-                        }
-                        break;                    
-                }
-            }
             else if (objectIndex == 0x3141 && objectSubindex == 0x01)
             {
                 ushort relayState = BitConverter.ToUInt16(data, 0);
@@ -495,7 +478,7 @@ namespace MPlayerMaster.Device.Media
             return result;
         }
 
-        private bool SetMediaControlWordValue(MediaControlWordValue state)
+        private bool SetMediaStatusWordValue(MediaStatusWordValue state)
         {
             bool result = false;
 
@@ -507,17 +490,17 @@ namespace MPlayerMaster.Device.Media
             return result;
         }
 
-        private bool GetMediaControlWordValue(out MediaControlWordValue state)
+        private bool GetMediaStatusWordValue(out MediaStatusWordValue state)
         {
             bool result = false;
 
-            state = MediaControlWordValue.Idle;
+            state = MediaStatusWordValue.Unknown;
 
             if (_mediaControlState != null)
             {
                 if(_mediaControlState.GetValue(out ushort s))
                 {
-                    state = (MediaControlWordValue)s;
+                    state = (MediaStatusWordValue)s;
                     result = true;
                 }
             }

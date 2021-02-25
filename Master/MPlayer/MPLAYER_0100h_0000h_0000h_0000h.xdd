@@ -28,7 +28,7 @@
 				<version versionType="SW" readOnly="true">0x0100</version>
 				<version versionType="HW" readOnly="true">0x0210</version>
 				<version versionType="APPNB" readOnly="true">0x0005</version>
-				<version versionType="APPVER" readOnly="true">0x0003</version>
+				<version versionType="APPVER" readOnly="true">0x0004</version>
 			</DeviceIdentity>
 			<DeviceManager>
 				<userLevelList>
@@ -288,7 +288,7 @@
               <type>UNSIGNED8</type>
             </dataType>
             <flagsIDRef uniqueIDRef="AT_RO" />
-            <defaultValue>4</defaultValue>
+            <defaultValue>3</defaultValue>
             <userLevels />
           </parameter>          
           <!-- Media Control Word -->
@@ -299,44 +299,18 @@
             <dataType>
               <type>UNSIGNED16</type>
             </dataType>
-            <flagsIDRef uniqueIDRef="AT_RW_BACKUP" />
+            <flagsIDRef uniqueIDRef="AT_RO" />
             <defaultValue>0</defaultValue>
             <userLevels>
               <userLevelIDRef uniqueIDRef="USR_Expert" />
               <userLevelIDRef uniqueIDRef="USR_Internal" />
             </userLevels>
             <displayFormat>hex</displayFormat>
-          </parameter>
-          <!-- Media Status Word -->
-          <parameter uniqueID="PARAM_MediaControlStateDisplay">
-            <index>0x3201</index>
-            <subIndex>0x02</subIndex>
-            <label lang="en-TT">Media Control State Display</label>
-            <dataType>
-              <type>UNSIGNED16</type>
-            </dataType>
-            <flagsIDRef uniqueIDRef="AT_RO" />
-            <defaultValue>0x00</defaultValue>
-            <allowedValues>
-              <range>
-                <minValue>
-                  <value>0x00</value>
-                </minValue>
-                <maxValue>
-                  <value>0xFFFF</value>
-                </maxValue>
-              </range>
-            </allowedValues>
-            <userLevels>
-              <userLevelIDRef uniqueIDRef="USR_Expert" />
-              <userLevelIDRef uniqueIDRef="USR_Internal" />
-            </userLevels>
-            <displayFormat>hex</displayFormat>
-          </parameter>
+          </parameter>          
           <!-- Shuffle -->
           <parameter uniqueID="PARAM_MediaControlShuffle">
             <index>0x3201</index>
-            <subIndex>0x03</subIndex>
+            <subIndex>0x02</subIndex>
             <label lang="en-TT">Media Control Shuffle</label>
             <dataType>
               <type>BOOLEAN</type>
@@ -353,7 +327,7 @@
           <!-- Random -->
           <parameter uniqueID="PARAM_MediaControlRandom">
             <index>0x3201</index>
-            <subIndex>0x04</subIndex>
+            <subIndex>0x03</subIndex>
             <label lang="en-TT">Media Control Random</label>
             <dataType>
               <type>BOOLEAN</type>

@@ -23,14 +23,19 @@ namespace MPlayerCommon.Contracts.Media
         {
         }
 
-        public Album(string path)
+        public Album(Artist artist, string path)
         {
+            Artist = artist;
             FullPath = path;
         }
 
         #endregion
 
         #region Properties
+
+        [IgnoreDataMember]
+        [JsonIgnore]
+        public Artist Artist { get; set; }
 
         [DataMember]
         public string Id { get; set; }
@@ -93,7 +98,7 @@ namespace MPlayerCommon.Contracts.Media
 
             foreach (var path in paths)
             {
-                var composition = new Composition(path);
+                var composition = new Composition(this, path);
 
                 Add(composition);
             }

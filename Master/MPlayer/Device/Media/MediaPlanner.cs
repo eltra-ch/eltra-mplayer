@@ -484,7 +484,7 @@ namespace MPlayerMaster.Device.Media
             {
                 switch (objectSubindex)
                 {
-                    case 0x03:
+                    case 0x02:
                         {
                             bool state = BitConverter.ToBoolean(data, 0);
 
@@ -494,7 +494,7 @@ namespace MPlayerMaster.Device.Media
                             }
                         }
                         break;
-                    case 0x04:
+                    case 0x03:
                         {
                             bool state = BitConverter.ToBoolean(data, 0);
 
