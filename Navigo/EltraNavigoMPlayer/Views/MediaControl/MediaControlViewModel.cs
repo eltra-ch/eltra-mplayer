@@ -899,8 +899,8 @@ namespace EltraNavigoMPlayer.Views.MediaControl
 
         private void InitializeRandomShuffleParameters()
         {
-            _randomParameter = Device?.SearchParameter(0x3201, 0x04) as XddParameter;
-            _shuffleParameter = Device?.SearchParameter(0x3201, 0x03) as XddParameter;
+            _randomParameter = Device?.SearchParameter(0x3201, 0x03) as XddParameter;
+            _shuffleParameter = Device?.SearchParameter(0x3201, 0x02) as XddParameter;
         }
 
         private bool GetActiveStationValue(out int activeStationValue)
