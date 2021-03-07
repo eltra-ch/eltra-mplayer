@@ -99,6 +99,8 @@ namespace MPlayerMaster.Device.Media
 
         private void OnMPlayerProcessExited(object sender, EventArgs e)
         {
+            MsgLogger.WriteFlow($"{GetType().Name} - OnMPlayerProcessExited", $"process exited, shuffle = {MediaPlanner.Shuffle}");
+
             SetMediaStatusWordValue(MediaStatusWordValue.Stopped);
 
             if (MediaPlanner.Shuffle)
@@ -107,7 +109,13 @@ namespace MPlayerMaster.Device.Media
 
                 if (composition != null)
                 {
+                    MsgLogger.WriteFlow($"{GetType().Name} - OnMPlayerProcessExited", $"play composition {composition.GetTitle()}");
+
                     PlayMedia(composition);
+                }
+                else
+                {
+                    MsgLogger.WriteFlow($"{GetType().Name} - OnMPlayerProcessExited", $"no composition found");
                 }
             }
         }
@@ -427,8 +435,6 @@ namespace MPlayerMaster.Device.Media
 
             if (composition != null)
             {
-                //composition.
-
                 _mediaCompositionPlaying?.SetValue(composition.GetTitle());
 
                 result = PlayerControl.Start(composition.GetUrl()) >= 0;
