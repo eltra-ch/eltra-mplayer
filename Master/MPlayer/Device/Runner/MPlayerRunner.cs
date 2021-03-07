@@ -151,15 +151,13 @@ namespace MPlayerMaster.Device.Runner
                     Parser.ProcessLine(args.Data);
                 };
 				
-				MsgLogger.WriteFlow($"{GetType().Name} - Start", $"Set Station request: app = {startInfo.FileName},  args: {startInfo.Arguments}, result = {_process != null}");
-
                 _process.Start();
 
                 _process.BeginOutputReadLine();
 
                 result = _process.Id;
 
-                MsgLogger.WriteFlow($"{GetType().Name} - Start", $"Set Station request: {url}, result = {_process != null}");
+                MsgLogger.WriteFlow($"{GetType().Name} - Start", $"Start process: app = {startInfo.FileName},  args: {startInfo.Arguments}, result = {_process != null}");
             }
             catch (Exception e)
             {
