@@ -5,7 +5,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
 	<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	<Configurations>Debug;Release;Debug_UWP</Configurations>
-	<Version>1.1.5</Version>
+	<Version>1.1.6</Version>
 	<Authors>Dawid Sienkiewicz</Authors>
 	<Company>Dawid Sienkiewicz, eltra.ch</Company>
 	<PackageProjectUrl>www.eltra.ch</PackageProjectUrl>

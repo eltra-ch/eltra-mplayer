@@ -27,6 +27,7 @@ namespace EltraNavigoMPlayer.Views.MediaControl
 
         private ushort _statusWordValue;
         private string _turnOffButonText;
+        private string _playingComposition;
         private int _activeStationValue;
         private bool _internalChange;
 
@@ -40,6 +41,7 @@ namespace EltraNavigoMPlayer.Views.MediaControl
         private XddParameter _activeArtistPositionParameter;
         private XddParameter _activeAlbumPositionParameter;
         private XddParameter _activeCompositionPositionParameter;
+        private XddParameter _mediaPlayingComposition;
 
         private XddParameter _randomParameter;
         private XddParameter _shuffleParameter;
@@ -55,7 +57,6 @@ namespace EltraNavigoMPlayer.Views.MediaControl
 
         private double _stationUpdateProgressValue;
         private ushort _relayStateValue;
-        private string _actualPlayingLabel;
 
         private VolumeControlViewModel _volumeControlViewModel;
 
@@ -83,6 +84,12 @@ namespace EltraNavigoMPlayer.Views.MediaControl
         #endregion
 
         #region Properties
+
+        public string PlayingComposition
+        {
+            get => _playingComposition;
+            set => SetProperty(ref _playingComposition, value);
+        }
 
         public Artist ActiveArtist
         {
@@ -136,12 +143,6 @@ namespace EltraNavigoMPlayer.Views.MediaControl
         {
             get => _activeStationValue;
             set => SetProperty(ref _activeStationValue, value);
-        }
-
-        public string ActualPlayingLabel
-        {
-            get => _actualPlayingLabel;
-            set => SetProperty(ref _actualPlayingLabel, value);
         }
 
         public bool IsRandom
@@ -240,6 +241,17 @@ namespace EltraNavigoMPlayer.Views.MediaControl
                 if (activeStationParameter.GetValue(out int activeStationValue))
                 {
                     ActiveStationValue = activeStationValue;
+                }
+            }
+        }
+
+        private void OnMediaPlayingCompositionChanged(object sender, ParameterChangedEventArgs e)
+        {
+            if (e.Parameter is XddParameter mediaPlayingParameter)
+            {
+                if (mediaPlayingParameter.GetValue(out string playingComposition))
+                {
+                    PlayingComposition = playingComposition;
                 }
             }
         }
@@ -679,6 +691,8 @@ namespace EltraNavigoMPlayer.Views.MediaControl
         private void InitializeMedia()
         {
             _mediaControlParameter = Device?.SearchParameter("PARAM_MediaControlState") as XddParameter;
+            _mediaPlayingComposition = Device?.SearchParameter("PARAM_CompositionPlaying") as XddParameter;
+
             _mediaDataParameter = Device?.SearchParameter("PARAM_Media_Data") as XddParameter;
             _compressedMediaParameter = Device?.SearchParameter("PARAM_Media_Data_Compressed") as XddParameter;
             _activeArtistPositionParameter = Device?.SearchParameter("PARAM_ActiveArtistPosition") as XddParameter;
@@ -824,6 +838,7 @@ namespace EltraNavigoMPlayer.Views.MediaControl
             {
                 var mediaControlState = await _mediaControlParameter.ReadValue();
                 ushort mediaControlStateValue = 0;
+
                 if(mediaControlState!=null)
                 {
                     if(mediaControlState.GetValue(ref mediaControlStateValue))
@@ -838,11 +853,12 @@ namespace EltraNavigoMPlayer.Views.MediaControl
 
         private void UpdatePlayingState(ushort mediaControlStateValue)
         {
-            var mcv = (MediaControlWordValue)mediaControlStateValue;
+            var mcv = (MediaStatusWordValue)mediaControlStateValue;
 
             switch (mcv)
             {
-                case MediaControlWordValue.Stop:
+                case MediaStatusWordValue.Stopped:
+                case MediaStatusWordValue.Stopping:
                     IsPlaying = false;
                     break;
                 default:
@@ -863,6 +879,17 @@ namespace EltraNavigoMPlayer.Views.MediaControl
             if (_mediaDataParameter != null)
             {
                 await _mediaDataParameter.UpdateValue();
+            }
+
+            if(_mediaPlayingComposition != null)
+            {
+                var playingCompositionValue = await _mediaPlayingComposition.ReadValue();
+                string playingComposition = string.Empty;
+
+                if (playingCompositionValue != null && playingCompositionValue.GetValue(ref playingComposition))
+                {
+                    PlayingComposition = playingComposition;
+                }
             }
 
             UpdateMediaStore();
@@ -1085,6 +1112,13 @@ namespace EltraNavigoMPlayer.Views.MediaControl
 
                 _mediaDataParameter.ParameterChanged += OnMediaDataParameterChanged;
             }
+
+            if (_mediaPlayingComposition != null)
+            {
+                _mediaPlayingComposition.AutoUpdate();
+
+                _mediaPlayingComposition.ParameterChanged += OnMediaPlayingCompositionChanged;
+            }
         }
 
         protected override async Task UpdateAllControls()
@@ -1148,6 +1182,13 @@ namespace EltraNavigoMPlayer.Views.MediaControl
                 _compressedMediaParameter.ParameterChanged -= OnMediaDataParameterChanged;
 
                 _compressedMediaParameter.StopUpdate();
+            }
+
+            if(_mediaPlayingComposition != null)
+            {
+                _mediaPlayingComposition.ParameterChanged -= OnMediaPlayingCompositionChanged;
+                
+                _mediaPlayingComposition.StopUpdate();
             }
         }
 

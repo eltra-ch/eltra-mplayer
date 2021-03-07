@@ -58,7 +58,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <Label VerticalOptions="Center" Grid.Column="0" Text="{Binding ActualPlayingLabel}" FontSize="14" LineBreakMode="WordWrap"/>
+                        <Label VerticalOptions="Center" Grid.Column="0" Text="{Binding PlayingComposition}" FontSize="14" LineBreakMode="WordWrap"/>
 
                         <Image Grid.Column="1" HeightRequest="24" HorizontalOptions="End" Margin="0,0,10,0" Source="{Binding StatusWordValue, Converter={StaticResource StatusWordToImageConverter}}"/>
                     </Grid>
@@ -97,7 +97,6 @@
                 <Grid Grid.Row="4" Grid.Column="1">
                     <Grid.Resources>
                         <xamconverters:AllTrueMultiConverter x:Key="AllTrueMultiConverter"/>
-                        <converters:StopPlayStateConverter x:Key="StopPlayStateConverter"/>
                         <converters:TurnOffButtonColorConverter x:Key="TurnOffButtonColorConverter"/>
                     </Grid.Resources>
                     <Grid.RowDefinitions>
