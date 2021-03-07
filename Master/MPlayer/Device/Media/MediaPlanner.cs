@@ -154,9 +154,9 @@ namespace MPlayerMaster.Device.Media
 
             if(_mediaActiveArtistPositionParameter!=null)
             {
-                await _mediaActiveAlbumPositionParameter.UpdateValue();
+                await _mediaActiveArtistPositionParameter.UpdateValue();
 
-                _mediaActiveAlbumPositionParameter.ParameterChanged += OnMediaPositionParameterChanged;
+                _mediaActiveArtistPositionParameter.ParameterChanged += OnMediaPositionParameterChanged;
             }
 
             if (_mediaActiveAlbumPositionParameter != null)
