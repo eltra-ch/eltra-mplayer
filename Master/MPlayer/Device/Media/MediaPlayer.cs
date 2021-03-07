@@ -101,9 +101,7 @@ namespace MPlayerMaster.Device.Media
         {
             MsgLogger.WriteFlow($"{GetType().Name} - OnMPlayerProcessExited", $"process exited, shuffle = {MediaPlanner.Shuffle}");
 
-            SetMediaStatusWordValue(MediaStatusWordValue.Stopped);
-
-            if (MediaPlanner.Shuffle)
+            if (GetMediaStatusWordValue(out var state) && state != MediaStatusWordValue.Stopping)
             {
                 var composition = MediaPlanner.GetNextUrl();
 
@@ -116,7 +114,13 @@ namespace MPlayerMaster.Device.Media
                 else
                 {
                     MsgLogger.WriteFlow($"{GetType().Name} - OnMPlayerProcessExited", $"no composition found");
+
+                    SetMediaStatusWordValue(MediaStatusWordValue.Stopped);
                 }
+            }
+            else
+            {
+                MsgLogger.WriteError($"{GetType().Name} - OnMPlayerProcessExited", $"getting status failed!");
             }
         }
 
@@ -182,6 +186,8 @@ namespace MPlayerMaster.Device.Media
             MediaPlanner.SetPlayListToReady();
 
             _mediaCompositionPlaying?.SetValue(string.Empty);
+
+            SetMediaStatusWordValue(MediaStatusWordValue.Stopping);
 
             bool result = PlayerControl.Stop();
 

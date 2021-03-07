@@ -331,8 +331,6 @@ namespace MPlayerMaster.Device.Runner
             return result;
         }
 
-
-
         private Task SetMuteAsync(bool muteValue)
         {
             var result = Task.Run(() =>

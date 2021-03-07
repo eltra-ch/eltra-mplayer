@@ -4,6 +4,7 @@
     {
         Unknown,
         Playing,
-        Stopped
+        Stopped,
+        Stopping
     }
 }
