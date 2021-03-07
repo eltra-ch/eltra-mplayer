@@ -150,6 +150,8 @@ namespace MPlayerMaster.Device.Runner
                 {
                     Parser.ProcessLine(args.Data);
                 };
+				
+				MsgLogger.WriteFlow($"{GetType().Name} - Start", $"Set Station request: app = {startInfo.FileName},  args: {startInfo.Arguments}, result = {_process != null}");
 
                 _process.Start();
 
