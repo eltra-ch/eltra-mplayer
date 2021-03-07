@@ -139,7 +139,7 @@ namespace MPlayerMaster.Device.Runner
 
                 GetPlayListFlag(url, out string playlistFlag);
 
-                startInfo.Arguments = Settings.AppArgs + playlistFlag + $" \"{url}\"";
+                startInfo.Arguments = Settings.AppArgs + playlistFlag + $" {url}";
                 startInfo.Arguments = startInfo.Arguments.Trim();
 
                 startInfo.FileName = Settings.MPlayerProcessPath;
