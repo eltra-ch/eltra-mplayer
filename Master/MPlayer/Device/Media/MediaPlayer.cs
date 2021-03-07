@@ -99,6 +99,8 @@ namespace MPlayerMaster.Device.Media
 
         private void OnMPlayerProcessExited(object sender, EventArgs e)
         {
+            SetMediaStatusWordValue(MediaStatusWordValue.Stopped);
+
             if (MediaPlanner.Shuffle)
             {
                 var composition = MediaPlanner.GetNextUrl();
