@@ -207,7 +207,9 @@ namespace MPlayerMaster.Device.Runner
 
                 if (!result)
                 {
-                    result = CloseBruteForce();
+                    CloseBruteForce();
+
+                    result = true;
                 }
             }
             catch (Exception e)

@@ -19,7 +19,7 @@ namespace MPlayerMaster.Device.Commands
             AddParameter("State", TypeCode.Int16, ParameterType.In);
 
             //Result
-            AddParameter("Result", TypeCode.String, ParameterType.Out);
+            AddParameter("Result", TypeCode.Boolean, ParameterType.Out);
             AddParameter("ErrorCode", TypeCode.UInt32, ParameterType.Out);
         }
 

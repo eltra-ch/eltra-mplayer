@@ -106,6 +106,8 @@ namespace MPlayerMaster.Device.Media
         private void OnMediaPositionParameterChanged(object sender, ParameterChangedEventArgs e)
         {
             BuildPlaylist();
+
+            _currentComposition = null;
         }
 
         #endregion

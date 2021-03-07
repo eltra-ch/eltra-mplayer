@@ -56,7 +56,7 @@ namespace MPlayerMaster.Device
             return result;
         }
 
-        internal object ControlMedia(MediaControlWordValue state)
+        internal bool ControlMedia(MediaControlWordValue state)
         {
             bool result = MediaPlayer.ControlMedia(state);
 
