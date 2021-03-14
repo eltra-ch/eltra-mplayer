@@ -27,8 +27,8 @@
 				<orderNumber readOnly="true">000000</orderNumber>
 				<version versionType="SW" readOnly="true">0x0100</version>
 				<version versionType="HW" readOnly="true">0x0210</version>
-				<version versionType="APPNB" readOnly="true">0x0007</version>
-				<version versionType="APPVER" readOnly="true">0x0002</version>
+				<version versionType="APPNB" readOnly="true">0x0008</version>
+				<version versionType="APPVER" readOnly="true">0x0001</version>
 			</DeviceIdentity>
 			<DeviceManager>
 				<userLevelList>
@@ -86,7 +86,9 @@
 					</flags>
 				</templateList>
 				<parameterList>
-          <!-- Relay State -->
+          <!-- ############# 
+							 Relay
+							############# -->
           <structuredParameter uniqueID="PARAM_RelayState">
             <index>0x3141</index>
             <label lang="en-TT">Relay state</label>
@@ -130,8 +132,10 @@
             </userLevels>
             <displayFormat>hex</displayFormat>
           </parameter>
-          
-          <!-- Media -->
+
+          <!-- ############# 
+							 Media
+							############# -->
           <structuredParameter uniqueID="PARAM_Media">
             <index>0x3200</index>
             <label lang="en-TT">Media</label>
@@ -274,8 +278,11 @@
               <userLevelIDRef uniqueIDRef="USR_Expert" />
               <userLevelIDRef uniqueIDRef="USR_Internal" />
             </userLevels>
-          </parameter>          
-					<!-- Media Control-->
+          </parameter>
+
+          <!-- ############# 
+							 Media Control
+							############# -->
           <structuredParameter uniqueID="PARAM_MediaControl">
             <index>0x3201</index>
             <label lang="en-TT">Media Control</label>
@@ -288,7 +295,7 @@
               <type>UNSIGNED8</type>
             </dataType>
             <flagsIDRef uniqueIDRef="AT_RO" />
-            <defaultValue>3</defaultValue>
+            <defaultValue>5</defaultValue>
             <userLevels />
           </parameter>          
           <!-- Media Control Word -->
@@ -341,9 +348,42 @@
             </userLevels>
             <displayFormat>dec</displayFormat>
           </parameter>
-          <!-- End - Media -->
-          
-					<!-- Stations date -->
+          <!-- Media Playing Position -->
+          <parameter uniqueID="PARAM_MediaPlayingPosition">
+            <index>0x3201</index>
+            <subIndex>0x04</subIndex>
+            <label lang="en-TT">Media Playing Position</label>
+            <dataType>
+              <type>UNSIGNED16</type>
+            </dataType>
+            <flagsIDRef uniqueIDRef="AT_RO" />
+            <defaultValue>0</defaultValue>
+            <userLevels>
+              <userLevelIDRef uniqueIDRef="USR_Expert" />
+              <userLevelIDRef uniqueIDRef="USR_Internal" />
+            </userLevels>
+            <displayFormat>hex</displayFormat>
+          </parameter>
+          <!-- Media Playing Positions Count -->
+          <parameter uniqueID="PARAM_MediaPlayingPositionsCount">
+            <index>0x3201</index>
+            <subIndex>0x05</subIndex>
+            <label lang="en-TT">Media Playing Positions Count</label>
+            <dataType>
+              <type>UNSIGNED16</type>
+            </dataType>
+            <flagsIDRef uniqueIDRef="AT_RO" />
+            <defaultValue>0</defaultValue>
+            <userLevels>
+              <userLevelIDRef uniqueIDRef="USR_Expert" />
+              <userLevelIDRef uniqueIDRef="USR_Internal" />
+            </userLevels>
+            <displayFormat>hex</displayFormat>
+          </parameter>
+
+          <!-- ############# 
+							 Stations data
+							############# -->
 					<structuredParameter uniqueID="PARAM_StationsData">
 						<index>0x3900</index>
 						<label lang="en-TT">Radio stations data</label>
@@ -898,7 +938,10 @@
 						</userLevels>
 						<displayFormat>dec</displayFormat>
 					</parameter>
-					<!-- Volume -->
+
+          <!-- ############# 
+							 Volume
+							############# -->
 					<parameter uniqueID="PARAM_Volume">
 						<index>0x4200</index>
 						<subIndex>0x00</subIndex>
@@ -925,7 +968,9 @@
 						</userLevels>
 						<displayFormat>dec</displayFormat>
 					</parameter>
-					<!-- Mute -->
+          <!-- ############# 
+							 Mute
+							############# -->
 					<parameter uniqueID="PARAM_Mute">
 						<index>0x4201</index>
 						<subIndex>0x00</subIndex>
@@ -942,6 +987,10 @@
 						</userLevels>
 						<displayFormat>dec</displayFormat>
 					</parameter>
+
+          <!-- ############# 
+							 Control/Status Word
+							############# -->
           <!-- Control Word -->
 					<parameter uniqueID="PARAM_ControlWord">
 						<index>0x6040</index>

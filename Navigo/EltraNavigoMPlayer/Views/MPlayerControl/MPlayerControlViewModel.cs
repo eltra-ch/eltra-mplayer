@@ -47,7 +47,7 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
 
         public MPlayerControlViewModel()
         {
-            Title = $"MPlayer";
+            Title = $"Radio";
             Uuid = "C999F6E2-1FF8-44E1-977C-5B8826E3B9CA";
             TurnOffButonText = "Turn Off";
 
@@ -219,6 +219,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             InitializeActiveStationParameter();
 
             InitializeStationList();
+
+            RegisterAutoUpdate();
 
             IsBusy = false;
 
@@ -433,10 +435,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             }
         }
 
-        protected override async Task RegisterAutoUpdate()
+        protected override Task RegisterAutoUpdate()
         {
-            await UnregisterAutoUpdate();
-
             if (_statusWordParameter != null)
             {
                 _statusWordParameter.ParameterChanged += OnStatusWordParameterChanged;
@@ -462,6 +462,8 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
             }
 
             RegisterStationParameterEvent();
+
+            return Task.CompletedTask;
         }
 
         protected override async Task UpdateAllControls()
@@ -526,6 +528,11 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl
         protected override void GoingOffline()
         {
             IsEnabled = false;
+        }
+
+        public override Task Show()
+        {
+            return base.Show();
         }
 
         #endregion

@@ -417,7 +417,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
 
                 _labelStationParameter.AutoUpdate();
                 _streamTitleStationParameter.AutoUpdate();
-                _urlStationParameter.AutoUpdate();
             }
         }
 
@@ -437,7 +436,6 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
                 
                 _labelStationParameter.StopUpdate();
                 _streamTitleStationParameter.StopUpdate();
-                _urlStationParameter.StopUpdate();
             }
 
             if (Agent != null)
@@ -558,6 +556,11 @@ namespace EltraNavigoMPlayer.Views.MPlayerControl.Station
         protected override void GoingOffline()
         {
             IsEnabled = false;
+        }
+
+        public override Task Show()
+        {
+            return base.Show();
         }
 
         #endregion

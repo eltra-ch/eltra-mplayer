@@ -32,7 +32,7 @@
 
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="4"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition/>
                     <ColumnDefinition Width="4"/>
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
@@ -167,8 +167,10 @@
                     </Frame>
                     <!-- Turn off -->
                     <Frame Grid.Column="1" Padding="0,0,0,6" BackgroundColor="Transparent">
+                            
                         <Button Text="{Binding TurnOffButonText}" Command="{Binding TurnOffButtonCommand}" 
                                 BackgroundColor="{Binding RelayStateValue, Converter={StaticResource TurnOffButtonColorConverter}}" IsEnabled="{Binding IsEnabled}"/>
+                            
                     </Frame>
 
                     </Grid>
@@ -184,13 +186,14 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition/>
                         </Grid.ColumnDefinitions>
 
-                        <Label Grid.Column="0" Grid.Row="0" Text="Random" VerticalOptions="Center"/>
-                        <CheckBox Grid.Column="1" Grid.Row="0" IsChecked="{Binding IsRandom}"/>
+                        <Label Grid.Column="0" Text="Random" VerticalOptions="Center"/>
+                        <CheckBox Grid.Column="1" IsChecked="{Binding IsRandom}"/>
 
-                        <Label Grid.Column="2" Grid.Row="0" Text="Shuffle" VerticalOptions="Center"/>
-                        <CheckBox Grid.Column="3" Grid.Row="0" IsChecked="{Binding IsShuffle}"/>
+                        <Label Grid.Column="2" Text="Shuffle" VerticalOptions="Center"/>
+                        <CheckBox Grid.Column="3" IsChecked="{Binding IsShuffle}"/>
 
                     </Grid>
 

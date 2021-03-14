@@ -657,9 +657,19 @@ namespace EltraNavigoMPlayer.Views.MediaControl
 
             if (parameter != null)
             {
-                if (parameter.SetValue(value))
+                if (parameter.GetValue(out int val))
                 {
-                    result = await parameter.Write();
+                    if(val != value)
+                    {
+                        if (parameter.SetValue(value))
+                        {
+                            result = await parameter.Write();
+                        }
+                    }
+                    else
+                    {
+                        result = true;
+                    }
                 }
             }
 
@@ -691,6 +701,7 @@ namespace EltraNavigoMPlayer.Views.MediaControl
         private void InitializeMedia()
         {
             _mediaControlParameter = Device?.SearchParameter("PARAM_MediaControlState") as XddParameter;
+            
             _mediaPlayingComposition = Device?.SearchParameter("PARAM_CompositionPlaying") as XddParameter;
 
             _mediaDataParameter = Device?.SearchParameter("PARAM_Media_Data") as XddParameter;
@@ -1057,10 +1068,8 @@ namespace EltraNavigoMPlayer.Views.MediaControl
             return result;
         }
 
-        protected override async Task RegisterAutoUpdate()
+        protected override Task RegisterAutoUpdate()
         {
-            await UnregisterAutoUpdate();
-
             if (_statusWordParameter != null)
             {
                 _statusWordParameter.ParameterChanged += OnStatusWordParameterChanged;
@@ -1095,6 +1104,8 @@ namespace EltraNavigoMPlayer.Views.MediaControl
             RegisterMediaParameterEvent();
 
             RegisterStationParameterEvent();
+
+            return Task.CompletedTask;
         }
 
         private void RegisterMediaParameterEvent()
@@ -1206,9 +1217,12 @@ namespace EltraNavigoMPlayer.Views.MediaControl
         {
             if (_shuffleParameter != null)
             {
-                if(_shuffleParameter.SetValue(IsShuffle))
+                if (_shuffleParameter.GetValue(out bool val) && val != IsShuffle)
                 {
-                    await _shuffleParameter.Write();
+                    if (_shuffleParameter.SetValue(IsShuffle))
+                    {
+                        await _shuffleParameter.Write();
+                    }
                 }
             }
         }
@@ -1217,9 +1231,12 @@ namespace EltraNavigoMPlayer.Views.MediaControl
         {
             if (_randomParameter != null)
             {
-                if (_randomParameter.SetValue(IsRandom))
+                if (_randomParameter.GetValue(out bool val) && val != IsRandom)
                 {
-                    await _randomParameter.Write();
+                    if (_randomParameter.SetValue(IsRandom))
+                    {
+                        await _randomParameter.Write();
+                    }
                 }
             }
         }

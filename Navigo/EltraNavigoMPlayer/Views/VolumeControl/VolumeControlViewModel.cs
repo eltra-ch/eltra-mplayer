@@ -157,10 +157,8 @@ namespace EltraNavigoMPlayer.Views.VolumeControl
             _valumeHistereseTimer.AutoReset = true;
         }
 
-        protected override async Task RegisterAutoUpdate()
+        protected override Task RegisterAutoUpdate()
         {
-            await UnregisterAutoUpdate();
-
             if (_muteParameter != null)
             {
                 _muteParameter.ParameterChanged += OnVolumeParameterChanged;
@@ -174,6 +172,8 @@ namespace EltraNavigoMPlayer.Views.VolumeControl
 
                 _volumeParameter.AutoUpdate();
             }
+
+            return Task.CompletedTask;
         }
 
         protected override Task UnregisterAutoUpdate()
