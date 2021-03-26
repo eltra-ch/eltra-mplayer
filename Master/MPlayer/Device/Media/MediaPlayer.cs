@@ -245,6 +245,27 @@ namespace MPlayerMaster.Device.Media
             return result;
         }
 
+        private bool PauseMedia()
+        {
+            var composition = MediaPlanner.CurrentComposition;
+
+            SetMediaStatusWordValue(MediaStatusWordValue.Stopping);
+
+            bool result = PlayerControl.Stop();
+
+            if (result)
+            {
+                if (composition != null)
+                {
+                    composition.State = PlayingState.Ready;
+                }
+
+                SetMediaStatusWordValue(MediaStatusWordValue.Stopped);
+            }
+
+            return result;
+        }
+
         private MediaPlanner CreateMediaPlanner()
         {
             var mediaPlanner = new MediaPlanner() { MediaStore = MediaStore, Vcs = Vcs };
@@ -411,6 +432,16 @@ namespace MPlayerMaster.Device.Media
                     else
                     {
                         MsgLogger.WriteError($"{GetType().Name} - ControlMedia", $"play previous media failed!");
+                    }
+                    break;
+                case MediaControlWordValue.Pause:
+                    if (PauseMedia())
+                    {
+                        result = SetMediaStatusWordValue(MediaStatusWordValue.Stopped);
+                    }
+                    else
+                    {
+                        MsgLogger.WriteError($"{GetType().Name} - ControlMedia", $"pause media failed!");
                     }
                     break;
                 case MediaControlWordValue.Stop:
