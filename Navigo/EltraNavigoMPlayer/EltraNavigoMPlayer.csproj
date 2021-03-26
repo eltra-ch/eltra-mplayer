@@ -45,11 +45,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="EltraXamCommon" Version="1.4.6" />
     <PackageReference Include="Xamarin.Forms" Version="5.0.0.2012" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\eltra-sdk\xternals\common\EltraXamCommon\EltraXamCommon.csproj" />
     <ProjectReference Include="..\..\Common\MPlayerCommon\MPlayerCommon.csproj" />
   </ItemGroup>
 

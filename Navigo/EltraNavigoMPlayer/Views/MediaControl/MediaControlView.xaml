@@ -131,6 +131,7 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition/>
                                         <ColumnDefinition/>
+                                        <ColumnDefinition/>
                                     </Grid.ColumnDefinitions>
                                     <Button Grid.Column="0" Text="Play" Command="{Binding PlayButtonCommand}">
                                         <Button.IsEnabled>
@@ -140,7 +141,15 @@
                                             </MultiBinding>
                                         </Button.IsEnabled>
                                     </Button>
-                                    <Button Grid.Column="1" Text="Stop" Command="{Binding StopButtonCommand}">
+                                    <Button Grid.Column="1" Text="Pause" Command="{Binding PauseButtonCommand}">
+                                        <Button.IsEnabled>
+                                            <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
+                                                <Binding Path="IsEnabled" />
+                                                <Binding Path="IsPlaying" />
+                                            </MultiBinding>
+                                        </Button.IsEnabled>
+                                    </Button>
+                                    <Button Grid.Column="2" Text="Stop" Command="{Binding StopButtonCommand}">
                                         <Button.IsEnabled>
                                             <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
                                                 <Binding Path="IsEnabled" />
@@ -148,14 +157,14 @@
                                             </MultiBinding>
                                         </Button.IsEnabled>
                                     </Button>
-                                    <Button Grid.Row="1" Grid.Column="0" Text="Next" Command="{Binding NextButtonCommand}">
+                                    <Button Grid.Row="1" Grid.Column="0" Text="Previous" Command="{Binding PrevButtonCommand}">
                                         <Button.IsEnabled>
                                             <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
                                                 <Binding Path="IsEnabled" />
                                             </MultiBinding>
                                         </Button.IsEnabled>
                                     </Button>
-                                    <Button Grid.Row="1" Grid.Column="1" Text="Previous" Command="{Binding PrevButtonCommand}">
+                                    <Button Grid.Row="1" Grid.Column="2" Text="Next" Command="{Binding NextButtonCommand}">
                                         <Button.IsEnabled>
                                             <MultiBinding Converter="{StaticResource AllTrueMultiConverter}">
                                                 <Binding Path="IsEnabled" />

@@ -206,6 +206,8 @@ namespace EltraNavigoMPlayer.Views.MediaControl
 
         public ICommand StopButtonCommand => new Command(OnStopButtonPressed);
 
+        public ICommand PauseButtonCommand => new Command(OnPauseButtonPressed);
+
         public ICommand PlayButtonCommand => new Command(OnPlayButtonPressed);
 
         public ICommand NextButtonCommand => new Command(OnNextButtonPressed);
@@ -293,6 +295,20 @@ namespace EltraNavigoMPlayer.Views.MediaControl
             if(!result)
             {
                 ToastMessage.ShortAlert("Stop failed!");
+            }
+
+            IsBusy = false;
+        }
+
+        private async void OnPauseButtonPressed(object obj)
+        {
+            IsBusy = true;
+
+            bool result = await ExecuteMediaControl(MediaControlWordValue.Pause);
+
+            if (!result)
+            {
+                ToastMessage.ShortAlert("Pause failed!");
             }
 
             IsBusy = false;

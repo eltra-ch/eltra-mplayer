@@ -7,6 +7,7 @@ using MPlayerMaster.Views.Dialogs;
 using System.Collections.Generic;
 using Xamarin.Forms;
 using Xamarin.Forms.Internals;
+using EltraUiCommon.Controls.Definitions;
 
 namespace EltraNavigoMPlayer.Plugins
 {
@@ -56,7 +57,7 @@ namespace EltraNavigoMPlayer.Plugins
 
         private MPlayerControlViewModel CreateMPlayerControlViewModel()
         {
-            var result = new MPlayerControlViewModel();
+            var result = new MPlayerControlViewModel() { AutoUpdateMode = AutoUpdateMode.Initialization };
 
             result.PluginService = this;
 
@@ -65,7 +66,7 @@ namespace EltraNavigoMPlayer.Plugins
 
         private MediaControlViewModel CreateMediaControlViewModel()
         {
-            var result = new MediaControlViewModel();
+            var result = new MediaControlViewModel() { AutoUpdateMode = AutoUpdateMode.Initialization };
 
             result.PluginService = this;
 
