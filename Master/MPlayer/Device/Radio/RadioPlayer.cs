@@ -195,16 +195,6 @@ namespace MPlayerMaster.Device.Radio
                         processIdParameter.UpdateValue();
                         customTitleParameter.UpdateValue();
 
-                        if(urlParameter.GetValue(out string url))
-                        {
-                            Runner.RadioPlayer = this;
-                            Runner.CreateStationFifo(i, url);
-                        }
-                        else
-                        {
-                            MsgLogger.WriteError($"{GetType().Name} - InitStationList", "get url parameter value failed!");
-                        }
-                        
                         _urlParameters.Add(urlParameter);
                         _stationTitleParameters.Add(stationTitleParameter);
                         _streamTitleParameters.Add(streamTitleParameter);
@@ -213,6 +203,16 @@ namespace MPlayerMaster.Device.Radio
                         _customTitleParameters.Add(customTitleParameter);
 
                         customTitleParameter.ParameterChanged += OnCustomStationTitleChanged;
+
+                        if (urlParameter.GetValue(out string url))
+                        {
+                            Runner.RadioPlayer = this;
+                            Runner.CreateStationFifo(i, url);
+                        }
+                        else
+                        {
+                            MsgLogger.WriteError($"{GetType().Name} - InitStationList", "get url parameter value failed!");
+                        }
                     }
                 }
             }
