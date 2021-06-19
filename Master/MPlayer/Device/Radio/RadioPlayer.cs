@@ -198,7 +198,7 @@ namespace MPlayerMaster.Device.Radio
                         if(urlParameter.GetValue(out string url))
                         {
                             Runner.RadioPlayer = this;
-                            Runner.CreateStationFifo(index, url);
+                            Runner.CreateStationFifo(i, url);
                         }
                         else
                         {
