@@ -194,7 +194,7 @@ namespace MPlayerMaster.Device.Runner
 
                 startInfo.WindowStyle = ProcessWindowStyle.Normal;
 
-                string args = $"-slave -input file={Path}";
+                string args = $" -slave -input file={Path}";
 
                 startInfo.Arguments = Settings.AppArgs + args + $" {url}";
                 startInfo.Arguments = startInfo.Arguments.Trim();
