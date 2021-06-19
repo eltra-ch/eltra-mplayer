@@ -188,6 +188,22 @@ namespace MPlayerMaster.Device.Radio
                         processIdParameter != null &&
                         customTitleParameter != null)
                     {
+                        urlParameter.UpdateValue();
+                        stationTitleParameter.UpdateValue();
+                        streamTitleParameter.UpdateValue();
+                        valumeScalingParameter.UpdateValue();
+                        processIdParameter.UpdateValue();
+                        customTitleParameter.UpdateValue();
+
+                        if(urlParameter.GetValue(out string url))
+                        {
+                            Runner.CreateStationFifo(index, url);
+                        }
+                        else
+                        {
+                            MsgLogger.WriteError($"{GetType().Name} - InitStationList", "get url parameter value failed!");
+                        }
+                        
                         _urlParameters.Add(urlParameter);
                         _stationTitleParameters.Add(stationTitleParameter);
                         _streamTitleParameters.Add(streamTitleParameter);
@@ -224,7 +240,7 @@ namespace MPlayerMaster.Device.Radio
 
             PlayerControl.SetStatusWord(StatusWordEnums.PendingExecution);
 
-            result = Runner.Stop();
+            result = Runner.StopFifo();
 
             PlayerControl.SetStatusWord(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
 
@@ -256,7 +272,7 @@ namespace MPlayerMaster.Device.Radio
 
                             SetEmptyStreamLabel((ushort)(activeStationValue - 1));
 
-                            result = Runner.Start(processParam, url);
+                            result = Runner.OpenUrl((ushort)(activeStationValue - 1), url);
 
                             PlayerControl.SetStatusWord(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
                         }
@@ -269,31 +285,6 @@ namespace MPlayerMaster.Device.Radio
             {
                 MsgLogger.WriteFlow($"{GetType().Name} - SetActiveStationAsync", $"another set active station task is running, id = {activeStationValue}");
             }
-        }
-
-        private bool SetActiveStationAsync(Parameter activeStation)
-        {
-            bool result = false;
-
-            if (activeStation != null)
-            {
-                if (activeStation.GetValue(out int activeStationValue))
-                {
-                    SetActiveStationAsync(activeStationValue);
-
-                    result = true;
-                }
-                else
-                {
-                    MsgLogger.WriteError($"{GetType().Name} - SetActiveStationAsync", "get activeStation parameter value failed!");
-                }
-            }
-            else
-            {
-                MsgLogger.WriteError($"{GetType().Name} - SetActiveStationAsync", "activeStation parameter not defined!");
-            }
-
-            return result;
         }
 
         public bool GetObject(ushort objectIndex, byte objectSubindex, ref byte[] data)

@@ -4,7 +4,6 @@ using MPlayerMaster.Device.Radio;
 using MPlayerMaster.Device.Runner.Console;
 using System;
 using System.Diagnostics;
-using System.IO;
 
 namespace MPlayerMaster.Device.Runner
 {
@@ -14,13 +13,14 @@ namespace MPlayerMaster.Device.Runner
 
         private MPlayerConsoleParser _parser;
         private Process _process;
+        private MPlayerFifoManager _fifoManager;
 
         #endregion
 
         #region Constructors
 
         public MPlayerRunner()
-        {            
+        {
         }
 
         #endregion
@@ -32,7 +32,7 @@ namespace MPlayerMaster.Device.Runner
             get
             {
                 int result = -1;
-                
+
                 var activeStationParameter = RadioPlayer?.ActiveStationParameter;
 
                 if (activeStationParameter != null && activeStationParameter.GetValue(out int activeStationValue))
@@ -46,9 +46,11 @@ namespace MPlayerMaster.Device.Runner
 
         public RadioPlayer RadioPlayer { get; set; }
 
-        public MPlayerSettings Settings;
+        public MPlayerSettings Settings { get; set; }
 
         internal MPlayerConsoleParser Parser => _parser ?? (_parser = CreateParser());
+
+        private MPlayerFifoManager FifoManager => _fifoManager ?? (_fifoManager = new MPlayerFifoManager() { Settings = Settings });
 
         #endregion
 
@@ -69,11 +71,35 @@ namespace MPlayerMaster.Device.Runner
 
         #region Methods
 
+        public void CreateStationFifo(ushort index, string url)
+        {
+            FifoManager.StreamTitleParameters = RadioPlayer.StreamTitleParameters;
+            FifoManager.StationTitleParameters = RadioPlayer.StationTitleParameters;
+            FifoManager.CustomStationTitleParameters = RadioPlayer.CustomStationTitleParameters;
+            FifoManager.ProcessIdParameters = RadioPlayer.ProcessIdParameters;
+
+            if (!FifoManager.Create(index))
+            {
+                MsgLogger.WriteError($"{GetType().Name} - CreateFifo", $"Fifo creation for index = {index} failed!");
+            }
+            else
+            {
+                FifoManager.OpenUrl(index, url, false);
+            }
+        }
+
+        public bool OpenUrl(ushort index, string url)
+        {
+            return FifoManager.OpenUrl(index, url, true);
+        }
+
         private MPlayerConsoleParser CreateParser()
         {
             var result = new MPlayerConsoleParser
             {
-                RadioPlayer = RadioPlayer
+                StreamTitleParameter = RadioPlayer.StreamTitleParameters[0],
+                StationTitleParameter = RadioPlayer.StationTitleParameters[0],
+                CustomStationTitleParameter = RadioPlayer.CustomStationTitleParameters[0]
             };
 
             return result;
@@ -125,7 +151,6 @@ namespace MPlayerMaster.Device.Runner
                     _process.Kill();
                 }
 
-                var tempPath = Path.GetTempPath();
                 var startInfo = new ProcessStartInfo();
                 
                 _process = new Process();
@@ -184,6 +209,11 @@ namespace MPlayerMaster.Device.Runner
             }
 
             return playlistFlag;
+        }
+
+        public bool StopFifo()
+        {
+            return FifoManager.Stop();
         }
 
         public bool Stop()
@@ -261,6 +291,8 @@ namespace MPlayerMaster.Device.Runner
 
             return result;
         }
+
+        
 
         private bool CloseBruteForce()
         {

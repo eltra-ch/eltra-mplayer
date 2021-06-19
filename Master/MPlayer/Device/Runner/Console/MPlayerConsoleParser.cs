@@ -1,7 +1,8 @@
 ﻿using EltraCommon.Logger;
-using MPlayerMaster.Device.Radio;
+using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application.Parameters;
+using EltraCommon.ObjectDictionary.Xdd.DeviceDescription.Profiles.Application.Parameters;
+using MPlayerMaster.Helpers;
 using System;
-using System.Linq;
 
 namespace MPlayerMaster.Device.Runner.Console
 {
@@ -15,46 +16,17 @@ namespace MPlayerMaster.Device.Runner.Console
 
         #region Properties
 
-        public RadioPlayer RadioPlayer { get; set; }
-        
-        public int ActiveStationValue
-        {
-            get
-            {
-                int result = -1;
-
-                var activeStationParameter = RadioPlayer?.ActiveStationParameter;
-
-                if (activeStationParameter != null && activeStationParameter.GetValue(out int activeStationValue))
-                {
-                    result = activeStationValue;
-                }
-
-                return result;
-            }
-        }
+        public Parameter StreamTitleParameter { get; set; }
+        public Parameter StationTitleParameter { get; set; }
+        public Parameter CustomStationTitleParameter { get; set; }
         
         #endregion
-
-        private static string RemoveWhitespace(string input)
-        {
-            string result = string.Empty;
-
-            if (!string.IsNullOrWhiteSpace(input))
-            {
-                result = new string(input.ToCharArray()
-                .Where(c => !Char.IsWhiteSpace(c))
-                .ToArray());
-            }
-
-            return result;
-        }
 
         public void ProcessLine(string line)
         {
             try
             {
-                var formattedLine = RemoveWhitespace(line).ToLower();
+                var formattedLine = StringHelpers.RemoveWhitespace(line).ToLower();
 
                 if (formattedLine.StartsWith("name:"))
                 {
@@ -96,16 +68,9 @@ namespace MPlayerMaster.Device.Runner.Console
                                     _streamTitle = streamTitle;
                                 }
 
-                                if (ActiveStationValue > 0)
+                                if (StreamTitleParameter != null && !StreamTitleParameter.SetValue(streamTitle))
                                 {
-                                    int index = ActiveStationValue - 1;
-
-                                    var streamTitleParameters = RadioPlayer.StreamTitleParameters;
-
-                                    if (streamTitleParameters != null && !streamTitleParameters[index].SetValue(streamTitle))
-                                    {
-                                        MsgLogger.WriteError($"{GetType().Name} - ParseMPlayerStationName", $"cannot set new stream title: {streamTitle}");
-                                    }
+                                    MsgLogger.WriteError($"{GetType().Name} - ParseMPlayerStationName", $"cannot set new stream title: {streamTitle}");
                                 }
                             }
                         }
@@ -132,22 +97,15 @@ namespace MPlayerMaster.Device.Runner.Console
                     {
                         MsgLogger.WriteLine($"station name: {stationName}");
 
-                        if (ActiveStationValue > 0)
                         {
-                            int index = ActiveStationValue - 1;
-
-                            var customStationTitleParameters = RadioPlayer?.CustomStationTitleParameters;
-
-                            if (customStationTitleParameters != null && customStationTitleParameters[index].GetValue(out string customTitle))
+                            if (CustomStationTitleParameter != null && CustomStationTitleParameter.GetValue(out string customTitle))
                             {
                                 if (!string.IsNullOrEmpty(customTitle))
                                 {
                                     stationName = customTitle;
                                 }
 
-                                var stationTitleParameters = RadioPlayer?.StationTitleParameters;
-
-                                if (stationTitleParameters!=null && !stationTitleParameters[index].SetValue(stationName))
+                                if (StationTitleParameter != null && !StationTitleParameter.SetValue(stationName))
                                 {
                                     MsgLogger.WriteError($"{GetType().Name} - ParseMPlayerStationName", $"cannot set new station title: {stationName}");
                                 }
