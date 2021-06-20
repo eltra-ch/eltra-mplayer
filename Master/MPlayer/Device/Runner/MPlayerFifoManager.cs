@@ -78,6 +78,8 @@ namespace MPlayerMaster.Device.Runner
                     fifo.CustomStationTitleParameter = CustomStationTitleParameters[index];
                     fifo.ProcessIdParameter = ProcessIdParameters[index];
 
+                    MsgLogger.WriteFlow($"fifo added - {fifo.Name}");
+
                     FifoList.Add(fifo);
                 }
 

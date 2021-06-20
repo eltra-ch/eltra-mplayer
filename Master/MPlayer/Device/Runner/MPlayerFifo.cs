@@ -100,7 +100,7 @@ namespace MPlayerMaster.Device.Runner
                 int exitCode = EXIT_CODE_SUCCESS;
                 int m = mute ? 1 : 0;
                 string processName = "echo";
-                var startInfo = new ProcessStartInfo($"{processName}", $"mute {m} >> {Path}");
+                var startInfo = new ProcessStartInfo($"{processName}", $"echo mute {m} >> {Path}");
 
                 var process = Process.Start(startInfo);
 
