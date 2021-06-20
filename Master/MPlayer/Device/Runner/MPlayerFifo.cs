@@ -28,6 +28,8 @@ namespace MPlayerMaster.Device.Runner
 
         #region Properties
 
+        public int ProcessId { get; private set; }
+
         public ushort Index { get; private set; }
 
         public string Name => GetFifoName();
@@ -48,9 +50,15 @@ namespace MPlayerMaster.Device.Runner
 
         #region Events
 
+        public event EventHandler Check;
+
         private void OnProcessExited(object sender, EventArgs e)
         {
-            
+        }
+
+        private void OnCheck()
+        {
+            Check?.Invoke(this, EventArgs.Empty);
         }
 
         #endregion
@@ -212,7 +220,9 @@ namespace MPlayerMaster.Device.Runner
 
                 _process.BeginOutputReadLine();
 
-                result = _process.Id;
+                ProcessId = _process.Id;
+
+                result = ProcessId;
 
                 Mute(true);
 
@@ -248,30 +258,7 @@ namespace MPlayerMaster.Device.Runner
                 MsgLogger.Exception($"{GetType().Name} - TerminateProcess", e);
             }
 
-            MsgLogger.WriteLine($"begin search for running mplayer process...");
-
-            try
-            {
-                string args = $"-input file={Path}";
-
-                foreach (var p in Process.GetProcessesByName(Settings.MPlayerProcessName))
-                {
-                    MsgLogger.WriteLine($"found running mplayer process with arguments: {p.StartInfo.Arguments}");
-
-                    if (p.StartInfo.Arguments.Contains(args))
-                    {
-                        MsgLogger.WriteLine($"process has same path, kill him!");
-
-                        p.Kill();
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                MsgLogger.Exception($"{GetType().Name} - TerminateProcess", e);
-            }
-
-            MsgLogger.WriteLine($"end search for running mplayer process...");
+            OnCheck();            
         }
 
         #endregion

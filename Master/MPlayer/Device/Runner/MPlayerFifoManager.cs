@@ -30,6 +30,40 @@ namespace MPlayerMaster.Device.Runner
 
         #endregion
 
+        #region Events
+
+        private void OnFifoCheck(object sender, EventArgs e)
+        {
+            var sourceFifo = sender as MPlayerFifo;
+
+            foreach (var fifo in FifoList)
+            {
+                if (fifo.Index == sourceFifo.Index && fifo.ProcessId > 0)
+                {
+                    MsgLogger.WriteLine($"begin search for running mplayer (index={fifo.Index}) process...");
+
+                    try
+                    {
+                        foreach (var p in Process.GetProcessesByName(Settings.MPlayerProcessName))
+                        {
+                            if(p.Id == fifo.ProcessId)
+                            {
+                                p.Kill();
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MsgLogger.Exception($"{GetType().Name} - TerminateProcess", ex);
+                    }
+
+                    MsgLogger.WriteLine($"end search for running mplayer (index={fifo.Index}) process...");
+                }
+            }            
+        }
+
+        #endregion
+
         #region Methods
 
         public bool Exists(ushort index)
@@ -79,6 +113,8 @@ namespace MPlayerMaster.Device.Runner
                     fifo.ProcessIdParameter = ProcessIdParameters[index];
 
                     MsgLogger.WriteFlow($"fifo added - {fifo.Name}");
+
+                    fifo.Check += OnFifoCheck;
 
                     FifoList.Add(fifo);
                 }
