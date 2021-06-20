@@ -247,6 +247,23 @@ namespace MPlayerMaster.Device.Runner
             {
                 MsgLogger.Exception($"{GetType().Name} - TerminateProcess", e);
             }
+
+            try
+            {
+                string args = $"-input file={Path}";
+
+                foreach (var p in Process.GetProcessesByName(Settings.MPlayerProcessName))
+                {
+                    if (p.StartInfo.Arguments.Contains(Path))
+                    {
+                        p.Kill();
+                    }                    
+                }
+            }
+            catch (Exception e)
+            {
+                MsgLogger.Exception($"{GetType().Name} - CloseBruteForce", e);
+            }
         }
 
         #endregion
