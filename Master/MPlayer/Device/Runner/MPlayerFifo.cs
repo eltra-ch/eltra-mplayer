@@ -137,19 +137,16 @@ namespace MPlayerMaster.Device.Runner
 
         internal bool Open(string url)
         {
-            bool result = false;
+            bool result;
 
             if (Url != url)
             {
-                var processId = Start(url);
+                Start(url);
 
-                SetProcessId(processId);
+                Url = url;
+                result = true;
 
-                if (processId != -1)
-                {
-                    Url = url;
-                    result = true;                    
-                }
+                SetProcessId();
             }
             else
             {
@@ -159,15 +156,15 @@ namespace MPlayerMaster.Device.Runner
             return result;
         }
 
-        private bool SetProcessId(int processId)
+        private bool SetProcessId()
         {
             bool result = false;
 
-            if (ProcessIdParameter != null && processId >= 0)
+            if (ProcessIdParameter != null && ProcessId >= 0)
             {
-                if (!ProcessIdParameter.SetValue(processId))
+                if (!ProcessIdParameter.SetValue(ProcessId))
                 {
-                    MsgLogger.WriteError($"{GetType().Name} - SetProcessId", $"process id {processId} cannot be set");
+                    MsgLogger.WriteError($"{GetType().Name} - SetProcessId", $"process id {ProcessId} cannot be set");
                 }
                 else
                 {
