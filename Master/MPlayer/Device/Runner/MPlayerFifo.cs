@@ -248,22 +248,30 @@ namespace MPlayerMaster.Device.Runner
                 MsgLogger.Exception($"{GetType().Name} - TerminateProcess", e);
             }
 
+            MsgLogger.WriteLine($"begin search for running mplayer process...");
+
             try
             {
                 string args = $"-input file={Path}";
 
                 foreach (var p in Process.GetProcessesByName(Settings.MPlayerProcessName))
                 {
-                    if (p.StartInfo.Arguments.Contains(Path))
+                    MsgLogger.WriteLine($"found running mplayer process with arguments: {p.StartInfo.Arguments}");
+
+                    if (p.StartInfo.Arguments.Contains(args))
                     {
+                        MsgLogger.WriteLine($"process has same path, kill him!");
+
                         p.Kill();
-                    }                    
+                    }
                 }
             }
             catch (Exception e)
             {
-                MsgLogger.Exception($"{GetType().Name} - CloseBruteForce", e);
+                MsgLogger.Exception($"{GetType().Name} - TerminateProcess", e);
             }
+
+            MsgLogger.WriteLine($"end search for running mplayer process...");
         }
 
         #endregion
