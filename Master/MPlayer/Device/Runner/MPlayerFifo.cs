@@ -110,7 +110,7 @@ namespace MPlayerMaster.Device.Runner
 
                     exitCode = process.ExitCode;
 
-                    MsgLogger.WriteLine($"{GetType().Name} - Mute", $"process {processName} exit code = {exitCode}");
+                    MsgLogger.WriteFlow($"{GetType().Name} - Mute", $"process {processName} exit code = {exitCode}");
                 }
                 else
                 {
