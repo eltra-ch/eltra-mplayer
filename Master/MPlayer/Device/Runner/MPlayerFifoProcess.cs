@@ -53,6 +53,7 @@ namespace MPlayerMaster.Device.Runner
                     }
 
                     _pause = pause;
+                    result = true;
                 }
                 else
                 {

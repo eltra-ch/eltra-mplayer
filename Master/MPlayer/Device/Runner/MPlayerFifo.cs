@@ -105,7 +105,7 @@ namespace MPlayerMaster.Device.Runner
 
         public bool Pause(bool pause)
         {
-            bool result = false;
+            bool result = true;
 
             if (_process != null)
             {
