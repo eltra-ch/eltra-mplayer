@@ -84,6 +84,7 @@ namespace MPlayerMaster.Device.Runner
 
                 startInfo.UseShellExecute = false;
                 startInfo.RedirectStandardOutput = true;
+                startInfo.RedirectStandardInput = true;
 
                 startInfo.WindowStyle = ProcessWindowStyle.Normal;
 
