@@ -97,7 +97,7 @@ namespace MPlayerMaster.Device.Runner
 
             if (_process != null)
             {
-                _process.Pause(true);
+                result = _process.Pause(true);
             }
 
             return result;
