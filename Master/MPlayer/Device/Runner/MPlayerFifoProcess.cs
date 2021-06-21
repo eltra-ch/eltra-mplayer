@@ -54,6 +54,10 @@ namespace MPlayerMaster.Device.Runner
 
                     _pause = pause;
                 }
+                else
+                {
+                    result = true;
+                }
             }
             catch(Exception e)
             {

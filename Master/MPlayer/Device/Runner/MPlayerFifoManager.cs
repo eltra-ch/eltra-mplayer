@@ -88,8 +88,8 @@ namespace MPlayerMaster.Device.Runner
 
             try
             {
-                int exitCode = EXIT_CODE_SUCCESS;
-                var fifo = new MPlayerFifo(index) { Settings = Settings };
+                /*int exitCode = EXIT_CODE_SUCCESS;
+                
                 
                 if (!File.Exists(fifo.Path))
                 {
@@ -103,10 +103,12 @@ namespace MPlayerMaster.Device.Runner
 
                         exitCode = process.ExitCode;
                     }
-                }
+                }*/
 
-                if(!Exists(index) && exitCode == EXIT_CODE_SUCCESS)
+                if(!Exists(index))
                 {
+                    var fifo = new MPlayerFifo(index) { Settings = Settings };
+
                     fifo.StreamTitleParameter = StreamTitleParameters[index];
                     fifo.StationTitleParameter = StationTitleParameters[index];
                     fifo.CustomStationTitleParameter = CustomStationTitleParameters[index];
@@ -117,9 +119,9 @@ namespace MPlayerMaster.Device.Runner
                     fifo.Check += OnFifoCheck;
 
                     FifoList.Add(fifo);
-                }
 
-                result = (exitCode == EXIT_CODE_SUCCESS);
+                    result = true;
+                }
             }
             catch (Exception e)
             {

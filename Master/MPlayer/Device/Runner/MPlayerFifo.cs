@@ -93,7 +93,12 @@ namespace MPlayerMaster.Device.Runner
 
         internal bool Stop()
         {
-            var result = _process.Pause(true);
+            bool result = false;
+
+            if (_process != null)
+            {
+                _process.Pause(true);
+            }
 
             return result;
         }
