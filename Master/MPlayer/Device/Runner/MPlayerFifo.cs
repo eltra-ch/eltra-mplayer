@@ -29,8 +29,6 @@ namespace MPlayerMaster.Device.Runner
 
         #region Properties
 
-        
-
         public ushort Index { get; private set; }
 
         public string Name => GetFifoName();
@@ -51,13 +49,11 @@ namespace MPlayerMaster.Device.Runner
 
         #region Events
 
-        public event EventHandler Check;
+        public event EventHandler Opened;
 
-        
-
-        private void OnCheck()
+        private void OnOpened()
         {
-            Check?.Invoke(this, EventArgs.Empty);
+            Opened?.Invoke(this, EventArgs.Empty);
         }
 
         #endregion
@@ -146,7 +142,7 @@ namespace MPlayerMaster.Device.Runner
             return result;
         }
 
-        internal bool Open(string url)
+        internal bool Open(string url, bool pause)
         {
             bool result = false;
 
@@ -155,17 +151,17 @@ namespace MPlayerMaster.Device.Runner
                 Start(url);
 
                 Url = url;
-                result = true;
             }
-            else if(_process != null)
+            
+            if(_process != null)
             {
-                result = _process.Pause(false);
+                result = _process.Pause(pause);
             }
 
             return result;
         }
         
-        public int Start(string url)
+        private int Start(string url)
         {
             int result = -1;
 
@@ -176,12 +172,10 @@ namespace MPlayerMaster.Device.Runner
                 TerminateProcess();
 
                 _process = new MPlayerFifoProcess() { Settings = Settings, ProcessIdParameter = ProcessIdParameter, Parser = Parser };
-
+                                
                 _process.Create(url);
 
-                result = _process.ProcessId;
-
-                _process.Pause(true);
+                result = _process.ProcessId;                
             }
             catch (Exception e)
             {
@@ -193,9 +187,7 @@ namespace MPlayerMaster.Device.Runner
 
         private void TerminateProcess()
         {
-            _process?.Abort();
-
-            OnCheck();            
+            _process?.Abort(); 
         }
 
         #endregion

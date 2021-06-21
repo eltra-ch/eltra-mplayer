@@ -2,6 +2,7 @@
 using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application.Parameters;
 using MPlayerMaster.Device.Runner.Console;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace MPlayerMaster.Device.Runner
@@ -11,7 +12,10 @@ namespace MPlayerMaster.Device.Runner
         #region
 
         private Process _process;
-        private bool _pause;
+        private bool _started;
+        private MPlayerConsoleParser _parser;
+        private Queue<bool> _pauseQueue;
+        int pauseToggleCount;
 
         #endregion
 
@@ -23,9 +27,19 @@ namespace MPlayerMaster.Device.Runner
 
         public Parameter ProcessIdParameter { get; internal set; }
 
-        public MPlayerConsoleParser Parser { get; internal set; }
+        public MPlayerConsoleParser Parser 
+        { 
+            get => _parser;
+            internal set
+            {
+                _parser = value;
+                OnParserChanged();
+            } 
+        }
 
-        public bool IsPaused => _pause;
+        protected bool IsStarted => _started;
+
+        private Queue<bool> PauseQueue => _pauseQueue ?? (_pauseQueue = new Queue<bool>());
 
         #endregion
 
@@ -35,9 +49,30 @@ namespace MPlayerMaster.Device.Runner
         {
         }
 
+        private void OnParserChanged()
+        {
+            if(_parser != null)
+            {
+                _parser.StartingPlayback += (o, e) =>
+                {
+                    _started = true;
+
+                    while(PauseQueue.TryDequeue(out bool pause))
+                    {
+                        Pause(pause);
+                    }
+                };
+            }
+        }
+
         #endregion
 
         #region Methods
+
+        public static bool IsOdd(int value)
+        {
+            return value % 2 != 0;
+        }
 
         public bool Pause(bool pause)
         {
@@ -45,14 +80,33 @@ namespace MPlayerMaster.Device.Runner
 
             try
             {
-                if (pause != _pause)
+                bool toggle = false;
+
+                if(pause && !IsOdd(pauseToggleCount))
                 {
-                    if (_process != null)
+                    toggle = true;
+                }
+                else if(!pause && IsOdd(pauseToggleCount))
+                {
+                    toggle = true;
+                }
+
+                if (toggle)
+                {
+                    if (IsStarted)
                     {
-                        _process.StandardInput.WriteLine("pause");
+                        if (_process != null)
+                        {
+                            _process.StandardInput.Write("pause\n");
+                            _process.StandardInput.Flush();
+                            pauseToggleCount++;
+                        }
+                    }
+                    else
+                    {
+                        PauseQueue.Enqueue(pause);
                     }
 
-                    _pause = pause;
                     result = true;
                 }
                 else
@@ -84,6 +138,8 @@ namespace MPlayerMaster.Device.Runner
                 _process.Exited += OnProcessExited;
 
                 startInfo.UseShellExecute = false;
+
+                startInfo.RedirectStandardError = true;
                 startInfo.RedirectStandardOutput = true;
                 startInfo.RedirectStandardInput = true;
 
@@ -100,12 +156,24 @@ namespace MPlayerMaster.Device.Runner
 
                 _process.OutputDataReceived += (sender, args) =>
                 {
-                    Parser.ProcessLine(args.Data);
+                    if (!string.IsNullOrEmpty(args.Data))
+                    {
+                        Parser?.ProcessLine(args.Data);
+                    }
+                };
+
+                _process.ErrorDataReceived += (sender, args) =>
+                {
+                    if (!string.IsNullOrEmpty(args.Data))
+                    {
+                        MsgLogger.WriteError($"{GetType().Name} - ErrorDataReceived", args.Data);
+                    }
                 };
 
                 if (_process.Start())
                 {
                     _process.BeginOutputReadLine();
+                    _process.BeginErrorReadLine();
 
                     ProcessId = _process.Id;
 

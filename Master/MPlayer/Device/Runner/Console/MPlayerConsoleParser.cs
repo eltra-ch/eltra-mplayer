@@ -1,6 +1,5 @@
 ﻿using EltraCommon.Logger;
 using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application.Parameters;
-using EltraCommon.ObjectDictionary.Xdd.DeviceDescription.Profiles.Application.Parameters;
 using MPlayerMaster.Helpers;
 using System;
 
@@ -19,8 +18,23 @@ namespace MPlayerMaster.Device.Runner.Console
         public Parameter StreamTitleParameter { get; set; }
         public Parameter StationTitleParameter { get; set; }
         public Parameter CustomStationTitleParameter { get; set; }
-        
+
+        public bool IsPlaybackStarted { get; private set; }
+
         #endregion
+
+        #region Events
+
+        public event EventHandler StartingPlayback;
+
+        private void OnStartingPlayback()
+        {
+            StartingPlayback?.Invoke(this, EventArgs.Empty);
+        }
+
+        #endregion
+
+        #region Methods
 
         public void ProcessLine(string line)
         {
@@ -36,10 +50,16 @@ namespace MPlayerMaster.Device.Runner.Console
                 {
                     ParseMPlayerStreamTitle(line);
                 }
+                else if (formattedLine.StartsWith("startingplayback..."))
+                {
+                    IsPlaybackStarted = true;
+
+                    OnStartingPlayback();
+                }
             }
             catch (Exception e)
             {
-                MsgLogger.Exception($"{GetType().Name} - ParseMPlayerOutputLine", e);
+                MsgLogger.Exception($"{GetType().Name} - ProcessLine", e);
             }
         }
 
@@ -123,5 +143,7 @@ namespace MPlayerMaster.Device.Runner.Console
                 MsgLogger.Exception($"{GetType().Name} - ParseMPlayerStationName", e);
             }
         }
+
+        #endregion
     }
 }

@@ -32,36 +32,6 @@ namespace MPlayerMaster.Device.Runner
 
         #region Events
 
-        private void OnFifoCheck(object sender, EventArgs e)
-        {
-            var sourceFifo = sender as MPlayerFifo;
-
-            /*foreach (var fifo in FifoList)
-            {
-                if (fifo.Index == sourceFifo.Index && fifo.ProcessId > 0)
-                {
-                    MsgLogger.WriteLine($"begin search for running mplayer (index={fifo.Index}) process...");
-
-                    try
-                    {
-                        foreach (var p in Process.GetProcessesByName(Settings.MPlayerProcessName))
-                        {
-                            if(p.Id == fifo.ProcessId)
-                            {
-                                p.Kill();
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        MsgLogger.Exception($"{GetType().Name} - TerminateProcess", ex);
-                    }
-
-                    MsgLogger.WriteLine($"end search for running mplayer (index={fifo.Index}) process...");
-                }
-            }*/           
-        }
-
         #endregion
 
         #region Methods
@@ -116,8 +86,6 @@ namespace MPlayerMaster.Device.Runner
 
                     MsgLogger.WriteFlow($"fifo added - {fifo.Name}");
 
-                    fifo.Check += OnFifoCheck;
-
                     FifoList.Add(fifo);
 
                     result = true;
@@ -154,29 +122,19 @@ namespace MPlayerMaster.Device.Runner
 
             if(fifo != null)
             {
-                PauseAll(true);
-
-                if (!fifo.Open(url))
+                if (!fifo.Open(url, pause))
                 {
                     MsgLogger.WriteError($"{GetType().Name} - OpenUrl", $"cannot open url {url}!");
                 }
                 else
                 {
                     MsgLogger.WriteLine($"url {url} opened successfully!");
-
-                    result = fifo.Pause(pause);
+                    
+                    result = true;
                 }
             }
 
             return result;
-        }
-
-        private void PauseAll(bool mute)
-        {
-            foreach (var f in FifoList)
-            {
-                f.Pause(mute);
-            }
         }
 
         internal bool Stop()
