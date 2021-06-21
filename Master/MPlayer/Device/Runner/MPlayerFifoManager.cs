@@ -36,7 +36,7 @@ namespace MPlayerMaster.Device.Runner
         {
             var sourceFifo = sender as MPlayerFifo;
 
-            foreach (var fifo in FifoList)
+            /*foreach (var fifo in FifoList)
             {
                 if (fifo.Index == sourceFifo.Index && fifo.ProcessId > 0)
                 {
@@ -59,7 +59,7 @@ namespace MPlayerMaster.Device.Runner
 
                     MsgLogger.WriteLine($"end search for running mplayer (index={fifo.Index}) process...");
                 }
-            }            
+            }*/           
         }
 
         #endregion
@@ -145,14 +145,14 @@ namespace MPlayerMaster.Device.Runner
             return result;
         }
 
-        internal bool OpenUrl(ushort index, string url, bool unmute)
+        internal bool OpenUrl(ushort index, string url, bool pause)
         {
             bool result = false;
             var fifo = GetFifo(index);
 
             if(fifo != null)
             {
-                MuteAll(true);
+                PauseAll(true);
 
                 if (!fifo.Open(url))
                 {
@@ -162,18 +162,18 @@ namespace MPlayerMaster.Device.Runner
                 {
                     MsgLogger.WriteLine($"url {url} opened successfully!");
 
-                    result = fifo.Mute(!unmute);
+                    result = fifo.Pause(pause);
                 }
             }
 
             return result;
         }
 
-        private void MuteAll(bool mute)
+        private void PauseAll(bool mute)
         {
             foreach (var f in FifoList)
             {
-                f.Mute(mute);
+                f.Pause(mute);
             }
         }
 

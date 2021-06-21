@@ -273,7 +273,7 @@ namespace MPlayerMaster.Device.Radio
 
                             SetEmptyStreamLabel((ushort)(activeStationValue - 1));
 
-                            result = Runner.OpenUrl((ushort)(activeStationValue - 1), url);
+                            result = Runner.PlayUrl((ushort)(activeStationValue - 1), url);
 
                             PlayerControl.SetStatusWord(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
                         }

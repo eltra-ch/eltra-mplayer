@@ -84,13 +84,13 @@ namespace MPlayerMaster.Device.Runner
             }
             else
             {
-                FifoManager.OpenUrl(index, url, false);
+                FifoManager.OpenUrl(index, url, true);
             }
         }
 
-        public bool OpenUrl(ushort index, string url)
+        public bool PlayUrl(ushort index, string url)
         {
-            return FifoManager.OpenUrl(index, url, true);
+            return FifoManager.OpenUrl(index, url, false);
         }
 
         private MPlayerConsoleParser CreateParser()

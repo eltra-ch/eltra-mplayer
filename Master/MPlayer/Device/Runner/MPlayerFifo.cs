@@ -2,7 +2,7 @@
 using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application.Parameters;
 using MPlayerMaster.Device.Runner.Console;
 using System;
-using System.Diagnostics;
+using System.IO;
 
 namespace MPlayerMaster.Device.Runner
 {
@@ -11,9 +11,10 @@ namespace MPlayerMaster.Device.Runner
         #region Private fields
 
         const int EXIT_CODE_SUCCESS = 0;
-
-        private Process _process;
+                
         private MPlayerConsoleParser _parser;
+        private MPlayerFifoProcess _process;
+
 
         #endregion
 
@@ -28,7 +29,7 @@ namespace MPlayerMaster.Device.Runner
 
         #region Properties
 
-        public int ProcessId { get; private set; }
+        
 
         public ushort Index { get; private set; }
 
@@ -52,9 +53,7 @@ namespace MPlayerMaster.Device.Runner
 
         public event EventHandler Check;
 
-        private void OnProcessExited(object sender, EventArgs e)
-        {
-        }
+        
 
         private void OnCheck()
         {
@@ -94,7 +93,19 @@ namespace MPlayerMaster.Device.Runner
 
         internal bool Stop()
         {
-            var result = Mute(true);
+            var result = _process.Pause(true);
+
+            return result;
+        }
+
+        public bool Pause(bool pause)
+        {
+            bool result = false;
+
+            if (_process != null)
+            {
+                result = _process.Pause(pause);
+            }
 
             return result;
         }
@@ -107,22 +118,17 @@ namespace MPlayerMaster.Device.Runner
             {
                 int exitCode = EXIT_CODE_SUCCESS;
                 int m = mute ? 1 : 0;
-                string processName = "echo";
-                var startInfo = new ProcessStartInfo($"{processName}", $"echo mute {m} >> {Path}");
-
-                var process = Process.Start(startInfo);
-
-                if (process != null)
+              
+                if (File.Exists(Path))
                 {
-                    process.WaitForExit();
-
-                    exitCode = process.ExitCode;
-
-                    MsgLogger.WriteFlow($"{GetType().Name} - Mute", $"process {processName} exit code = {exitCode}");
+                    using (var fifoFile = new StreamWriter(Path, append: false))
+                    {
+                        fifoFile.WriteLine("mute {m}");
+                    }
                 }
                 else
                 {
-                    MsgLogger.WriteError($"{GetType().Name} - Mute", $"cannot start {processName} process!");
+                    MsgLogger.WriteError($"{GetType().Name} - Mute", $"fifo file {Path} doesn't exist!");
                 }
 
                 result = (exitCode == EXIT_CODE_SUCCESS);
@@ -137,7 +143,7 @@ namespace MPlayerMaster.Device.Runner
 
         internal bool Open(string url)
         {
-            bool result;
+            bool result = false;
 
             if (Url != url)
             {
@@ -145,36 +151,15 @@ namespace MPlayerMaster.Device.Runner
 
                 Url = url;
                 result = true;
-
-                SetProcessId();
             }
-            else
+            else if(_process != null)
             {
-                result = Mute(false);
+                result = _process.Pause(false);
             }
 
             return result;
         }
-
-        private bool SetProcessId()
-        {
-            bool result = false;
-
-            if (ProcessIdParameter != null && ProcessId >= 0)
-            {
-                if (!ProcessIdParameter.SetValue(ProcessId))
-                {
-                    MsgLogger.WriteError($"{GetType().Name} - SetProcessId", $"process id {ProcessId} cannot be set");
-                }
-                else
-                {
-                    result = true;
-                }
-            }
-
-            return result;
-        }
-
+        
         public int Start(string url)
         {
             int result = -1;
@@ -185,45 +170,13 @@ namespace MPlayerMaster.Device.Runner
 
                 TerminateProcess();
 
-                var startInfo = new ProcessStartInfo();
+                _process = new MPlayerFifoProcess() { Settings = Settings, ProcessIdParameter = ProcessIdParameter, Parser = Parser };
 
-                _process = new Process
-                {
-                    EnableRaisingEvents = true
-                };
+                _process.Create(url);
 
-                _process.Exited += OnProcessExited;
+                result = _process.ProcessId;
 
-                startInfo.UseShellExecute = false;
-                startInfo.RedirectStandardOutput = true;
-
-                startInfo.WindowStyle = ProcessWindowStyle.Normal;
-
-                string args = $" -slave -input file={Path}";
-
-                startInfo.Arguments = Settings.AppArgs + args + $" {url}";
-                startInfo.Arguments = startInfo.Arguments.Trim();
-
-                startInfo.FileName = Settings.MPlayerProcessPath;
-
-                _process.StartInfo = startInfo;
-
-                _process.OutputDataReceived += (sender, args) =>
-                {
-                    Parser.ProcessLine(args.Data);
-                };
-
-                _process.Start();
-
-                _process.BeginOutputReadLine();
-
-                ProcessId = _process.Id;
-
-                result = ProcessId;
-
-                Mute(true);
-
-                MsgLogger.WriteFlow($"{GetType().Name} - Start", $"Start process: app = {startInfo.FileName},  args: {startInfo.Arguments}, result = {_process != null}");
+                _process.Pause(true);
             }
             catch (Exception e)
             {
@@ -235,25 +188,7 @@ namespace MPlayerMaster.Device.Runner
 
         private void TerminateProcess()
         {
-            try
-            {
-                if (_process != null && !_process.HasExited)
-                {
-                    _process.EnableRaisingEvents = false;
-                    _process.Exited -= OnProcessExited;
-
-                    _process.Kill();
-
-                    if (!_process.HasExited)
-                    {
-                        _process.WaitForExit();
-                    }
-                }
-            }
-            catch(Exception e)
-            {
-                MsgLogger.Exception($"{GetType().Name} - TerminateProcess", e);
-            }
+            _process?.Abort();
 
             OnCheck();            
         }
