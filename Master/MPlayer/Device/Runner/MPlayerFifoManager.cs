@@ -2,8 +2,6 @@
 using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application.Parameters;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 
 namespace MPlayerMaster.Device.Runner
 {
@@ -58,23 +56,6 @@ namespace MPlayerMaster.Device.Runner
 
             try
             {
-                /*int exitCode = EXIT_CODE_SUCCESS;
-                
-                
-                if (!File.Exists(fifo.Path))
-                {
-                    var startInfo = new ProcessStartInfo("mkfifo", fifo.Path);
-
-                    var process = Process.Start(startInfo);
-
-                    if (process != null)
-                    {
-                        process.WaitForExit();
-
-                        exitCode = process.ExitCode;
-                    }
-                }*/
-
                 if(!Exists(index))
                 {
                     var fifo = new MPlayerFifo(index) { Settings = Settings };
@@ -115,6 +96,14 @@ namespace MPlayerMaster.Device.Runner
             return result;
         }
 
+        private void PauseAll(bool pause)
+        {
+            foreach (var f in FifoList)
+            {
+                f.Pause(pause);
+            }
+        }
+
         internal bool OpenUrl(ushort index, string url, bool pause)
         {
             bool result = false;
@@ -122,6 +111,8 @@ namespace MPlayerMaster.Device.Runner
 
             if(fifo != null)
             {
+                PauseAll(true);
+
                 if (!fifo.Open(url, pause))
                 {
                     MsgLogger.WriteError($"{GetType().Name} - OpenUrl", $"cannot open url {url}!");
