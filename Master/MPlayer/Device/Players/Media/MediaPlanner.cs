@@ -9,7 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace MPlayerMaster.Device.Media
+namespace MPlayerMaster.Device.Players.Media
 {
     class MediaPlanner
     {
@@ -139,8 +139,8 @@ namespace MPlayerMaster.Device.Media
                _mediaActiveCompositionPositionParmeter != null)
             {
                 result = _mediaActiveArtistPositionParameter.GetValue(out activeArtistPosition);
-                if(result) result = _mediaActiveAlbumPositionParameter.GetValue(out activeAlbumPosition);
-                if (result) result = _mediaActiveCompositionPositionParmeter.GetValue(out activeCompositionPosition);                
+                if (result) result = _mediaActiveAlbumPositionParameter.GetValue(out activeAlbumPosition);
+                if (result) result = _mediaActiveCompositionPositionParmeter.GetValue(out activeCompositionPosition);
             }
 
             return result;
@@ -152,7 +152,7 @@ namespace MPlayerMaster.Device.Media
             _mediaActiveAlbumPositionParameter = Vcs.SearchParameter("PARAM_ActiveAlbumPosition") as XddParameter;
             _mediaActiveCompositionPositionParmeter = Vcs.SearchParameter("PARAM_ActiveCompositionPosition") as XddParameter;
 
-            if(_mediaActiveArtistPositionParameter!=null)
+            if (_mediaActiveArtistPositionParameter != null)
             {
                 await _mediaActiveArtistPositionParameter.UpdateValue();
 
@@ -180,7 +180,7 @@ namespace MPlayerMaster.Device.Media
             {
                 var shuffleParameterValue = await _mediaControlShuffle.UpdateValue();
 
-                if(shuffleParameterValue != null)
+                if (shuffleParameterValue != null)
                 {
                     shuffleParameterValue.GetValue(ref _shuffle);
                 }
@@ -192,7 +192,7 @@ namespace MPlayerMaster.Device.Media
             {
                 var randomParameterValue = await _mediaControlRandom.UpdateValue();
 
-                if(randomParameterValue!=null)
+                if (randomParameterValue != null)
                 {
                     randomParameterValue.GetValue(ref _random);
                 }
@@ -207,7 +207,7 @@ namespace MPlayerMaster.Device.Media
         {
             PlannerComposition result = null;
 
-            if(CurrentPlaylist.Count > 0)
+            if (CurrentPlaylist.Count > 0)
             {
                 var toBePlayed = GetToBePlayed();
 
@@ -270,7 +270,7 @@ namespace MPlayerMaster.Device.Media
             {
                 int index = FindCurrentCompositionIndex();
 
-                if(index != -1)
+                if (index != -1)
                 {
                     CurrentPlaylist[index].State = PlayingState.Ready;
                     if (index > 0)
@@ -344,7 +344,7 @@ namespace MPlayerMaster.Device.Media
         }
 
         private void BuildAllCompositionPlaylist()
-        {   
+        {
             foreach (var artist in MediaStore.Artists)
             {
                 BuildAllArtistCompositionPlaylist(artist);
@@ -369,7 +369,7 @@ namespace MPlayerMaster.Device.Media
                 foreach (var composition in album.Compositions)
                 {
                     CurrentPlaylist.Add(new PlannerComposition(composition));
-                }                
+                }
             }
         }
 
@@ -387,7 +387,7 @@ namespace MPlayerMaster.Device.Media
 
         internal void SetPlayListToReady()
         {
-            foreach(var composition in CurrentPlaylist)
+            foreach (var composition in CurrentPlaylist)
             {
                 composition.State = PlayingState.Ready;
             }
@@ -411,7 +411,7 @@ namespace MPlayerMaster.Device.Media
 
             if (activeCompositionPosition >= 0 && album.Compositions.Count > activeCompositionPosition)
             {
-                result = album.Compositions[activeCompositionPosition];    
+                result = album.Compositions[activeCompositionPosition];
             }
 
             return result;
@@ -427,7 +427,7 @@ namespace MPlayerMaster.Device.Media
             {
                 BuildAllCompositionPlaylist();
             }
-            else 
+            else
             {
                 var album = GetAlbum(artist, activeAlbumPosition);
 

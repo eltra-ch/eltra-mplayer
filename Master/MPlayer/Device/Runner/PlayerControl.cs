@@ -3,8 +3,9 @@ using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application
 using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application.Parameters.Events;
 using EltraCommon.ObjectDictionary.Xdd.DeviceDescription.Profiles.Application.Parameters;
 using EltraConnector.Master.Device;
-using MPlayerMaster.Device.Radio;
+using MPlayerMaster.Device.Players;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -24,7 +25,7 @@ namespace MPlayerMaster.Device.Runner
 
         private MPlayerRunner _runner;
 
-        private RadioPlayer _radioPlayer;
+        private List<Player> _playerList;
 
         #endregion
 
@@ -35,15 +36,10 @@ namespace MPlayerMaster.Device.Runner
         public MasterVcs Vcs { get; internal set; }
 
         internal MPlayerRunner Runner => _runner ?? (_runner = CreateRunner());
-
-        public RadioPlayer RadioPlayer
+        
+        public List<Player> PlayerList
         {
-            get => _radioPlayer;
-            set
-            {
-                _radioPlayer = value;
-                OnRadioPlayerChaned();
-            }
+            get => _playerList ?? (_playerList = new List<Player>());
         }
 
         #endregion
@@ -56,9 +52,12 @@ namespace MPlayerMaster.Device.Runner
 
         #region Events handler
 
-        private void OnRadioPlayerChaned()
+        private void OnPlayerChaned()
         {
-            RadioPlayer.Runner = Runner;
+            foreach(var player in PlayerList)
+            {
+                player.Runner = Runner;
+            }            
         }
 
         private void OnControlWordChanged(object sender, ParameterChangedEventArgs e)
@@ -106,6 +105,13 @@ namespace MPlayerMaster.Device.Runner
         #endregion
 
         #region Methods
+
+        public void AddPlayer(Player player)
+        {
+            PlayerList.Add(player);
+
+            OnPlayerChaned();
+        }
 
         private MPlayerRunner CreateRunner()
         {
@@ -241,6 +247,11 @@ namespace MPlayerMaster.Device.Runner
             return result;
         }
 
+        internal void CreateFifo(ushort index, string url)
+        {
+            Runner.CreateFifo(index, url);
+        }
+
         public bool SetStatusWord(StatusWordEnums status)
         {
             bool result = false;
@@ -270,6 +281,22 @@ namespace MPlayerMaster.Device.Runner
             else
             {
                 MsgLogger.WriteError($"{GetType().Name} - SetVolumeAsync", "volume parameter not defined!");
+            }
+
+            return result;
+        }
+
+        internal bool Stop(bool useFifo = true)
+        {
+            bool result;
+
+            if (useFifo)
+            {
+                result = Runner.StopFifo();
+            }
+            else
+            {
+                result = Runner.Stop();
             }
 
             return result;
@@ -331,6 +358,11 @@ namespace MPlayerMaster.Device.Runner
             return result;
         }
 
+        internal bool PlayUrl(ushort index, string url)
+        {
+            return Runner.PlayUrl(index, url);
+        }
+
         private Task SetMuteAsync(bool muteValue)
         {
             var result = Task.Run(() =>
@@ -369,11 +401,6 @@ namespace MPlayerMaster.Device.Runner
         public int Start(string url)
         {
             return Runner.Start(url);
-        }
-
-        public bool Stop()
-        {
-            return Runner.Stop();
         }
 
         #endregion

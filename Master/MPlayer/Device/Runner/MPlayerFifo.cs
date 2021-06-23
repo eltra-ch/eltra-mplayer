@@ -2,7 +2,6 @@
 using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application.Parameters;
 using MPlayerMaster.Device.Runner.Console;
 using System;
-using System.IO;
 
 namespace MPlayerMaster.Device.Runner
 {
@@ -10,11 +9,8 @@ namespace MPlayerMaster.Device.Runner
     {
         #region Private fields
 
-        const int EXIT_CODE_SUCCESS = 0;
-                
         private MPlayerConsoleParser _parser;
         private MPlayerFifoProcess _process;
-
 
         #endregion
 
@@ -32,8 +28,6 @@ namespace MPlayerMaster.Device.Runner
         public ushort Index { get; private set; }
 
         public string Name => GetFifoName();
-
-        public string Path => GetFifoPath();
 
         public string Url { get; set; }
 
@@ -78,15 +72,6 @@ namespace MPlayerMaster.Device.Runner
             return $"MPM{Index:X4}";
         }
 
-        private string GetFifoPath()
-        {
-            var tempPath = System.IO.Path.GetTempPath();
-
-            string fifoPath = System.IO.Path.Combine(tempPath, Name);
-
-            return fifoPath;
-        }
-
         internal bool Stop()
         {
             bool result = false;
@@ -106,37 +91,6 @@ namespace MPlayerMaster.Device.Runner
             if (_process != null)
             {
                 result = _process.Pause(pause);
-            }
-
-            return result;
-        }
-
-        public bool Mute(bool mute)
-        {
-            bool result = false;
-
-            try
-            {
-                int exitCode = EXIT_CODE_SUCCESS;
-                int m = mute ? 1 : 0;
-              
-                if (File.Exists(Path))
-                {
-                    using (var fifoFile = new StreamWriter(Path, append: false))
-                    {
-                        fifoFile.WriteLine("mute {m}");
-                    }
-                }
-                else
-                {
-                    MsgLogger.WriteError($"{GetType().Name} - Mute", $"fifo file {Path} doesn't exist!");
-                }
-
-                result = (exitCode == EXIT_CODE_SUCCESS);
-            }
-            catch (Exception e)
-            {
-                MsgLogger.Exception($"{GetType().Name} - Mute", e);
             }
 
             return result;

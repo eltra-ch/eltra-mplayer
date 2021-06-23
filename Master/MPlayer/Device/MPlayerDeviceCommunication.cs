@@ -3,10 +3,10 @@ using System;
 using EltraConnector.Master.Device;
 using System.Threading.Tasks;
 using MPlayerMaster.Device.Runner;
-using MPlayerMaster.Device.Media;
-using MPlayerMaster.Device.Radio;
 using EltraCommon.Logger;
 using MPlayerCommon.Definitions;
+using MPlayerMaster.Device.Players.Radio;
+using MPlayerMaster.Device.Players.Media;
 
 namespace MPlayerMaster.Device
 {

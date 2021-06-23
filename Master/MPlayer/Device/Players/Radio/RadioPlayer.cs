@@ -5,16 +5,15 @@ using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application
 using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application.Parameters.Events;
 using EltraCommon.ObjectDictionary.Xdd.DeviceDescription.Profiles.Application.Parameters;
 using EltraConnector.Agent;
-using EltraConnector.Master.Device;
 using MPlayerMaster.Device.Runner;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using static MPlayerMaster.MPlayerDefinitions;
 
-namespace MPlayerMaster.Device.Radio
+namespace MPlayerMaster.Device.Players.Radio
 {
-    class RadioPlayer
+    class RadioPlayer : Player
     {
         #region Private fields
 
@@ -34,8 +33,6 @@ namespace MPlayerMaster.Device.Radio
         private ushort _maxStationsCount;
         private Task<bool> _setActiveStationAsyncTask;
 
-        private PlayerControl _playerControl;
-
         #endregion
 
         #region Constructors
@@ -54,10 +51,6 @@ namespace MPlayerMaster.Device.Radio
 
         #region Properties
 
-        public MasterVcs Vcs { get; internal set; }
-
-        public MPlayerSettings Settings { get; set; }
-
         public int ActiveStationValue
         {
             get
@@ -73,8 +66,6 @@ namespace MPlayerMaster.Device.Radio
             }
         }
 
-        public MPlayerRunner Runner { get; set; }
-
         public Parameter ActiveStationParameter => _activeStationParameter;
 
         public Parameter StationsCountParameter => _stationsCountParameter;
@@ -87,24 +78,9 @@ namespace MPlayerMaster.Device.Radio
 
         public List<Parameter> StationTitleParameters => _stationTitleParameters;
 
-        public PlayerControl PlayerControl
-        {
-            get => _playerControl;
-            set
-            {
-                _playerControl = value;
-                OnPlayerControlChanged();
-            }
-        }
-
         #endregion
 
         #region Events handling
-
-        private void OnPlayerControlChanged()
-        {
-            PlayerControl.RadioPlayer = this;
-        }
 
         private void OnActiveStationParameterChanged(object sender, ParameterChangedEventArgs e)
         {
@@ -143,6 +119,8 @@ namespace MPlayerMaster.Device.Radio
 
         internal async Task InitParameters()
         {
+            ResetStreamLabels();
+
             InitStationList();
 
             await InitQueryStation();
@@ -206,8 +184,7 @@ namespace MPlayerMaster.Device.Radio
 
                         if (urlParameter.GetValue(out string url))
                         {
-                            Runner.RadioPlayer = this;
-                            Runner.CreateStationFifo(i, url);
+                            PlayerControl.CreateFifo((ushort)(i), url);
                         }
                         else
                         {
@@ -234,18 +211,22 @@ namespace MPlayerMaster.Device.Radio
         private bool StopPlaying()
         {
             bool result;
-            for (ushort i = 0; i < _maxStationsCount; i++)
-            {
-                SetEmptyStreamLabel(i);
-            }
 
             PlayerControl.SetStatusWord(StatusWordEnums.PendingExecution);
 
-            result = Runner.StopFifo();
+            result = PlayerControl.Stop();
 
             PlayerControl.SetStatusWord(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
 
             return result;
+        }
+
+        private void ResetStreamLabels()
+        {
+            for (ushort i = 0; i < _maxStationsCount; i++)
+            {
+                SetEmptyStreamLabel(i);
+            }
         }
 
         private void SetActiveStationAsync(int activeStationValue)
@@ -271,9 +252,9 @@ namespace MPlayerMaster.Device.Radio
                         {
                             PlayerControl.SetStatusWord(StatusWordEnums.PendingExecution);
 
-                            SetEmptyStreamLabel((ushort)(activeStationValue - 1));
+                            //SetEmptyStreamLabel((ushort)(activeStationValue - 1));
 
-                            result = Runner.PlayUrl((ushort)(activeStationValue - 1), url);
+                            result = PlayerControl.PlayUrl((ushort)(activeStationValue - 1), url);
 
                             PlayerControl.SetStatusWord(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
                         }
@@ -300,7 +281,7 @@ namespace MPlayerMaster.Device.Radio
                     result = true;
                 }
             }
-            else if (objectIndex >= 0x4000 && objectIndex <= (0x4000 + _maxStationsCount) && objectSubindex == 0x01
+            else if (objectIndex >= 0x4000 && objectIndex <= 0x4000 + _maxStationsCount && objectSubindex == 0x01
                       && _urlParameters.Count > 0)
             {
                 if (_urlParameters[objectIndex - 0x4000].GetValue(out byte[] d1))
@@ -309,7 +290,7 @@ namespace MPlayerMaster.Device.Radio
                     result = true;
                 }
             }
-            else if (objectIndex >= 0x4000 && objectIndex <= (0x4000 + _maxStationsCount) && objectSubindex == 0x02
+            else if (objectIndex >= 0x4000 && objectIndex <= 0x4000 + _maxStationsCount && objectSubindex == 0x02
                       && _stationTitleParameters.Count > 0)
             {
                 if (_stationTitleParameters[objectIndex - 0x4000].GetValue(out byte[] d1))
@@ -318,7 +299,7 @@ namespace MPlayerMaster.Device.Radio
                     result = true;
                 }
             }
-            else if (objectIndex >= 0x4000 && objectIndex <= (0x4000 + _maxStationsCount) && objectSubindex == 0x03
+            else if (objectIndex >= 0x4000 && objectIndex <= 0x4000 + _maxStationsCount && objectSubindex == 0x03
                       && _streamTitleParameters.Count > 0)
             {
                 if (_streamTitleParameters[objectIndex - 0x4000].GetValue(out byte[] d1))
@@ -327,7 +308,7 @@ namespace MPlayerMaster.Device.Radio
                     result = true;
                 }
             }
-            else if (objectIndex >= 0x4000 && objectIndex <= (0x4000 + _maxStationsCount) && objectSubindex == 0x04
+            else if (objectIndex >= 0x4000 && objectIndex <= 0x4000 + _maxStationsCount && objectSubindex == 0x04
                       && _volumeScalingParameters.Count > 0)
             {
                 if (_volumeScalingParameters[objectIndex - 0x4000].GetValue(out byte[] d1))
@@ -336,7 +317,7 @@ namespace MPlayerMaster.Device.Radio
                     result = true;
                 }
             }
-            else if (objectIndex >= 0x4000 && objectIndex <= (0x4000 + _maxStationsCount) && objectSubindex == 0x05
+            else if (objectIndex >= 0x4000 && objectIndex <= 0x4000 + _maxStationsCount && objectSubindex == 0x05
                       && _processIdParameters.Count > 0)
             {
                 if (_processIdParameters[objectIndex - 0x4000].GetValue(out byte[] d1))
@@ -345,7 +326,7 @@ namespace MPlayerMaster.Device.Radio
                     result = true;
                 }
             }
-            else if (objectIndex >= 0x4000 && objectIndex <= (0x4000 + _maxStationsCount) && objectSubindex == 0x06
+            else if (objectIndex >= 0x4000 && objectIndex <= 0x4000 + _maxStationsCount && objectSubindex == 0x06
                       && _customTitleParameters.Count > 0)
             {
                 if (_customTitleParameters[objectIndex - 0x4000].GetValue(out byte[] d1))
@@ -354,7 +335,7 @@ namespace MPlayerMaster.Device.Radio
                     result = true;
                 }
             }
-            
+
             return result;
         }
 
@@ -362,26 +343,26 @@ namespace MPlayerMaster.Device.Radio
         {
             bool result = false;
 
-            if (objectIndex >= 0x4000 && objectIndex <= (0x4000 + _maxStationsCount)
+            if (objectIndex >= 0x4000 && objectIndex <= 0x4000 + _maxStationsCount
                     && objectSubindex == 0x01)
             {
-                if (_urlParameters.Count > (objectIndex - 0x4000))
+                if (_urlParameters.Count > objectIndex - 0x4000)
                 {
                     result = _urlParameters[objectIndex - 0x4000].SetValue(data);
                 }
             }
-            else if (objectIndex >= 0x4000 && objectIndex <= (0x4000 + _maxStationsCount)
+            else if (objectIndex >= 0x4000 && objectIndex <= 0x4000 + _maxStationsCount
                     && objectSubindex == 0x04)
             {
-                if (_volumeScalingParameters.Count > (objectIndex - 0x4000))
+                if (_volumeScalingParameters.Count > objectIndex - 0x4000)
                 {
                     result = _volumeScalingParameters[objectIndex - 0x4000].SetValue(data);
                 }
             }
-            else if (objectIndex >= 0x4000 && objectIndex <= (0x4000 + _maxStationsCount)
+            else if (objectIndex >= 0x4000 && objectIndex <= 0x4000 + _maxStationsCount
                     && objectSubindex == 0x06)
             {
-                if (_customTitleParameters.Count > (objectIndex - 0x4000))
+                if (_customTitleParameters.Count > objectIndex - 0x4000)
                 {
                     result = _customTitleParameters[objectIndex - 0x4000].SetValue(data);
                 }
@@ -394,7 +375,7 @@ namespace MPlayerMaster.Device.Radio
 
                 result = _activeStationParameter.SetValue(activeStationValue);
             }
-            
+
             return result;
         }
 
@@ -439,7 +420,7 @@ namespace MPlayerMaster.Device.Radio
                     }
                 }
             }
-            
+
             return result;
         }
 

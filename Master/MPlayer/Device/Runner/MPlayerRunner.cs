@@ -1,6 +1,6 @@
 ﻿using EltraCommon.Logger;
-using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application.Parameters;
-using MPlayerMaster.Device.Radio;
+using MPlayerMaster.Device.Players.Media;
+using MPlayerMaster.Device.Players.Radio;
 using MPlayerMaster.Device.Runner.Console;
 using System;
 using System.Diagnostics;
@@ -46,6 +46,8 @@ namespace MPlayerMaster.Device.Runner
 
         public RadioPlayer RadioPlayer { get; set; }
 
+        public MediaPlayer MediaPlayer { get; set; }
+
         public MPlayerSettings Settings { get; set; }
 
         internal MPlayerConsoleParser Parser => _parser ?? (_parser = CreateParser());
@@ -71,7 +73,7 @@ namespace MPlayerMaster.Device.Runner
 
         #region Methods
 
-        public void CreateStationFifo(ushort index, string url)
+        public void CreateFifo(ushort index, string url)
         {
             FifoManager.StreamTitleParameters = RadioPlayer.StreamTitleParameters;
             FifoManager.StationTitleParameters = RadioPlayer.StationTitleParameters;
@@ -101,36 +103,6 @@ namespace MPlayerMaster.Device.Runner
                 StationTitleParameter = RadioPlayer.StationTitleParameters[0],
                 CustomStationTitleParameter = RadioPlayer.CustomStationTitleParameters[0]
             };
-
-            return result;
-        }
-
-        public bool Start(Parameter processParam, string url)
-        {
-            bool result = false;
-
-            try
-            {
-                int processId = Start(url);
-
-                if (processParam != null && processId >= 0)
-                {
-                    if (!processParam.SetValue(processId))
-                    {
-                        MsgLogger.WriteError($"{GetType().Name} - Start", "process id cannot be set");
-                    }
-                    else
-                    {
-                        result = true;
-                    }
-                }
-
-                MsgLogger.WriteFlow($"{GetType().Name} - Start", $"Set Station request: {url}, processId = {processId}");
-            }
-            catch (Exception e)
-            {
-                MsgLogger.Exception($"{GetType().Name} - Start", e);
-            }
 
             return result;
         }

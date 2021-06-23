@@ -2,7 +2,6 @@
 using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application.Parameters.Events;
 using EltraCommon.ObjectDictionary.Xdd.DeviceDescription.Profiles.Application.Parameters;
 using EltraCommon.Os.Linux;
-using EltraConnector.Master.Device;
 using MPlayerCommon.Contracts.Media;
 using MPlayerCommon.Definitions;
 using MPlayerMaster.Device.Runner;
@@ -15,9 +14,9 @@ using static MPlayerMaster.MPlayerDefinitions;
 using MPlayerMaster.Device.Contracts;
 using MPlayerMaster.Extensions;
 
-namespace MPlayerMaster.Device.Media
+namespace MPlayerMaster.Device.Players.Media
 {
-    class MediaPlayer : IDisposable
+    class MediaPlayer : Player
     {
         #region Private fields
 
@@ -26,14 +25,13 @@ namespace MPlayerMaster.Device.Media
         private Task _workingTask = Task.CompletedTask;
         private MediaStore _mediaStore;
         private MediaPlanner _mediaPlanner;
-        private PlayerControl _playerControl;
 
         //media
         private XddParameter _mediaDataParameter;
         private XddParameter _mediaDataCompressedParameter;
-        
+
         private XddParameter _mediaControlState;
-        
+
         private XddParameter _mediaCompositionPlaying;
 
         //relay
@@ -64,20 +62,6 @@ namespace MPlayerMaster.Device.Media
 
         private MediaStore MediaStore => _mediaStore ?? (_mediaStore = new MediaStore());
 
-        public PlayerControl PlayerControl
-        { 
-            get => _playerControl; 
-            set
-            {
-                _playerControl = value;
-                OnPlayerControlChanged();
-            }
-        }
-
-        public MasterVcs Vcs { get; internal set; }
-
-        public MPlayerSettings Settings { get; set; }
-
         #endregion
 
         #region Events handling
@@ -86,18 +70,14 @@ namespace MPlayerMaster.Device.Media
         {
             if (_relayStateParameter != null && _relayStateParameter.GetValue(out ushort state))
             {
-                Task.Run(() => {
+                Task.Run(() =>
+                {
                     SetRelayState(state);
                 });
             }
         }
 
-        private void OnPlayerControlChanged()
-        {
-            PlayerControl.MPlayerProcessExited += OnMPlayerProcessExited;
-        }
-
-        private void OnMPlayerProcessExited(object sender, EventArgs e)
+        protected override void OnMPlayerProcessExited(object sender, EventArgs e)
         {
             MsgLogger.WriteFlow($"{GetType().Name} - OnMPlayerProcessExited", $"process exited, shuffle = {MediaPlanner.Shuffle}");
 
@@ -143,8 +123,8 @@ namespace MPlayerMaster.Device.Media
         private void OnMediaControlStateChanged(MediaControlWordValue state)
         {
             MsgLogger.WriteFlow($"{GetType().Name} - OnMediaControlStateChanged", $"media control state changed, new state = {state}");
-        
-            
+
+
         }
 
         #endregion
@@ -189,7 +169,7 @@ namespace MPlayerMaster.Device.Media
 
             SetMediaStatusWordValue(MediaStatusWordValue.Stopping);
 
-            bool result = PlayerControl.Stop();
+            bool result = PlayerControl.Stop(false);
 
             if (result)
             {
@@ -206,7 +186,7 @@ namespace MPlayerMaster.Device.Media
             bool result = false;
             var composition = MediaPlanner.CurrentComposition;
 
-            if(composition == null)
+            if (composition == null)
             {
                 composition = MediaPlanner.GetNextUrl();
             }
@@ -251,7 +231,7 @@ namespace MPlayerMaster.Device.Media
 
             SetMediaStatusWordValue(MediaStatusWordValue.Stopping);
 
-            bool result = PlayerControl.Stop();
+            bool result = PlayerControl.Stop(false);
 
             if (result)
             {
@@ -276,8 +256,8 @@ namespace MPlayerMaster.Device.Media
         internal bool Start()
         {
             bool result = false;
-            
-            if(Update())
+
+            if (Update())
             {
                 _workingTask = Task.Run(async () => { await DoUpdate(); }, _cancellationTokenSource.Token);
 
@@ -291,25 +271,25 @@ namespace MPlayerMaster.Device.Media
         {
             const int minDelay = 250;
 
-            while(!_cancellationTokenSource.IsCancellationRequested)
+            while (!_cancellationTokenSource.IsCancellationRequested)
             {
                 Update();
 
                 var stopWatch = new Stopwatch();
-                
+
                 stopWatch.Start();
 
-                while(stopWatch.Elapsed < UpdateInterval && !_cancellationTokenSource.IsCancellationRequested)
+                while (stopWatch.Elapsed < UpdateInterval && !_cancellationTokenSource.IsCancellationRequested)
                 {
                     await Task.Delay(minDelay);
                 }
-            }            
+            }
         }
 
         internal bool Update()
         {
             bool result = false;
-            
+
             if (_mediaDataParameter != null)
             {
                 if (MediaStore.Build(MediaPath))
@@ -347,24 +327,24 @@ namespace MPlayerMaster.Device.Media
         }
 
         public void Dispose()
-        {            
+        {
             Dispose(disposing: true);
-        
+
             GC.SuppressFinalize(this);
         }
-        
+
         internal async Task InitParameters()
         {
             InitRelayState();
 
             _mediaDataParameter = Vcs.SearchParameter("PARAM_Media_Data") as XddParameter;
             _mediaDataCompressedParameter = Vcs.SearchParameter("PARAM_Media_Data_Compressed") as XddParameter;
-            
+
             _mediaControlState = Vcs.SearchParameter("PARAM_MediaControlState") as XddParameter;
-            
+
             _mediaCompositionPlaying = Vcs.SearchParameter("PARAM_CompositionPlaying") as XddParameter;
 
-            if(_mediaCompositionPlaying != null)
+            if (_mediaCompositionPlaying != null)
             {
                 await _mediaCompositionPlaying.UpdateValue();
             }
@@ -502,7 +482,7 @@ namespace MPlayerMaster.Device.Media
                         {
                             result = true;
                         }
-                        break;                    
+                        break;
                 }
             }
             else if (objectIndex == 0x3141 && objectSubindex == 0x01)
@@ -529,7 +509,7 @@ namespace MPlayerMaster.Device.Media
 
             if (_mediaControlState != null)
             {
-                result = _mediaControlState.SetValue((ushort) state);
+                result = _mediaControlState.SetValue((ushort)state);
             }
 
             return result;
@@ -543,7 +523,7 @@ namespace MPlayerMaster.Device.Media
 
             if (_mediaControlState != null)
             {
-                if(_mediaControlState.GetValue(out ushort s))
+                if (_mediaControlState.GetValue(out ushort s))
                 {
                     state = (MediaStatusWordValue)s;
                     result = true;
