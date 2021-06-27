@@ -179,9 +179,12 @@ namespace MPlayerMaster.Device.Players.Radio
                         customTitleParameter.UpdateValue();
 
                         _urlParameters.Add(urlParameter);
-                                                
                         _volumeScalingParameters.Add(valumeScalingParameter);
-                        
+
+                        CustomStationTitleParameters.Add(customTitleParameter);
+                        StreamTitleParameters.Add(streamTitleParameter);
+                        StationTitleParameters.Add(stationTitleParameter);
+
                         customTitleParameter.ParameterChanged += OnCustomStationTitleChanged;
 
                         PlayerControl.CreateFifo(this, (ushort)(i + 1), streamTitleParameter, stationTitleParameter, customTitleParameter);
