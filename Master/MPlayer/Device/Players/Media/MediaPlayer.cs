@@ -10,15 +10,18 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using MPlayerMaster.Device.Runner.Wrapper;
-using static MPlayerMaster.MPlayerDefinitions;
 using MPlayerMaster.Device.Contracts;
 using MPlayerMaster.Extensions;
+
+using static MPlayerMaster.MPlayerDefinitions;
 
 namespace MPlayerMaster.Device.Players.Media
 {
     class MediaPlayer : Player
     {
         #region Private fields
+
+        const ushort MEDIA_PLAYER_FIFO_INDEX = 0;
 
         private bool disposedValue;
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
@@ -63,10 +66,9 @@ namespace MPlayerMaster.Device.Players.Media
         private MediaStore MediaStore => _mediaStore ?? (_mediaStore = new MediaStore());
 
         #endregion
-
         #region Events handling
 
-        private void OnRelayStateParameterChanged(object sender, ParameterChangedEventArgs e)
+        protected virtual void OnRelayStateParameterChanged(object sender, ParameterChangedEventArgs e)
         {
             if (_relayStateParameter != null && _relayStateParameter.GetValue(out ushort state))
             {
@@ -123,8 +125,6 @@ namespace MPlayerMaster.Device.Players.Media
         private void OnMediaControlStateChanged(MediaControlWordValue state)
         {
             MsgLogger.WriteFlow($"{GetType().Name} - OnMediaControlStateChanged", $"media control state changed, new state = {state}");
-
-
         }
 
         #endregion
@@ -169,7 +169,7 @@ namespace MPlayerMaster.Device.Players.Media
 
             SetMediaStatusWordValue(MediaStatusWordValue.Stopping);
 
-            bool result = PlayerControl.Stop(false);
+            bool result = PlayerControl.Stop();
 
             if (result)
             {
@@ -231,7 +231,7 @@ namespace MPlayerMaster.Device.Players.Media
 
             SetMediaStatusWordValue(MediaStatusWordValue.Stopping);
 
-            bool result = PlayerControl.Stop(false);
+            bool result = PlayerControl.Stop();
 
             if (result)
             {
@@ -363,6 +363,8 @@ namespace MPlayerMaster.Device.Players.Media
 
             await MediaPlanner.InitParameters();
 
+            PlayerControl.CreateFifo(this, MEDIA_PLAYER_FIFO_INDEX, _mediaCompositionPlaying, null, null);
+
             Start();
         }
 
@@ -454,7 +456,7 @@ namespace MPlayerMaster.Device.Players.Media
             {
                 _mediaCompositionPlaying?.SetValue(composition.GetTitle());
 
-                result = PlayerControl.Start(composition.GetUrl()) >= 0;
+                result = PlayerControl.Play(MEDIA_PLAYER_FIFO_INDEX, composition.GetUrl());
 
                 SetStatusWord(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
             }

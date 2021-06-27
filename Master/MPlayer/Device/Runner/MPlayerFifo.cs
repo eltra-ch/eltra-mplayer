@@ -1,7 +1,10 @@
 ﻿using EltraCommon.Logger;
 using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application.Parameters;
+using MPlayerMaster.Device.Players;
 using MPlayerMaster.Device.Runner.Console;
+using MPlayerMaster.Helpers;
 using System;
+using System.IO;
 
 namespace MPlayerMaster.Device.Runner
 {
@@ -11,13 +14,15 @@ namespace MPlayerMaster.Device.Runner
 
         private MPlayerConsoleParser _parser;
         private MPlayerFifoProcess _process;
+        private Player _player;
 
         #endregion
 
         #region Constructors
 
-        public MPlayerFifo(ushort index)
+        public MPlayerFifo(Player player, ushort index)
         {
+            _player = player;
             Index = index;
         }
 
@@ -37,7 +42,8 @@ namespace MPlayerMaster.Device.Runner
         public Parameter StreamTitleParameter { get; internal set; }
         public Parameter StationTitleParameter { get; internal set; }
         public Parameter CustomStationTitleParameter { get; internal set; }
-        public Parameter ProcessIdParameter { get; internal set; }
+        
+        public bool IsCreated => _process != null;
 
         #endregion
 
@@ -74,12 +80,7 @@ namespace MPlayerMaster.Device.Runner
 
         internal bool Stop()
         {
-            bool result = false;
-
-            if (_process != null)
-            {
-                result = _process.Pause(true);
-            }
+            var result = Pause(true);
 
             return result;
         }
@@ -96,40 +97,74 @@ namespace MPlayerMaster.Device.Runner
             return result;
         }
 
-        internal bool Open(string url, bool pause)
+        private bool PlayProcess(string url)
+        {
+            bool result = true;
+
+            if (_process != null)
+            {
+                result = _process.Play(url);
+            }
+
+            return result;
+        }
+
+        internal bool Play(string url)
         {
             bool result = false;
 
             if (Url != url)
             {
-                Start(url);
+                PlayProcess(url);
 
                 Url = url;
             }
-            
-            if(_process != null)
+
+            if (_process != null)
             {
-                result = _process.Pause(pause);
+                result = _process.Pause(false);
             }
 
             return result;
         }
-        
-        private int Start(string url)
+
+        private string GetSilenceUri()
         {
-            int result = -1;
+            string result = string.Empty;
+            string embeddedFileName = "mp_silence_77F7.mp3";
+            string tempPath = Path.GetTempPath();
+            string targetFile = Path.Combine(tempPath, embeddedFileName);
+
+            if (!File.Exists(targetFile))
+            {
+                if(AssembyHelpers.CreateFileFromResource(embeddedFileName, targetFile))
+                {
+                    result = targetFile;
+                }
+            }
+            else
+            {
+                result = targetFile;
+            }
+
+            return result;
+        }
+
+        public bool Create()
+        {
+            bool result = false;
 
             try
             {
                 Stop();
 
-                TerminateProcess();
+                string url = GetSilenceUri();
 
-                _process = new MPlayerFifoProcess() { Settings = Settings, ProcessIdParameter = ProcessIdParameter, Parser = Parser };
+                _process = new MPlayerFifoProcess() { Settings = Settings, Parser = Parser };
                                 
                 _process.Create(url);
 
-                result = _process.ProcessId;                
+                result = _process.ProcessId > 0;                
             }
             catch (Exception e)
             {
@@ -137,11 +172,6 @@ namespace MPlayerMaster.Device.Runner
             }
 
             return result;
-        }
-
-        private void TerminateProcess()
-        {
-            _process?.Abort(); 
         }
 
         #endregion

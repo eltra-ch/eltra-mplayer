@@ -54,8 +54,9 @@ namespace MPlayerMaster.Device.Runner
 
         private void OnPlayerChaned()
         {
-            foreach(var player in PlayerList)
+            foreach (var player in PlayerList)
             {
+                Runner.AddPlayer(player);
                 player.Runner = Runner;
             }            
         }
@@ -67,7 +68,6 @@ namespace MPlayerMaster.Device.Runner
 
             if (parameterValue != null && parameterValue.GetValue(ref controlWordValue))
             {
-
             }
         }
 
@@ -247,9 +247,11 @@ namespace MPlayerMaster.Device.Runner
             return result;
         }
 
-        internal void CreateFifo(ushort index, string url)
+        internal void CreateFifo(Player player, ushort index, Parameter streamTitleParameter,
+                                                          Parameter stationTitleParameter,
+                                                          Parameter customStationTitleParameter)
         {
-            Runner.CreateFifo(index, url);
+            Runner.CreateFifo(player, index, streamTitleParameter, stationTitleParameter, customStationTitleParameter);
         }
 
         public bool SetStatusWord(StatusWordEnums status)
@@ -286,18 +288,9 @@ namespace MPlayerMaster.Device.Runner
             return result;
         }
 
-        internal bool Stop(bool useFifo = true)
+        internal bool Stop()
         {
-            bool result;
-
-            if (useFifo)
-            {
-                result = Runner.StopFifo();
-            }
-            else
-            {
-                result = Runner.Stop();
-            }
+            var result = Runner.StopFifo();
 
             return result;
         }
@@ -358,9 +351,9 @@ namespace MPlayerMaster.Device.Runner
             return result;
         }
 
-        internal bool PlayUrl(ushort index, string url)
+        internal bool Play(ushort index, string url)
         {
-            return Runner.PlayUrl(index, url);
+            return Runner.Play(index, url);
         }
 
         private Task SetMuteAsync(bool muteValue)
@@ -398,11 +391,7 @@ namespace MPlayerMaster.Device.Runner
 
             return result;
         }
-        public int Start(string url)
-        {
-            return Runner.Start(url);
-        }
-
+        
         #endregion
     }
 }

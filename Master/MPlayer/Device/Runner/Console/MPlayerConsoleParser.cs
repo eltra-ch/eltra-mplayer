@@ -1,7 +1,9 @@
 ﻿using EltraCommon.Logger;
 using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application.Parameters;
+using MPlayerMaster.Device.Players;
 using MPlayerMaster.Helpers;
 using System;
+using System.Collections.Generic;
 
 namespace MPlayerMaster.Device.Runner.Console
 {
@@ -20,6 +22,7 @@ namespace MPlayerMaster.Device.Runner.Console
         public Parameter CustomStationTitleParameter { get; set; }
 
         public bool IsPlaybackStarted { get; private set; }
+        public List<Player> PlayerList { get; internal set; }
 
         #endregion
 

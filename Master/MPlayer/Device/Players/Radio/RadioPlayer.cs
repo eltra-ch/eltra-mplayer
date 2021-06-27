@@ -21,17 +21,17 @@ namespace MPlayerMaster.Device.Players.Radio
         private DeviceCommand _queryStationCommand;
 
         private readonly List<Parameter> _urlParameters;
-        private readonly List<Parameter> _stationTitleParameters;
-        private readonly List<Parameter> _streamTitleParameters;
-
         private readonly List<Parameter> _volumeScalingParameters;
-        private readonly List<Parameter> _processIdParameters;
-        private readonly List<Parameter> _customTitleParameters;
-
+        
         private Parameter _activeStationParameter;
         private Parameter _stationsCountParameter;
         private ushort _maxStationsCount;
+
         private Task<bool> _setActiveStationAsyncTask;
+
+        private List<Parameter> _streamTitleParameters;
+        private List<Parameter> _customTitleParameters;
+        private List<Parameter> _stationTitleParameters;
 
         #endregion
 
@@ -40,11 +40,7 @@ namespace MPlayerMaster.Device.Players.Radio
         public RadioPlayer()
         {
             _urlParameters = new List<Parameter>();
-            _stationTitleParameters = new List<Parameter>();
-            _streamTitleParameters = new List<Parameter>();
             _volumeScalingParameters = new List<Parameter>();
-            _processIdParameters = new List<Parameter>();
-            _customTitleParameters = new List<Parameter>();
         }
 
         #endregion
@@ -70,13 +66,11 @@ namespace MPlayerMaster.Device.Players.Radio
 
         public Parameter StationsCountParameter => _stationsCountParameter;
 
-        public List<Parameter> ProcessIdParameters => _processIdParameters;
+        public List<Parameter> StreamTitleParameters => _streamTitleParameters ?? (_streamTitleParameters = new List<Parameter>());
 
-        public List<Parameter> StreamTitleParameters => _streamTitleParameters;
+        public List<Parameter> CustomStationTitleParameters => _customTitleParameters ?? (_customTitleParameters = new List<Parameter>());
 
-        public List<Parameter> CustomStationTitleParameters => _customTitleParameters;
-
-        public List<Parameter> StationTitleParameters => _stationTitleParameters;
+        public List<Parameter> StationTitleParameters => _stationTitleParameters ?? (_stationTitleParameters = new List<Parameter>());
 
         #endregion
 
@@ -126,6 +120,20 @@ namespace MPlayerMaster.Device.Players.Radio
             await InitQueryStation();
 
             await InitActiveStation();
+
+            if (_urlParameters.Count > ActiveStationValue)
+            {
+                var urlParameter = _urlParameters[ActiveStationValue - 1];
+
+                if (!urlParameter.GetValue(out string url))
+                {
+                    MsgLogger.WriteError($"{GetType().Name} - InitStationList", "get url parameter value failed!");
+                }
+                else
+                {
+                    PlayerControl.Play((ushort)ActiveStationValue, url);
+                }
+            }
         }
 
         private async Task InitActiveStation()
@@ -156,40 +164,27 @@ namespace MPlayerMaster.Device.Players.Radio
                     var stationTitleParameter = Vcs.SearchParameter(index, 0x02) as XddParameter;
                     var streamTitleParameter = Vcs.SearchParameter(index, 0x03) as XddParameter;
                     var valumeScalingParameter = Vcs.SearchParameter(index, 0x04) as XddParameter;
-                    var processIdParameter = Vcs.SearchParameter(index, 0x05) as XddParameter;
-                    var customTitleParameter = Vcs.SearchParameter(index, 0x06) as XddParameter;
+                    var customTitleParameter = Vcs.SearchParameter(index, 0x05) as XddParameter;
 
                     if (urlParameter != null &&
                         stationTitleParameter != null &&
                         streamTitleParameter != null &&
                         valumeScalingParameter != null &&
-                        processIdParameter != null &&
                         customTitleParameter != null)
                     {
                         urlParameter.UpdateValue();
                         stationTitleParameter.UpdateValue();
                         streamTitleParameter.UpdateValue();
                         valumeScalingParameter.UpdateValue();
-                        processIdParameter.UpdateValue();
                         customTitleParameter.UpdateValue();
 
                         _urlParameters.Add(urlParameter);
-                        _stationTitleParameters.Add(stationTitleParameter);
-                        _streamTitleParameters.Add(streamTitleParameter);
+                                                
                         _volumeScalingParameters.Add(valumeScalingParameter);
-                        _processIdParameters.Add(processIdParameter);
-                        _customTitleParameters.Add(customTitleParameter);
-
+                        
                         customTitleParameter.ParameterChanged += OnCustomStationTitleChanged;
 
-                        if (urlParameter.GetValue(out string url))
-                        {
-                            PlayerControl.CreateFifo((ushort)(i), url);
-                        }
-                        else
-                        {
-                            MsgLogger.WriteError($"{GetType().Name} - InitStationList", "get url parameter value failed!");
-                        }
+                        PlayerControl.CreateFifo(this, (ushort)(i + 1), streamTitleParameter, stationTitleParameter, customTitleParameter);
                     }
                 }
             }
@@ -197,9 +192,9 @@ namespace MPlayerMaster.Device.Players.Radio
 
         private void SetEmptyStreamLabel(ushort stationIndex)
         {
-            if (_streamTitleParameters.Count > stationIndex)
+            if (StreamTitleParameters.Count > stationIndex)
             {
-                var streamParam = _streamTitleParameters[stationIndex];
+                var streamParam = StreamTitleParameters[stationIndex];
 
                 if (streamParam != null)
                 {
@@ -246,15 +241,14 @@ namespace MPlayerMaster.Device.Players.Radio
                     else if (_urlParameters.Count >= activeStationValue && activeStationValue > 0)
                     {
                         var urlParam = _urlParameters[activeStationValue - 1];
-                        var processParam = _processIdParameters[activeStationValue - 1];
-
+                        
                         if (urlParam.GetValue(out string url))
                         {
                             PlayerControl.SetStatusWord(StatusWordEnums.PendingExecution);
 
                             //SetEmptyStreamLabel((ushort)(activeStationValue - 1));
 
-                            result = PlayerControl.PlayUrl((ushort)(activeStationValue - 1), url);
+                            result = PlayerControl.Play((ushort)(activeStationValue), url);
 
                             PlayerControl.SetStatusWord(result ? StatusWordEnums.ExecutedSuccessfully : StatusWordEnums.ExecutionFailed);
                         }
@@ -291,18 +285,18 @@ namespace MPlayerMaster.Device.Players.Radio
                 }
             }
             else if (objectIndex >= 0x4000 && objectIndex <= 0x4000 + _maxStationsCount && objectSubindex == 0x02
-                      && _stationTitleParameters.Count > 0)
+                      && StationTitleParameters.Count > 0)
             {
-                if (_stationTitleParameters[objectIndex - 0x4000].GetValue(out byte[] d1))
+                if (StationTitleParameters[objectIndex - 0x4000].GetValue(out byte[] d1))
                 {
                     data = d1;
                     result = true;
                 }
             }
             else if (objectIndex >= 0x4000 && objectIndex <= 0x4000 + _maxStationsCount && objectSubindex == 0x03
-                      && _streamTitleParameters.Count > 0)
+                      && StreamTitleParameters.Count > 0)
             {
-                if (_streamTitleParameters[objectIndex - 0x4000].GetValue(out byte[] d1))
+                if (StreamTitleParameters[objectIndex - 0x4000].GetValue(out byte[] d1))
                 {
                     data = d1;
                     result = true;
@@ -318,18 +312,9 @@ namespace MPlayerMaster.Device.Players.Radio
                 }
             }
             else if (objectIndex >= 0x4000 && objectIndex <= 0x4000 + _maxStationsCount && objectSubindex == 0x05
-                      && _processIdParameters.Count > 0)
+                      && CustomStationTitleParameters.Count > 0)
             {
-                if (_processIdParameters[objectIndex - 0x4000].GetValue(out byte[] d1))
-                {
-                    data = d1;
-                    result = true;
-                }
-            }
-            else if (objectIndex >= 0x4000 && objectIndex <= 0x4000 + _maxStationsCount && objectSubindex == 0x06
-                      && _customTitleParameters.Count > 0)
-            {
-                if (_customTitleParameters[objectIndex - 0x4000].GetValue(out byte[] d1))
+                if (CustomStationTitleParameters[objectIndex - 0x4000].GetValue(out byte[] d1))
                 {
                     data = d1;
                     result = true;
@@ -360,11 +345,11 @@ namespace MPlayerMaster.Device.Players.Radio
                 }
             }
             else if (objectIndex >= 0x4000 && objectIndex <= 0x4000 + _maxStationsCount
-                    && objectSubindex == 0x06)
+                    && objectSubindex == 0x05)
             {
-                if (_customTitleParameters.Count > objectIndex - 0x4000)
+                if (CustomStationTitleParameters.Count > objectIndex - 0x4000)
                 {
-                    result = _customTitleParameters[objectIndex - 0x4000].SetValue(data);
+                    result = CustomStationTitleParameters[objectIndex - 0x4000].SetValue(data);
                 }
             }
             else if (objectIndex == 0x4100 && objectSubindex == 0x0)

@@ -25,8 +25,6 @@ namespace MPlayerMaster.Device.Runner
 
         public int ProcessId { get; private set; }
 
-        public Parameter ProcessIdParameter { get; internal set; }
-
         public MPlayerConsoleParser Parser 
         { 
             get => _parser;
@@ -74,6 +72,43 @@ namespace MPlayerMaster.Device.Runner
             return value % 2 != 0;
         }
 
+        private bool WriteCommand(string command)
+        {
+            bool result = false;
+
+            try
+            {
+                if (_process != null)
+                {
+                    _process.StandardInput.Write($"{command}\n");
+                    _process.StandardInput.Flush();
+
+                    result = true;
+                }
+            }
+            catch(Exception e)
+            {
+                MsgLogger.Exception($"{GetType().Name} - WriteCommand", e);
+            }
+
+            return result;
+        }
+
+        public bool Play(string url)
+        {
+            bool result = false;
+
+            if (IsStarted)
+            {
+                if (WriteCommand($"loadfile {url}"))
+                {
+                    result = true;
+                }
+            }
+
+            return result;
+        }
+
         public bool Pause(bool pause)
         {
             bool result = false;
@@ -95,19 +130,17 @@ namespace MPlayerMaster.Device.Runner
                 {
                     if (IsStarted)
                     {
-                        if (_process != null)
+                        if (WriteCommand("pause"))
                         {
-                            _process.StandardInput.Write("pause\n");
-                            _process.StandardInput.Flush();
+                            result = true;
                             pauseToggleCount++;
                         }
                     }
                     else
                     {
+                        result = true;
                         PauseQueue.Enqueue(pause);
-                    }
-
-                    result = true;
+                    }                    
                 }
                 else
                 {
@@ -119,6 +152,28 @@ namespace MPlayerMaster.Device.Runner
                 MsgLogger.Exception($"{GetType().Name} - Pause", e);
             }
             
+            return result;
+        }
+
+        private static bool GetPlayListFlag(string url, out string playlistFlag)
+        {
+            bool result = false;
+
+            playlistFlag = string.Empty;
+
+            url = url.TrimEnd();
+
+            string[] playlistExtensions = { ".asx", ".m3u", ".m3u8", ".pls", ".plst", ".qtl", ".ram", ".wax", ".wpl", ".xspf" };
+            foreach (var playlistExtension in playlistExtensions)
+            {
+                if (url.EndsWith(playlistExtension) || url.EndsWith(playlistExtension + "\""))
+                {
+                    playlistFlag = " -playlist ";
+                    result = true;
+                    break;
+                }
+            }
+
             return result;
         }
 
@@ -147,7 +202,10 @@ namespace MPlayerMaster.Device.Runner
 
                 string args = $" -slave -quiet";
 
-                startInfo.Arguments = Settings.AppArgs + args + $" {url}";
+                GetPlayListFlag(url, out string playlistFlag);
+
+                startInfo.Arguments = Settings.AppArgs + playlistFlag  + args + $" {url}";
+
                 startInfo.Arguments = startInfo.Arguments.Trim();
 
                 startInfo.FileName = Settings.MPlayerProcessPath;
@@ -177,8 +235,6 @@ namespace MPlayerMaster.Device.Runner
 
                     ProcessId = _process.Id;
 
-                    SetProcessId();
-
                     result = true;
                 }
 
@@ -190,50 +246,6 @@ namespace MPlayerMaster.Device.Runner
             }
 
             return result;
-        }
-
-        private bool SetProcessId()
-        {
-            bool result = false;
-
-            if (ProcessIdParameter != null && ProcessId >= 0)
-            {
-                if (!ProcessIdParameter.SetValue(ProcessId))
-                {
-                    MsgLogger.WriteError($"{GetType().Name} - SetProcessId", $"process id {ProcessId} cannot be set");
-                }
-                else
-                {
-                    result = true;
-                }
-            }
-
-            return result;
-        }
-
-        public void Abort()
-        {
-            try
-            {
-                if (_process != null && !_process.HasExited)
-                {
-                    _process.EnableRaisingEvents = false;
-                    _process.Exited -= OnProcessExited;
-
-                    _process.Kill();
-
-                    if (!_process.HasExited)
-                    {
-                        _process.WaitForExit();
-                    }
-                }
-
-                _process = null;
-            }
-            catch (Exception e)
-            {
-                MsgLogger.Exception($"{GetType().Name} - Abort", e);
-            }
         }
 
         #endregion

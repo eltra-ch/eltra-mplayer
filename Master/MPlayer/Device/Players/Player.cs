@@ -1,6 +1,8 @@
-﻿using EltraConnector.Master.Device;
+﻿using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application.Parameters;
+using EltraConnector.Master.Device;
 using MPlayerMaster.Device.Runner;
 using System;
+using System.Collections.Generic;
 
 namespace MPlayerMaster.Device.Players
 {
@@ -9,7 +11,7 @@ namespace MPlayerMaster.Device.Players
         #region Private fields
 
         private PlayerControl _playerControl;
-
+        
         #endregion
 
         #region Events
@@ -24,12 +26,15 @@ namespace MPlayerMaster.Device.Players
 
         protected virtual void OnMPlayerProcessExited(object sender, EventArgs e)
         {
-
         }
 
         #endregion
 
-            #region Properties
+        #region Events handling
+            
+        #endregion
+
+        #region Properties
 
         public MasterVcs Vcs { get; internal set; }
 

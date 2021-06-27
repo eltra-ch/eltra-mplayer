@@ -29,6 +29,14 @@
     <None Remove="TestStreema\**" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="resources\mp_silence_77F7.mp3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="resources\mp_silence_77F7.mp3" />
+  </ItemGroup>
+
 	<ItemGroup>
       <PackageReference Include="Eltra.Connector" Version="2.1.1" />
       <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="5.0.0" />

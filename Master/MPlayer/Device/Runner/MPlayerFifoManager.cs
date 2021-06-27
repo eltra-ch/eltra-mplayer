@@ -1,5 +1,6 @@
 ﻿using EltraCommon.Logger;
 using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application.Parameters;
+using MPlayerMaster.Device.Players;
 using System;
 using System.Collections.Generic;
 
@@ -9,10 +10,8 @@ namespace MPlayerMaster.Device.Runner
     {
         #region Private fields
 
-        const int EXIT_CODE_SUCCESS = 0;
-
         private List<MPlayerFifo> _fifoList;
-
+   
         #endregion
 
         #region Properties
@@ -21,11 +20,6 @@ namespace MPlayerMaster.Device.Runner
 
         public List<MPlayerFifo> FifoList => _fifoList ?? (_fifoList = new List<MPlayerFifo>());
                 
-        public List<Parameter> StreamTitleParameters { get; internal set; }
-        public List<Parameter> StationTitleParameters { get; internal set; }
-        public List<Parameter> CustomStationTitleParameters { get; internal set; }
-        public List<Parameter> ProcessIdParameters { get; internal set; }
-
         #endregion
 
         #region Events
@@ -50,7 +44,9 @@ namespace MPlayerMaster.Device.Runner
             return result;
         }
 
-        internal bool Create(ushort index)
+        internal bool Create(Player player, ushort index, Parameter streamTitleParameter, 
+                                                          Parameter stationTitleParameter,
+                                                          Parameter customStationTitleParameter)
         {
             bool result = false;
 
@@ -58,14 +54,29 @@ namespace MPlayerMaster.Device.Runner
             {
                 if(!Exists(index))
                 {
-                    var fifo = new MPlayerFifo(index) { Settings = Settings };
+                    var fifo = new MPlayerFifo(player, index) { Settings = Settings };
 
-                    fifo.StreamTitleParameter = StreamTitleParameters[index];
-                    fifo.StationTitleParameter = StationTitleParameters[index];
-                    fifo.CustomStationTitleParameter = CustomStationTitleParameters[index];
-                    fifo.ProcessIdParameter = ProcessIdParameters[index];
+                    if (streamTitleParameter != null)
+                    {
+                        fifo.StreamTitleParameter = streamTitleParameter;
+                    }
+
+                    if (stationTitleParameter != null)
+                    {
+                        fifo.StationTitleParameter = stationTitleParameter;
+                    }
+
+                    if (customStationTitleParameter != null)
+                    {
+                        fifo.CustomStationTitleParameter = customStationTitleParameter;
+                    }
 
                     MsgLogger.WriteFlow($"fifo added - {fifo.Name}");
+
+                    if (!fifo.IsCreated)
+                    {
+                        fifo.Create();
+                    }
 
                     FifoList.Add(fifo);
 
@@ -96,24 +107,16 @@ namespace MPlayerMaster.Device.Runner
             return result;
         }
 
-        private void PauseAll(bool pause)
-        {
-            foreach (var f in FifoList)
-            {
-                f.Pause(pause);
-            }
-        }
-
-        internal bool OpenUrl(ushort index, string url, bool pause)
+        internal bool Play(ushort index, string url)
         {
             bool result = false;
             var fifo = GetFifo(index);
 
             if(fifo != null)
             {
-                PauseAll(true);
+                Stop();
 
-                if (!fifo.Open(url, pause))
+                if (!fifo.Play(url))
                 {
                     MsgLogger.WriteError($"{GetType().Name} - OpenUrl", $"cannot open url {url}!");
                 }
