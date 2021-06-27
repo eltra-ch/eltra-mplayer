@@ -11,6 +11,9 @@ namespace MPlayerMaster.Extensions
             if (composition != null && !string.IsNullOrEmpty(composition.FullPath))
             {
                 result = $"\"{composition.FullPath}\"";
+                /*result = $"file://{composition.FullPath}";
+                result = result.Replace('\\', '/');
+                result = result.Replace(" ", "%20");*/
             }
 
             return result;
