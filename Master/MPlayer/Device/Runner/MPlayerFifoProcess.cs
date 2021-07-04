@@ -1,5 +1,4 @@
 ﻿using EltraCommon.Logger;
-using EltraCommon.ObjectDictionary.Common.DeviceDescription.Profiles.Application.Parameters;
 using MPlayerMaster.Device.Runner.Console;
 using System;
 using System.Collections.Generic;
@@ -11,11 +10,23 @@ namespace MPlayerMaster.Device.Runner
     {
         #region
 
+        const int maxErrorCount = 50;
+
         private Process _process;
         private bool _started;
         private MPlayerConsoleParser _parser;
         private Queue<bool> _pauseQueue;
         int pauseToggleCount;
+        int _errorsCount;
+
+        #endregion
+
+        #region Constructors
+
+        public MPlayerFifoProcess()
+        {
+            _errorsCount = 0;
+        }
 
         #endregion
 
@@ -225,6 +236,22 @@ namespace MPlayerMaster.Device.Runner
                     if (!string.IsNullOrEmpty(args.Data))
                     {
                         MsgLogger.WriteError($"{GetType().Name} - ErrorDataReceived", args.Data);
+
+                        if(_errorsCount > maxErrorCount)
+                        {
+                            if(RestartProcess(url))
+                            {
+                                _errorsCount = 0;
+                            }
+                            else
+                            {
+                                _errorsCount++;
+                            }
+                        }
+                        else
+                        {
+                            _errorsCount++;
+                        }                        
                     }
                 };
 
@@ -243,6 +270,38 @@ namespace MPlayerMaster.Device.Runner
             catch(Exception e)
             {
                 MsgLogger.Exception($"{GetType().Name} - Create", e);
+            }
+
+            return result;
+        }
+
+        private bool RestartProcess(string url)
+        {
+            bool result = false;
+
+            try
+            {
+                MsgLogger.WriteLine($"{GetType().Name} - RestartProcess", $"restart process after {_errorsCount}/{maxErrorCount} try ...");
+
+                if (_process != null)
+                {
+                    _process.Kill(true);
+                }
+
+                result = Create(url);
+
+                if(result)
+                {
+                    MsgLogger.WriteLine($"{GetType().Name} - RestartProcess", $"recreate process success, url = {url}");
+                }
+                else
+                {
+                    MsgLogger.WriteError($"{GetType().Name} - RestartProcess", $"recreate process failed!, url = {url}");
+                }
+            }
+            catch(Exception e)
+            {
+                MsgLogger.Exception($"{GetType().Name} - RestartProcess", e);
             }
 
             return result;
