@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Eltra.Common" Version="1.9.1" />
+    <ProjectReference Include="..\..\..\eltra-sdk\xternals\common\EltraCommon\EltraCommon.csproj" />
   </ItemGroup>
 
 </Project>
